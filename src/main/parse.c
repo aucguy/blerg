@@ -34,3 +34,32 @@ IntToken* parseInt(ParseState* state) {
     free(extracted);
     return token;
 }
+
+
+LiteralToken* parseLiteral(ParseState* state) {
+    LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
+    token->token.type = TOKEN_LITERAL;
+
+    advance(state); //skip the '
+    int start = state->index;
+    while(getChar(state) != '\'') {
+        advance(state);
+    }
+
+    int len = sizeof(char) * (state->index - start + 1);
+    char* extracted = (char*) malloc(len);
+    memcpy(extracted, &state->src[start], len);
+    extracted[len - 1] = 0;
+    token->value = extracted;
+
+    advance(state); //skip the '
+
+    return token;
+}
+
+void destroyToken(Token* token) {
+    if(token->type == TOKEN_LITERAL) {
+        free((void*) ((LiteralToken*) token)->value);
+    }
+    free(token);
+}

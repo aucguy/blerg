@@ -4,7 +4,8 @@
 #include "main/flags.h"
 
 typedef enum {
-    TOKEN_INT
+    TOKEN_INT,
+    TOKEN_LITERAL
 } TokenType;
 
 typedef struct {
@@ -15,6 +16,13 @@ typedef struct {
     Token token;
     int value;
 } IntToken;
+
+typedef struct {
+    Token token;
+    const char* value;
+} LiteralToken;
+
+void destroyToken(Token* token);
 
 #if INCLUDE_TESTS || IS_PARSE_IMPL
 typedef struct {
@@ -27,6 +35,7 @@ ParseState* createParseState(const char*);
 
 #if INCLUDE_TESTS
 IntToken* parseInt(ParseState*);
+LiteralToken* parseLiteral(ParseState*);
 #endif
 
 #endif /* PARSE_H_ */

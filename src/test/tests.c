@@ -11,7 +11,10 @@ void runTest(const char* name, const char* msg, int* status) {
 int runTests() {
     int status = 0;
     printf("running tests...\n");
-    runTest("testParseIdentifier", testParseIdentifier(), &status);
+
+    runTest("testParseInt", testParseInt(), &status);
+    runTest("testParseLiteral", testParseLiteral(), &status);
+
     if(status == 0) {
         printf("all tests succeeded");
     }
