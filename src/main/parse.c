@@ -18,20 +18,31 @@ void advance(ParseState* state) {
     state->index++;
 }
 
+void advanceWhile(ParseState* state, const char* chars) {
+    while(strchr(chars, getChar(state)) != NULL) {
+        advance(state);
+    }
+}
+
+char* sliceStr(const char* str, int start, int end) {
+    int len = sizeof(char) * (end - start);
+    char* extracted = (char*) malloc(len + 1);
+    memcpy(extracted, &str[start], len);
+    extracted[len] = 0;
+    return extracted;
+}
+
 IntToken* parseInt(ParseState* state) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
     token->token.type = TOKEN_INT;
 
     int start = state->index;
-    while(strchr("123456789", getChar(state)) != NULL) {
-        advance(state);
-    }
+    advanceWhile(state, "123456789");
 
-    int len = sizeof(char) * (state->index - start);
-    char* extracted = (char*) malloc(len);
-    memcpy(extracted, &state->src[start], len);
+    char* extracted = sliceStr(state->src, start, state->index);
     token->value = atoi(extracted);
     free(extracted);
+
     return token;
 }
 
@@ -46,12 +57,7 @@ LiteralToken* parseLiteral(ParseState* state) {
         advance(state);
     }
 
-    int len = sizeof(char) * (state->index - start + 1);
-    char* extracted = (char*) malloc(len);
-    memcpy(extracted, &state->src[start], len);
-    extracted[len - 1] = 0;
-    token->value = extracted;
-
+    token->value = sliceStr(state->src, start, state->index);
     advance(state); //skip the '
 
     return token;
@@ -64,14 +70,9 @@ IdentifierToken* parseIdentifier(ParseState* state) {
     token->token.type = TOKEN_IDENTIFIER;
 
     int start = state->index;
-    while(strchr(IDENTIFIER_CHARS, getChar(state)) != NULL) {
-        advance(state);
-    }
+    advanceWhile(state, IDENTIFIER_CHARS);
 
-    int len = sizeof(char) * (state->index - start);
-    char* extracted = (char*) malloc(len);
-    memcpy(extracted, &state->src[start], len);
-    token->value = extracted;
+    token->value = sliceStr(state->src, start, state->index);
     return token;
 }
 
