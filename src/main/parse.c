@@ -57,9 +57,29 @@ LiteralToken* parseLiteral(ParseState* state) {
     return token;
 }
 
+const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+
+IdentifierToken* parseIdentifier(ParseState* state) {
+    IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
+    token->token.type = TOKEN_IDENTIFIER;
+
+    int start = state->index;
+    while(strchr(IDENTIFIER_CHARS, getChar(state)) != NULL) {
+        advance(state);
+    }
+
+    int len = sizeof(char) * (state->index - start);
+    char* extracted = (char*) malloc(len);
+    memcpy(extracted, &state->src[start], len);
+    token->value = extracted;
+    return token;
+}
+
 void destroyToken(Token* token) {
     if(token->type == TOKEN_LITERAL) {
         free((void*) ((LiteralToken*) token)->value);
+    } else if(token->type == TOKEN_IDENTIFIER) {
+        free((void*) ((IdentifierToken*) token)->value);
     }
     free(token);
 }

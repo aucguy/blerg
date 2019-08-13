@@ -24,3 +24,13 @@ const char* testParseLiteral() {
     destroyToken(&token->token);
     return NULL;
 }
+
+const char* testParseIdentifier() {
+    ParseState* state = createParseState("var");
+    IdentifierToken* token = parseIdentifier(state);
+    assert(token->token.type == TOKEN_IDENTIFIER, "token type is not identifier");
+    assert(strcmp(token->value, "var") == 0, "token value is not 'Hello'");
+    free(state);
+    destroyToken(&token->token);
+    return NULL;
+}

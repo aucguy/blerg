@@ -5,5 +5,6 @@
 
 const char* testParseInt();
 const char* testParseLiteral();
+const char* testParseIdentifier();
 
 #endif /* PARSETEST_H_ */
