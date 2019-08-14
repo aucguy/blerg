@@ -32,12 +32,14 @@ char* sliceStr(const char* str, int start, int end) {
     return extracted;
 }
 
+const char* INT_CHARS = "0123456789";
+
 IntToken* parseInt(ParseState* state) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
     token->token.type = TOKEN_INT;
 
     int start = state->index;
-    advanceWhile(state, "123456789");
+    advanceWhile(state, INT_CHARS);
 
     char* extracted = sliceStr(state->src, start, state->index);
     token->value = atoi(extracted);
@@ -76,11 +78,45 @@ IdentifierToken* parseIdentifier(ParseState* state) {
     return token;
 }
 
+Token* parseFactor(ParseState* state) {
+    char c = getChar(state);
+    if(strchr(INT_CHARS, c) != NULL) {
+        return (Token*) parseInt(state);
+    } else if(strchr(IDENTIFIER_CHARS, c) != NULL) {
+        return (Token*) parseIdentifier(state);
+    } else if(c == '\'') {
+        return (Token*) parseLiteral(state);
+    } else {
+        return NULL;
+    }
+}
+
+Token* parseTerm(ParseState* state) {
+    Token* token = parseFactor(state);
+
+    while(strchr("*/", getChar(state)) != NULL) {
+        BinaryOpToken* binaryOp = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
+        binaryOp->token.type = TOKEN_BINARY_OP;
+        binaryOp->op = sliceStr(state->src, state->index, state->index + 1);
+        advance(state);
+        binaryOp->left = token;
+        binaryOp->right = parseFactor(state);
+        token = (Token*) binaryOp;
+    }
+
+    return token;
+}
+
 void destroyToken(Token* token) {
     if(token->type == TOKEN_LITERAL) {
         free((void*) ((LiteralToken*) token)->value);
     } else if(token->type == TOKEN_IDENTIFIER) {
         free((void*) ((IdentifierToken*) token)->value);
+    } else if(token->type == TOKEN_BINARY_OP) {
+        BinaryOpToken* binaryOp = (BinaryOpToken*) token;
+        free((void*) binaryOp->op);
+        destroyToken(binaryOp->left);
+        destroyToken(binaryOp->right);
     }
     free(token);
 }

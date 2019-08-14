@@ -6,7 +6,8 @@
 typedef enum {
     TOKEN_INT,
     TOKEN_LITERAL,
-    TOKEN_IDENTIFIER
+    TOKEN_IDENTIFIER,
+    TOKEN_BINARY_OP
 } TokenType;
 
 typedef struct {
@@ -28,6 +29,13 @@ typedef struct {
     const char* value;
 } IdentifierToken;
 
+typedef struct {
+    Token token;
+    const char* op;
+    Token* left;
+    Token* right;
+} BinaryOpToken;
+
 void destroyToken(Token* token);
 
 #if INCLUDE_TESTS || IS_PARSE_IMPL
@@ -43,6 +51,7 @@ ParseState* createParseState(const char*);
 IntToken* parseInt(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
+Token* parseTerm(ParseState*);
 #endif
 
 #endif /* PARSE_H_ */
