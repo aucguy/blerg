@@ -3,6 +3,40 @@
 #include <string.h>
 #include "main/parse.h"
 
+int containsChar(const char* chars, char c) {
+    return c != 0 && strchr(chars, c);
+}
+
+IntToken* createIntToken(int value) {
+    IntToken* token = (IntToken*) malloc(sizeof(IntToken));
+    token->token.type = TOKEN_INT;
+    token->value = value;
+    return token;
+}
+
+LiteralToken* createLiteralToken(const char* value) {
+    LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
+    token->token.type = TOKEN_LITERAL;
+    token->value = value;
+    return token;
+}
+
+IdentifierToken* createIdentifierToken(const char* value) {
+    IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
+    token->token.type = TOKEN_IDENTIFIER;
+    token->value = value;
+    return token;
+}
+
+BinaryOpToken* createBinaryOpToken(const char* op, Token* left, Token* right) {
+    BinaryOpToken* token = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
+    token->token.type = TOKEN_BINARY_OP;
+    token->op = op;
+    token->left = left;
+    token->right = right;
+    return token;
+}
+
 ParseState* createParseState(const char* src) {
     ParseState* state = (ParseState*) malloc(sizeof(ParseState));
     state->index = 0;
@@ -19,7 +53,7 @@ void advance(ParseState* state) {
 }
 
 void advanceWhile(ParseState* state, const char* chars) {
-    while(strchr(chars, getChar(state)) != NULL) {
+    while(containsChar(chars, getChar(state)) != NULL) {
         advance(state);
     }
 }
@@ -35,54 +69,44 @@ char* sliceStr(const char* str, int start, int end) {
 const char* INT_CHARS = "0123456789";
 
 IntToken* parseInt(ParseState* state) {
-    IntToken* token = (IntToken*) malloc(sizeof(IntToken));
-    token->token.type = TOKEN_INT;
-
     int start = state->index;
     advanceWhile(state, INT_CHARS);
 
     char* extracted = sliceStr(state->src, start, state->index);
-    token->value = atoi(extracted);
+    int value = atoi(extracted);
     free(extracted);
 
-    return token;
+    return createIntToken(value);
 }
 
 
 LiteralToken* parseLiteral(ParseState* state) {
-    LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
-    token->token.type = TOKEN_LITERAL;
-
     advance(state); //skip the '
     int start = state->index;
     while(getChar(state) != '\'') {
         advance(state);
     }
 
-    token->value = sliceStr(state->src, start, state->index);
+    const char* value = sliceStr(state->src, start, state->index);
     advance(state); //skip the '
 
-    return token;
+    return createLiteralToken(value);
 }
 
 const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 
 IdentifierToken* parseIdentifier(ParseState* state) {
-    IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
-    token->token.type = TOKEN_IDENTIFIER;
-
     int start = state->index;
     advanceWhile(state, IDENTIFIER_CHARS);
 
-    token->value = sliceStr(state->src, start, state->index);
-    return token;
+    return createIdentifierToken(sliceStr(state->src, start, state->index));
 }
 
 Token* parseFactor(ParseState* state) {
     char c = getChar(state);
-    if(strchr(INT_CHARS, c) != NULL) {
+    if(containsChar(INT_CHARS, c) != NULL) {
         return (Token*) parseInt(state);
-    } else if(strchr(IDENTIFIER_CHARS, c) != NULL) {
+    } else if(containsChar(IDENTIFIER_CHARS, c) != NULL) {
         return (Token*) parseIdentifier(state);
     } else if(c == '\'') {
         return (Token*) parseLiteral(state);
@@ -94,14 +118,11 @@ Token* parseFactor(ParseState* state) {
 Token* parseTerm(ParseState* state) {
     Token* token = parseFactor(state);
 
-    while(strchr("*/", getChar(state)) != NULL) {
-        BinaryOpToken* binaryOp = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
-        binaryOp->token.type = TOKEN_BINARY_OP;
-        binaryOp->op = sliceStr(state->src, state->index, state->index + 1);
+    while(containsChar("*/", getChar(state)) != NULL) {
+        const char* op = sliceStr(state->src, state->index, state->index + 1);
         advance(state);
-        binaryOp->left = token;
-        binaryOp->right = parseFactor(state);
-        token = (Token*) binaryOp;
+        Token* right = parseFactor(state);
+        token = (Token*) createBinaryOpToken(op, token, right);
     }
 
     return token;

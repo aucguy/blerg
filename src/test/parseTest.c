@@ -5,6 +5,35 @@
 #include "test/parseTest.h"
 #include "main/parse.h"
 
+int tokensEqual(Token* a, Token* b) {
+    if(a->type != b->type) {
+        return 0;
+    }
+    if(a->type == TOKEN_INT) {
+        return ((IntToken*) a)->value == ((IntToken*) b)->value;
+    } else if(a->type == TOKEN_LITERAL) {
+        return strcmp(((LiteralToken*) a)->value, ((LiteralToken*) b)->value) == 0;
+    } else if(a->type == TOKEN_IDENTIFIER) {
+        return strcmp(((IdentifierToken*) a)->value, ((IdentifierToken*) b)->value) == 0;
+    } else if(a->type == TOKEN_BINARY_OP) {
+        BinaryOpToken* aBinOp = (BinaryOpToken*) a;
+        BinaryOpToken* bBinOp = (BinaryOpToken*) b;
+        return strcmp(aBinOp->op, bBinOp->op) == 0 &&
+                tokensEqual(aBinOp->left, bBinOp->left) &&
+                tokensEqual(aBinOp->right, bBinOp->right);
+    } else {
+        return 0;
+    }
+}
+
+const char* newStr(const char* src) {
+    int len = sizeof(char) * (strlen(src) + 1);
+    char* dst = (char*) malloc(len);
+    memcpy(dst, src, len);
+    dst[len - 1] = 0;
+    return dst;
+}
+
 void parseCleanup(ParseState* state, Token* token) {
     free(state);
     destroyToken(token);
@@ -45,30 +74,19 @@ const char* testParseIdentifier() {
 
 const char* testParseTerm() {
     ParseState* state = createParseState("1*'hello'/foo");
-    Token* token = parseTerm(state);
+    Token* parsed = parseTerm(state);
 
-    assert(token->type == TOKEN_BINARY_OP, "second op is not a binary op");
-    BinaryOpToken* outerOp = (BinaryOpToken*) token;
-    assert(strcmp(outerOp->op, "/") == 0, "second op is not '/'");
+    BinaryOpToken* expected = createBinaryOpToken(newStr("/"),
+            (Token*) createBinaryOpToken(newStr("*"),
+                    (Token*) createIntToken(1),
+                    (Token*) createLiteralToken(newStr("hello"))),
+            (Token*) createIdentifierToken(newStr("foo")));
 
-    assert(outerOp->right->type == TOKEN_IDENTIFIER, "third factor is not an identifier");
-    IdentifierToken* third = (IdentifierToken*) outerOp->right;
-    assert(strcmp(third->value, "foo") == 0, "third factor is not 'foo'");
-
-    assert(outerOp->left->type == TOKEN_BINARY_OP, "second op is not a binary op");
-    BinaryOpToken* innerOp = (BinaryOpToken*) outerOp->left;
-    assert(strcmp(innerOp->op, "*") == 0, "first op is not '*'");
-
-    assert(innerOp->left->type == TOKEN_INT, "first factor is not an int");
-    IntToken* first = (IntToken*) innerOp->left;
-    assert(first->value == 1, "first factor is not 1");
-
-    assert(innerOp->right->type == TOKEN_LITERAL, "second factor is not a literal");
-    LiteralToken* second = (LiteralToken*) innerOp->right;
-    assert(strcmp(second->value, "hello") == 0, "second factor is not 'hello'");
+    assert(tokensEqual(parsed, (Token*) expected), "incorrect parse");
 
     free(state);
-    destroyToken(token);
+    destroyToken((Token*) expected);
+    destroyToken(parsed);
 
     return NULL;
 }

@@ -48,6 +48,11 @@ ParseState* createParseState(const char*);
 #endif
 
 #if INCLUDE_TESTS
+IntToken* createIntToken(int);
+LiteralToken* createLiteralToken(const char*);
+IdentifierToken* createIdentifierToken(const char*);
+BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
+
 IntToken* parseInt(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
