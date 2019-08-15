@@ -73,7 +73,7 @@ const char* testParseIdentifier() {
 }
 
 const char* testParseTerm() {
-    ParseState* state = createParseState("1*'hello'/foo");
+    ParseState* state = createParseState("1 * 'hello' / foo");
     Token* parsed = parseTerm(state);
 
     BinaryOpToken* expected = createBinaryOpToken(newStr("/"),

@@ -58,6 +58,10 @@ void advanceWhile(ParseState* state, const char* chars) {
     }
 }
 
+void skipWhitespace(ParseState* state) {
+    advanceWhile(state, " \t\n\r");
+}
+
 char* sliceStr(const char* str, int start, int end) {
     int len = sizeof(char) * (end - start);
     char* extracted = (char*) malloc(len + 1);
@@ -103,6 +107,7 @@ IdentifierToken* parseIdentifier(ParseState* state) {
 }
 
 Token* parseFactor(ParseState* state) {
+    skipWhitespace(state);
     char c = getChar(state);
     if(containsChar(INT_CHARS, c) != NULL) {
         return (Token*) parseInt(state);
@@ -118,11 +123,13 @@ Token* parseFactor(ParseState* state) {
 Token* parseTerm(ParseState* state) {
     Token* token = parseFactor(state);
 
+    skipWhitespace(state);
     while(containsChar("*/", getChar(state)) != NULL) {
         const char* op = sliceStr(state->src, state->index, state->index + 1);
         advance(state);
         Token* right = parseFactor(state);
         token = (Token*) createBinaryOpToken(op, token, right);
+        skipWhitespace(state);
     }
 
     return token;
