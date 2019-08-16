@@ -23,7 +23,7 @@ def executable(debugging):
 
 def debug_flag(debugging):
     if debugging:
-        return '-g'
+        return '-g -O0'
     else:
         return ''
 

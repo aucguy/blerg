@@ -7,5 +7,6 @@ const char* testParseInt();
 const char* testParseLiteral();
 const char* testParseIdentifier();
 const char* testParseTerm();
+const char* testParseExpression();
 
 #endif /* PARSETEST_H_ */

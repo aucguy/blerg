@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main/parse.h"
+#include "main/util.h"
 
 int containsChar(const char* chars, char c) {
     return c != 0 && strchr(chars, c);
@@ -44,8 +45,20 @@ ParseState* createParseState(const char* src) {
     return state;
 }
 
+UnaryOpToken* createUnaryOpToken(const char* op, Token* child) {
+    UnaryOpToken* token = (UnaryOpToken*) malloc(sizeof(UnaryOpToken));
+    token->token.type = TOKEN_UNARY_OP;
+    token->op = op;
+    token->child = child;
+    return token;
+}
+
 char getChar(ParseState* state) {
     return state->src[state->index];
+}
+
+void advance(ParseState* state, int amount) {
+    state->index += amount;
 }
 
 void advance(ParseState* state) {
@@ -109,7 +122,12 @@ IdentifierToken* parseIdentifier(ParseState* state) {
 Token* parseFactor(ParseState* state) {
     skipWhitespace(state);
     char c = getChar(state);
-    if(containsChar(INT_CHARS, c) != NULL) {
+    if(c == '(') {
+        advance(state);
+        Token* token = parseExpression(state);
+        advance(state);
+        return token;
+    } else if(containsChar(INT_CHARS, c) != NULL) {
         return (Token*) parseInt(state);
     } else if(containsChar(IDENTIFIER_CHARS, c) != NULL) {
         return (Token*) parseIdentifier(state);
@@ -133,6 +151,66 @@ Token* parseTerm(ParseState* state) {
     }
 
     return token;
+}
+
+const int OP_LEVELS = 4;
+const int OP_AMOUNT = 7;
+const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
+        { "*", "/", "end" },
+        { "+", "-", "end" },
+        { "==", "!=", ">", ">=", "<", "<=", "end" },
+        { "and", "or", "end" }
+};
+
+const char* getOp(ParseState* state, int level) {
+    for(int i = 0; i < OP_AMOUNT; i++) {
+        if(strcmp(OP_DATA[level][i], "end") == 0) {
+            break;
+        }
+        int found;
+        int k = 0;
+        while(1) {
+            char a = OP_DATA[level][i][k];
+            char b = state->src[state->index + k];
+            if(a == 0) {
+                found = 1;
+                break;
+            }
+            if(b == 0 || a != b) {
+                found = 0;
+                break;
+            }
+            k++;
+        }
+        if(found) {
+            return newStr(OP_DATA[level][i]);
+        }
+    }
+    return NULL;
+}
+
+Token* parseExpression(ParseState* state, int level) {
+    if(level == -1) {
+        return parseFactor(state);
+    }
+
+    Token* token = parseExpression(state, level - 1);
+
+    skipWhitespace(state);
+
+    const char* op;
+    while((op = getOp(state, level)) != NULL) {
+        advance(state, strlen(op));
+        Token* right = parseExpression(state, level - 1);
+        token = (Token*) createBinaryOpToken(op, token, right);
+        skipWhitespace(state);
+    }
+
+    return token;
+}
+
+Token* parseExpression(ParseState* state) {
+    return parseExpression(state, OP_LEVELS - 1);
 }
 
 void destroyToken(Token* token) {

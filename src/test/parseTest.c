@@ -4,6 +4,7 @@
 
 #include "test/parseTest.h"
 #include "main/parse.h"
+#include "main/util.h"
 
 int tokensEqual(Token* a, Token* b) {
     if(a->type != b->type) {
@@ -26,12 +27,29 @@ int tokensEqual(Token* a, Token* b) {
     }
 }
 
-const char* newStr(const char* src) {
-    int len = sizeof(char) * (strlen(src) + 1);
-    char* dst = (char*) malloc(len);
-    memcpy(dst, src, len);
-    dst[len - 1] = 0;
-    return dst;
+void printToken(Token* token, int indent) {
+    for(int i = 0; i < indent; i++) {
+        printf("    ");
+    }
+
+    if(token->type == TOKEN_INT) {
+        printf("int: %i\n", ((IntToken*) token)->value);
+    } else if(token->type == TOKEN_LITERAL) {
+        printf("literal: %s\n", ((LiteralToken*) token)->value);
+    } else if(token->type == TOKEN_IDENTIFIER) {
+        printf("identifier: %s\n", ((IdentifierToken*) token)->value);
+    } else if(token->type == TOKEN_BINARY_OP) {
+        BinaryOpToken* binaryOp = (BinaryOpToken*) token;
+        printf("binaryOp: %s\n", binaryOp->op);
+        printToken(binaryOp->left, indent + 1);
+        printToken(binaryOp->right, indent + 1);
+    } else {
+        printf("unknown");
+    }
+}
+
+void printToken(Token* token) {
+    printToken(token, 0);
 }
 
 void parseCleanup(ParseState* state, Token* token) {
@@ -87,6 +105,33 @@ const char* testParseTerm() {
     free(state);
     destroyToken((Token*) expected);
     destroyToken(parsed);
+
+    return NULL;
+}
+
+const char* testParseExpression() {
+    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and b == c or d");
+    Token* parsed = parseExpression(state);
+
+    BinaryOpToken* expected = createBinaryOpToken(newStr("or"),
+            (Token*) createBinaryOpToken(newStr("and"),
+                    (Token*) createBinaryOpToken(newStr(">"),
+                            (Token*) createBinaryOpToken(newStr("*"),
+                                    (Token*) createIntToken(2),
+                                    (Token*) createBinaryOpToken(newStr("+"),
+                                            (Token*) createIdentifierToken(newStr("a")),
+                                            (Token*) createIntToken(1))),
+                            (Token*) createIntToken(5)),
+                    (Token*) createBinaryOpToken(newStr("=="),
+                            (Token*) createIdentifierToken(newStr("b")),
+                            (Token*) createIdentifierToken(newStr("c")))),
+            (Token*) createIdentifierToken(newStr("d")));
+
+    assert(tokensEqual(parsed, (Token*) expected), "incorrect parse");
+
+    free(state);
+    destroyToken(parsed);
+    destroyToken((Token*) expected);
 
     return NULL;
 }
