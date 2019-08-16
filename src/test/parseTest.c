@@ -90,25 +90,6 @@ const char* testParseIdentifier() {
     return NULL;
 }
 
-const char* testParseTerm() {
-    ParseState* state = createParseState("1 * 'hello' / foo");
-    Token* parsed = parseTerm(state);
-
-    BinaryOpToken* expected = createBinaryOpToken(newStr("/"),
-            (Token*) createBinaryOpToken(newStr("*"),
-                    (Token*) createIntToken(1),
-                    (Token*) createLiteralToken(newStr("hello"))),
-            (Token*) createIdentifierToken(newStr("foo")));
-
-    assert(tokensEqual(parsed, (Token*) expected), "incorrect parse");
-
-    free(state);
-    destroyToken((Token*) expected);
-    destroyToken(parsed);
-
-    return NULL;
-}
-
 const char* testParseExpression() {
     ParseState* state = createParseState("2 * ( a + 1 ) > 5 and b == c or d");
     Token* parsed = parseExpression(state);

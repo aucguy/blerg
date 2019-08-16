@@ -138,21 +138,6 @@ Token* parseFactor(ParseState* state) {
     }
 }
 
-Token* parseTerm(ParseState* state) {
-    Token* token = parseFactor(state);
-
-    skipWhitespace(state);
-    while(containsChar("*/", getChar(state)) != NULL) {
-        const char* op = sliceStr(state->src, state->index, state->index + 1);
-        advance(state);
-        Token* right = parseFactor(state);
-        token = (Token*) createBinaryOpToken(op, token, right);
-        skipWhitespace(state);
-    }
-
-    return token;
-}
-
 const int OP_LEVELS = 4;
 const int OP_AMOUNT = 7;
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {

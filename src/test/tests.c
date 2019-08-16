@@ -15,7 +15,6 @@ int runTests() {
     runTest("testParseInt", testParseInt(), &status);
     runTest("testParseLiteral", testParseLiteral(), &status);
     runTest("testParseIdentifier", testParseIdentifier(), &status);
-    runTest("testParseTerm", testParseTerm(), &status);
     runTest("testParseExpression", testParseExpression(), &status);
 
     if(status == 0) {
