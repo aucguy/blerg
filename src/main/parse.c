@@ -100,8 +100,12 @@ IntToken* parseInt(ParseState* state) {
 LiteralToken* parseLiteral(ParseState* state) {
     advance(state); //skip the '
     int start = state->index;
-    while(getChar(state) != '\'') {
+    while(getChar(state) != '\'' && getChar(state) != 0) {
         advance(state);
+    }
+
+    if(getChar(state) != '\'') {
+        return NULL;
     }
 
     const char* value = sliceStr(state->src, start, state->index);
@@ -125,6 +129,11 @@ Token* parseFactor(ParseState* state) {
     if(c == '(') {
         advance(state);
         Token* token = parseExpression(state);
+        skipWhitespace(state);
+        if(getChar(state) != ')') {
+            destroyToken(token);
+            return NULL;
+        }
         advance(state);
         return token;
     } else if(containsChar(INT_CHARS, c) != NULL) {
@@ -182,6 +191,9 @@ Token* parseExpression(ParseState* state, int level);
 
 Token* parseBinaryOp(ParseState* state, int level) {
     Token* token = parseExpression(state, level - 1);
+    if(token == NULL) {
+        return NULL;
+    }
 
     skipWhitespace(state);
 
@@ -189,6 +201,11 @@ Token* parseBinaryOp(ParseState* state, int level) {
     while((op = getOp(state, level)) != NULL) {
         advance(state, strlen(op));
         Token* right = parseExpression(state, level - 1);
+        if(right == NULL) {
+            free((void*) op);
+            destroyToken(token);
+            return NULL;
+        }
         token = (Token*) createBinaryOpToken(op, token, right);
         skipWhitespace(state);
     }
@@ -201,7 +218,12 @@ Token* parsePrefixUnaryOp(ParseState* state, int level) {
     const char* op = getOp(state, level);
     if(op != NULL) {
         advance(state, strlen(op));
-        return (Token*) createUnaryOpToken(op, parseExpression(state, level));
+        Token* child = parseExpression(state, level);
+        if(child == NULL) {
+            free((void*) op);
+            return NULL;
+        }
+        return (Token*) createUnaryOpToken(op, child);
     } else {
         return parseExpression(state, level - 1);
     }
@@ -222,6 +244,9 @@ Token* parseExpression(ParseState* state) {
 }
 
 void destroyToken(Token* token) {
+    if(token == NULL) {
+        return;
+    }
     if(token->type == TOKEN_LITERAL) {
         free((void*) ((LiteralToken*) token)->value);
     } else if(token->type == TOKEN_IDENTIFIER) {

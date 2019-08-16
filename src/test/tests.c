@@ -16,6 +16,7 @@ int runTests() {
     runTest("testParseLiteral", testParseLiteral(), &status);
     runTest("testParseIdentifier", testParseIdentifier(), &status);
     runTest("testParseExpression", testParseExpression(), &status);
+    runTest("testParseFail", testParseFail(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

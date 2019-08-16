@@ -126,3 +126,18 @@ const char* testParseExpression() {
 
     return NULL;
 }
+
+const char* testParseFail() {
+    ParseState* state = createParseState("'hello");
+    assert(parseExpression(state) == NULL, "parse succeeded for identifier");
+    free(state);
+
+    state = createParseState("1 + (a *");
+    assert(parseExpression(state) == NULL, "parse succeeded for parenthesis");
+    free(state);
+
+    state = createParseState("2 * %");
+    assert(parseExpression(state) == NULL, "parse succeeded, for unknown factor");
+    free(state);
+    return NULL;
+}
