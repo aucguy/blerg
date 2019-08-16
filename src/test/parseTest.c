@@ -22,6 +22,11 @@ int tokensEqual(Token* a, Token* b) {
         return strcmp(aBinOp->op, bBinOp->op) == 0 &&
                 tokensEqual(aBinOp->left, bBinOp->left) &&
                 tokensEqual(aBinOp->right, bBinOp->right);
+    } else if(a->type == TOKEN_UNARY_OP) {
+        UnaryOpToken* aUnOp = (UnaryOpToken*) a;
+        UnaryOpToken* bUnOp = (UnaryOpToken*) b;
+        return strcmp(aUnOp->op, bUnOp->op) == 0 &&
+                tokensEqual(aUnOp->child, bUnOp->child);
     } else {
         return 0;
     }
@@ -43,6 +48,10 @@ void printToken(Token* token, int indent) {
         printf("binaryOp: %s\n", binaryOp->op);
         printToken(binaryOp->left, indent + 1);
         printToken(binaryOp->right, indent + 1);
+    } else if(token->type == TOKEN_UNARY_OP) {
+        UnaryOpToken* unaryOp = (UnaryOpToken*) token;
+        printf("unaryOp: %s\n", unaryOp->op);
+        printToken(unaryOp->child, indent + 1);
     } else {
         printf("unknown");
     }
@@ -91,7 +100,7 @@ const char* testParseIdentifier() {
 }
 
 const char* testParseExpression() {
-    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and b == c or d");
+    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and b == c or not d");
     Token* parsed = parseExpression(state);
 
     BinaryOpToken* expected = createBinaryOpToken(newStr("or"),
@@ -106,7 +115,8 @@ const char* testParseExpression() {
                     (Token*) createBinaryOpToken(newStr("=="),
                             (Token*) createIdentifierToken(newStr("b")),
                             (Token*) createIdentifierToken(newStr("c")))),
-            (Token*) createIdentifierToken(newStr("d")));
+            (Token*) createUnaryOpToken(newStr("not"),
+                    (Token*) createIdentifierToken(newStr("d"))));
 
     assert(tokensEqual(parsed, (Token*) expected), "incorrect parse");
 

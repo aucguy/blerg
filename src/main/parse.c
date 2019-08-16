@@ -138,12 +138,13 @@ Token* parseFactor(ParseState* state) {
     }
 }
 
-const int OP_LEVELS = 4;
+const int OP_LEVELS = 5;
 const int OP_AMOUNT = 7;
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "*", "/", "end" },
         { "+", "-", "end" },
         { "==", "!=", ">", ">=", "<", "<=", "end" },
+        { "prefix", "not", "end" },
         { "and", "or", "end" }
 };
 
@@ -151,6 +152,9 @@ const char* getOp(ParseState* state, int level) {
     for(int i = 0; i < OP_AMOUNT; i++) {
         if(strcmp(OP_DATA[level][i], "end") == 0) {
             break;
+        }
+        if(strcmp(OP_DATA[level][i], "prefix") == 0) {
+            continue;
         }
         int found;
         int k = 0;
@@ -174,11 +178,9 @@ const char* getOp(ParseState* state, int level) {
     return NULL;
 }
 
-Token* parseExpression(ParseState* state, int level) {
-    if(level == -1) {
-        return parseFactor(state);
-    }
+Token* parseExpression(ParseState* state, int level);
 
+Token* parseBinaryOp(ParseState* state, int level) {
     Token* token = parseExpression(state, level - 1);
 
     skipWhitespace(state);
@@ -192,6 +194,27 @@ Token* parseExpression(ParseState* state, int level) {
     }
 
     return token;
+}
+
+Token* parsePrefixUnaryOp(ParseState* state, int level) {
+    skipWhitespace(state);
+    const char* op = getOp(state, level);
+    if(op != NULL) {
+        advance(state, strlen(op));
+        return (Token*) createUnaryOpToken(op, parseExpression(state, level));
+    } else {
+        return parseExpression(state, level - 1);
+    }
+}
+
+Token* parseExpression(ParseState* state, int level) {
+    if(level == -1) {
+        return parseFactor(state);
+    } else if(strcmp(OP_DATA[level][0], "prefix") == 0) {
+        return parsePrefixUnaryOp(state, level);
+    } else {
+        return parseBinaryOp(state, level);
+    }
 }
 
 Token* parseExpression(ParseState* state) {
@@ -208,6 +231,10 @@ void destroyToken(Token* token) {
         free((void*) binaryOp->op);
         destroyToken(binaryOp->left);
         destroyToken(binaryOp->right);
+    } else if(token->type == TOKEN_UNARY_OP) {
+        UnaryOpToken* unaryOp = (UnaryOpToken*) token;
+        free((void*) unaryOp->op);
+        destroyToken(unaryOp->child);
     }
     free(token);
 }
