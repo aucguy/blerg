@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main/parse.h"
-#include "main/util.h"
 
 int containsChar(const char* chars, char c) {
     return c != 0 && strchr(chars, c);
@@ -38,19 +37,34 @@ BinaryOpToken* createBinaryOpToken(const char* op, Token* left, Token* right) {
     return token;
 }
 
-ParseState* createParseState(const char* src) {
-    ParseState* state = (ParseState*) malloc(sizeof(ParseState));
-    state->index = 0;
-    state->src = src;
-    return state;
-}
-
 UnaryOpToken* createUnaryOpToken(const char* op, Token* child) {
     UnaryOpToken* token = (UnaryOpToken*) malloc(sizeof(UnaryOpToken));
     token->token.type = TOKEN_UNARY_OP;
     token->op = op;
     token->child = child;
     return token;
+}
+
+AssignmentToken* createAssignmentToken(IdentifierToken* left, Token* right) {
+    AssignmentToken* token = (AssignmentToken*) malloc(sizeof(AssignmentToken));
+    token->token.type = TOKEN_ASSIGNMENT;
+    token->left = left;
+    token->right = right;
+    return token;
+}
+
+BlockToken* createBlockToken(List* children) {
+    BlockToken* token = (BlockToken*) malloc(sizeof(BlockToken));
+    token->token.type = TOKEN_BLOCK;
+    token->children = children;
+    return token;
+}
+
+ParseState* createParseState(const char* src) {
+    ParseState* state = (ParseState*) malloc(sizeof(ParseState));
+    state->index = 0;
+    state->src = src;
+    return state;
 }
 
 char getChar(ParseState* state) {
@@ -144,6 +158,21 @@ Token* parseFactor(ParseState* state) {
         return (Token*) parseLiteral(state);
     } else {
         return NULL;
+    }
+}
+
+int lookAhead(ParseState* state, const char* str) {
+    int i = 0;
+    while(1) {
+        char a = str[i];
+        char b = state->src[state->index + i];
+        if(a == 0) {
+            return 1;
+        }
+        if(b == 0 || a != b) {
+            return 0;
+        }
+        i++;
     }
 }
 
@@ -243,6 +272,66 @@ Token* parseExpression(ParseState* state) {
     return parseExpression(state, OP_LEVELS - 1);
 }
 
+Token* parseAssignment(ParseState* state) {
+    skipWhitespace(state);
+    Token* left = parseExpression(state);
+    if(left == NULL) {
+        return NULL;
+    }
+    skipWhitespace(state);
+    if(getChar(state) == ';') {
+        advance(state);
+        return left;
+    } else if(getChar(state) == '=') {
+        advance(state);
+        skipWhitespace(state);
+        Token* right = parseExpression(state);
+        if(right == NULL || left->type != TOKEN_IDENTIFIER || getChar(state) != ';') {
+            free(left);
+            return NULL;
+        }
+        advance(state);
+        IdentifierToken* identifier = (IdentifierToken*) left;
+        return (Token*) createAssignmentToken(identifier, right);
+    } else {
+        free(left);
+        return NULL;
+    }
+}
+
+List* parseBlockHelper(ParseState* state, int* error) {
+    skipWhitespace(state);
+    if(lookAhead(state, "end")) {
+        if(getChar(state) == 0) {
+            *error = 1;
+        }
+        return NULL;
+    }
+    Token* head = parseAssignment(state);
+    if(head == NULL) {
+        destroyToken(head);
+        *error = 1;
+        return NULL;
+    }
+    List* tail = parseBlockHelper(state, error);
+    if(*error) {
+        //TODO fix memleak?
+        return NULL;
+    }
+    return consList(head, tail);
+}
+
+BlockToken* parseBlock(ParseState* state) {
+    int error = 0;
+    List* list = parseBlockHelper(state, &error);
+    if(error) {
+        return NULL;
+    }
+    return createBlockToken(list);
+}
+
+void destroyTokenVoid(void*);
+
 void destroyToken(Token* token) {
     if(token == NULL) {
         return;
@@ -260,6 +349,16 @@ void destroyToken(Token* token) {
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
         free((void*) unaryOp->op);
         destroyToken(unaryOp->child);
+    } else if(token->type == TOKEN_ASSIGNMENT) {
+        AssignmentToken* assignment = (AssignmentToken*) token;
+        destroyToken((Token*) assignment->left);
+        destroyToken(assignment->right);
+    } else if(token->type == TOKEN_BLOCK) {
+        destroyList(((BlockToken*) token)->children, destroyTokenVoid);
     }
     free(token);
+}
+
+void destroyTokenVoid(void* token) {
+    destroyToken((Token*) token);
 }

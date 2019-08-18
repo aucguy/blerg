@@ -8,5 +8,6 @@ const char* testParseLiteral();
 const char* testParseIdentifier();
 const char* testParseExpression();
 const char* testParseFail();
+const char* testParseAssignments();
 
 #endif /* PARSETEST_H_ */

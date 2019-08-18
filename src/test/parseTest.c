@@ -7,7 +7,7 @@
 #include "main/util.h"
 
 int tokensEqual(Token* a, Token* b) {
-    if(a->type != b->type) {
+    if(a == NULL || b == NULL || a->type != b->type) {
         return 0;
     }
     if(a->type == TOKEN_INT) {
@@ -27,6 +27,23 @@ int tokensEqual(Token* a, Token* b) {
         UnaryOpToken* bUnOp = (UnaryOpToken*) b;
         return strcmp(aUnOp->op, bUnOp->op) == 0 &&
                 tokensEqual(aUnOp->child, bUnOp->child);
+    } else if(a->type == TOKEN_ASSIGNMENT) {
+        AssignmentToken* assignA = (AssignmentToken*) a;
+        AssignmentToken* assignB = (AssignmentToken*) b;
+        return tokensEqual((Token*) assignA->left, (Token*) assignB->left) &&
+                tokensEqual(assignB->right, assignB->right);
+    } else if(a->type == TOKEN_BLOCK) {
+        List* nodeA = ((BlockToken*) a)->children;
+        List* nodeB = ((BlockToken*) b)->children;
+
+        while(nodeA != NULL && nodeB != NULL) {
+            if(!tokensEqual((Token*) nodeA->head, (Token*) nodeB->head)) {
+                return 0;
+            }
+            nodeA = nodeA->tail;
+            nodeB = nodeB->tail;
+        }
+        return nodeA == NULL && nodeB == NULL;
     } else {
         return 0;
     }
@@ -52,8 +69,18 @@ void printToken(Token* token, int indent) {
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
         printf("unaryOp: %s\n", unaryOp->op);
         printToken(unaryOp->child, indent + 1);
+    } else if(token->type == TOKEN_ASSIGNMENT) {
+        AssignmentToken* assignment = (AssignmentToken*) token;
+        printf("assignment: %s\n", assignment->left->value);
+        printToken(assignment->right, indent + 1);
+    } else if(token->type == TOKEN_BLOCK) {
+        BlockToken* block = (BlockToken*) token;
+        printf("block:\n");
+        for(List* node = block->children; node != NULL; node = node->tail) {
+            printToken((Token*) node->head, indent + 1);
+        }
     } else {
-        printf("unknown");
+        printf("unknown\n");
     }
 }
 
@@ -139,5 +166,32 @@ const char* testParseFail() {
     state = createParseState("2 * %");
     assert(parseExpression(state) == NULL, "parse succeeded, for unknown factor");
     free(state);
+    return NULL;
+}
+
+const char* testParseAssignments() {
+    ParseState* state = createParseState("a = 1 + 2; b = 3; c; end");
+    BlockToken* parsed = parseBlock(state);
+
+    AssignmentToken* stmt1 = createAssignmentToken(
+            createIdentifierToken(newStr("a")),
+            (Token*) createBinaryOpToken(newStr("+"),
+                    (Token*) createIntToken(1),
+                    (Token*) createIntToken(2)));
+
+    AssignmentToken* stmt2 = createAssignmentToken(
+            createIdentifierToken(newStr("b")),
+            (Token*) createIntToken(3));
+
+    IdentifierToken* stmt3 = createIdentifierToken(newStr("c"));
+
+    List* list = consList(stmt1, consList(stmt2, consList(stmt3, NULL)));
+    BlockToken* expected = createBlockToken(list);
+
+    assert(tokensEqual((Token*) parsed, (Token*) expected), "incorrect parse");
+
+    free(state);
+    destroyToken((Token*) parsed);
+    destroyToken((Token*) expected);
     return NULL;
 }
