@@ -302,9 +302,10 @@ Token* parseAssignment(ParseState* state) {
 List* parseBlockHelper(ParseState* state, int* error) {
     skipWhitespace(state);
     if(lookAhead(state, "end")) {
-        if(getChar(state) == 0) {
-            *error = 1;
-        }
+        return NULL;
+    }
+    if(getChar(state) == 0) {
+        *error = 1;
         return NULL;
     }
     Token* head = parseAssignment(state);
@@ -315,7 +316,7 @@ List* parseBlockHelper(ParseState* state, int* error) {
     }
     List* tail = parseBlockHelper(state, error);
     if(*error) {
-        //TODO fix memleak?
+        destroyToken(head);
         return NULL;
     }
     return consList(head, tail);

@@ -195,3 +195,11 @@ const char* testParseAssignments() {
     destroyToken((Token*) expected);
     return NULL;
 }
+
+const char* parseTestBlockWithoutEndFails() {
+    ParseState* state = createParseState("a = 1 + 2; b = 3; c;");
+    BlockToken* parsed = parseBlock(state);
+    assert(parsed == NULL, "parse succeeded");
+    free(state);
+    return NULL;
+}
