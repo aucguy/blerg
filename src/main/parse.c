@@ -188,29 +188,15 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
 
 const char* getOp(ParseState* state, int level) {
     for(int i = 0; i < OP_AMOUNT; i++) {
-        if(strcmp(OP_DATA[level][i], "end") == 0) {
+        const char* checking = OP_DATA[level][i];
+        if(strcmp(checking, "end") == 0) {
             break;
         }
-        if(strcmp(OP_DATA[level][i], "prefix") == 0) {
+        if(strcmp(checking, "prefix") == 0) {
             continue;
         }
-        int found;
-        int k = 0;
-        while(1) {
-            char a = OP_DATA[level][i][k];
-            char b = state->src[state->index + k];
-            if(a == 0) {
-                found = 1;
-                break;
-            }
-            if(b == 0 || a != b) {
-                found = 0;
-                break;
-            }
-            k++;
-        }
-        if(found) {
-            return newStr(OP_DATA[level][i]);
+        if(lookAhead(state, checking)) {
+            return newStr(checking);
         }
     }
     return NULL;
