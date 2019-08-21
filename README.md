@@ -4,7 +4,7 @@ Currently only bash shells and the GNU compiler are supported. Python 3
 is required to run the build script.
 
 Run `python3 tools.py build` to build the executable. The executable is found
-at `build/erk`.`python3` may be `python` on your system.
+at `build/blerg`. `python3` may be `python` on your system.
 
 Run `python3 tools.py clean` to clean the build files.
 
