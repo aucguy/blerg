@@ -6,6 +6,9 @@
 #include "main/parse.h"
 #include "main/util.h"
 
+/**
+ * Determines if two tokens are equal.
+ */
 int tokensEqual(Token* a, Token* b) {
     if(a == NULL || b == NULL || a->type != b->type) {
         return 0;
@@ -49,6 +52,9 @@ int tokensEqual(Token* a, Token* b) {
     }
 }
 
+/**
+ * Prints the given token. Subchildren are indented.
+ */
 void printToken(Token* token, int indent) {
     for(int i = 0; i < indent; i++) {
         printf("    ");
