@@ -118,6 +118,14 @@ IfToken* createIfToken(List* branches, BlockToken* elseBranch) {
     return token;
 }
 
+WhileToken* createWhileToken(BlockToken* condition, BlockToken* body) {
+    WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
+    token->token.type = TOKEN_WHILE;
+    token->condition = condition;
+    token->body = body;
+    return token;
+}
+
 ParseState* createParseState(const char* src) {
     ParseState* state = (ParseState*) malloc(sizeof(ParseState));
     state->index = 0;
@@ -544,10 +552,36 @@ IfToken* parseIfStmt(ParseState* state) {
     return createIfToken(branches, elseBranch);
 }
 
+const char* WHILE_COND_ENDS[] = { "do", "~" };
+const char* WHILE_BODY_ENDS[] = { "end", "~" };
+
+WhileToken* parseWhileStmt(ParseState* state) {
+    if(!lookAhead(state, "while")) {
+        return NULL;
+    }
+    advance(state, strlen("while"));
+
+    BlockToken* conditional = parseBlock(state, WHILE_COND_ENDS);
+    if(conditional == NULL || !lookAhead(state, "do")) {
+        return NULL;
+    }
+    advance(state, strlen("do"));
+
+    BlockToken* body = parseBlock(state, WHILE_BODY_ENDS);
+    if(body == NULL || !lookAhead(state, "end")) {
+        return NULL;
+    }
+    advance(state, strlen("end"));
+
+    return createWhileToken(conditional, body);
+}
+
 Token* parseStatement(ParseState* state) {
     skipWhitespace(state);
     if(lookAhead(state, "if")) {
         return (Token*) parseIfStmt(state);
+    } else if(lookAhead(state, "while")) {
+        return (Token*) parseWhileStmt(state);
     } else {
         return parseAssignment(state);
     }
@@ -656,6 +690,10 @@ void destroyToken(Token* token) {
         IfToken* ifToken = (IfToken*) token;
         destroyList(ifToken->branches, destroyIfBranch);
         destroyToken((Token*) ifToken->elseBranch);
+    } else if(token->type == TOKEN_WHILE) {
+        WhileToken* whileToken = (WhileToken*) token;
+        destroyToken((Token*) whileToken->condition);
+        destroyToken((Token*) whileToken->body);
     }
     free(token);
 }

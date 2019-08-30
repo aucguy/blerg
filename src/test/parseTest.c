@@ -75,6 +75,11 @@ int tokensEqual(Token* a, Token* b) {
             return 1;
         }
         return tokensEqual((Token*) ifA->elseBranch, (Token*) ifB->elseBranch);
+    } else if(a->type == TOKEN_WHILE) {
+        WhileToken* whileA = (WhileToken*) a;
+        WhileToken* whileB = (WhileToken*) b;
+        return tokensEqual((Token*) whileA->condition, (Token*) whileB->condition) &&
+                tokensEqual((Token*) whileA->body, (Token*) whileB->body);
     } else {
         return 0;
     }
@@ -134,6 +139,17 @@ void printToken(Token* token, int indent) {
         printIndent(indent + 1);
         printf("else:\n");
         printToken((Token*) ifStmt->elseBranch, indent + 2);
+    } else if(token->type == TOKEN_WHILE) {
+        WhileToken* whileStmt = (WhileToken*) token;
+        printf("while:\n");
+
+        printIndent(indent + 1);
+        printf("condition:\n");
+        printToken((Token*) whileStmt->condition, indent + 2);
+
+        printIndent(indent + 1);
+        printf("body:\n");
+        printToken((Token*) whileStmt->body, indent + 2);
     } else {
         printf("unknown\n");
     }
@@ -296,5 +312,34 @@ const char* parseTestIfStmt() {
     free(state);
     destroyToken((Token*) parsed);
     destroyToken((Token*) expected);
+    return NULL;
+}
+
+const char* parseTestWhileStmt() {
+    ParseState* state = createParseState("x = 0; while x < 10; do x = x + 1; end end");
+    Token* parsed = (Token*) parseBlock(state, BLOCK_ENDS);
+
+    Token* stmt1 = (Token*) createAssignmentToken(
+            createIdentifierToken(newStr("x")),
+            (Token*) createIntToken(0));
+
+    Token* stmt2 = (Token*) createWhileToken(
+            createBlockToken(consList(
+                    createBinaryOpToken(newStr("<"),
+                            (Token*) createIdentifierToken(newStr("x")),
+                            (Token*) createIntToken(10)), NULL)),
+            createBlockToken(consList(
+                    createAssignmentToken(
+                            createIdentifierToken(newStr("x")),
+                            (Token*) createBinaryOpToken(newStr("x"),
+                                    (Token*) createIdentifierToken(newStr("x")),
+                                    (Token*) createIntToken(1))), NULL)));
+
+    Token* expected = (Token*) createBlockToken(consList(stmt1, consList(stmt2, NULL)));
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    free(state);
+    destroyToken(parsed);
+    destroyToken(expected);
     return NULL;
 }
