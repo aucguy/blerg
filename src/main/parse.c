@@ -103,6 +103,21 @@ BlockToken* createBlockToken(List* children) {
     return token;
 }
 
+IfBranch* createIfBranch(BlockToken* condition, BlockToken* block) {
+    IfBranch* branch = (IfBranch*) malloc(sizeof(IfBranch));
+    branch->condition = condition;
+    branch->block = block;
+    return branch;
+}
+
+IfToken* createIfToken(List* branches, BlockToken* elseBranch) {
+    IfToken* token = (IfToken*) malloc(sizeof(IfToken));
+    token->token.type = TOKEN_IF;
+    token->branches = branches;
+    token->elseBranch = elseBranch;
+    return token;
+}
+
 ParseState* createParseState(const char* src) {
     ParseState* state = (ParseState*) malloc(sizeof(ParseState));
     state->index = 0;
@@ -444,22 +459,121 @@ Token* parseAssignment(ParseState* state) {
     }
 }
 
+//ending keywords for if condition blocks
+const char* IF_COND_ENDS[] = { "then", "~" };
+//ending keywords for if non-else blocks
+const char* IF_BODY_ENDS[] = { "elif", "else", "end", "~" };
+//ending keywords for if else blocks
+const char* IF_ELSE_ENDS[] = { "end", "~" };
+
 /**
- * Parses a list of statements.
+ * Parses a list of if nonelse branches. This function does not consume the ending
+ * keyword.
  *
  * @param state the ParseState
+ * @param error set to 1 if there's an error. The return value cannot indicate
+ *      whether or not there's an error since the function returns NULL on
+ *      nonerror conditions
+ * @return A list of the rest of non-else branches in this block. If there are no
+ *      more non-else branches, this returns NULL.
+ */
+List* parseIfStmtBranches(ParseState* state, int* error) {
+    BlockToken* condition = parseBlock(state, IF_COND_ENDS);
+    if(condition == NULL || !lookAhead(state, "then")) {
+        *error = 1;
+        return NULL;
+    }
+    advance(state, strlen("then"));
+    BlockToken* body = parseBlock(state, IF_BODY_ENDS);
+    if(body == NULL) {
+        *error = 1;
+        return NULL;
+    }
+    IfBranch* head = createIfBranch(condition, body);
+    List* tail;
+    if(lookAhead(state, "elif")) {
+        advance(state, strlen("elif"));
+        //parse the rest of the branches
+        List* tail = parseIfStmtBranches(state, error);
+        if(*error) {
+            return NULL;
+        }
+        return consList(head, tail);
+    } else if(lookAhead(state, "else") || lookAhead(state, "end")) {
+        //end of the branches
+        //don't advance so parseIfStmt knows there is or is not an else branch
+        tail = NULL;
+    } else {
+        *error = 1; //no terminating keyword
+        return NULL;
+    }
+    return consList(head, tail);
+}
+
+/**
+ * Parses an if statement.
+ *
+ * <if> ::= if <block> then <block> (elif <block> then <block>)* (else <block>)? end
+ */
+IfToken* parseIfStmt(ParseState* state) {
+    skipWhitespace(state);
+    //just in case
+    if(!lookAhead(state, "if")) {
+        return NULL;
+    }
+    advance(state, strlen("if"));
+    //an error code is used because parseIfStmtBranches returns NULL when there
+    //are no more branches, not for errors. Note that parseIfStmtBranches does
+    //not consume elif / else / end.
+    int error = 0;
+    List* branches = parseIfStmtBranches(state, &error);
+    if(error) {
+        return NULL;
+    }
+    BlockToken* elseBranch;
+    if(lookAhead(state, "else")) {
+        advance(state, strlen("else"));
+        elseBranch = parseBlock(state, IF_ELSE_ENDS);
+    } else if(lookAhead(state, "end")) {
+        advance(state, strlen("end"));
+        elseBranch = NULL;
+    } else {
+        //shouldn't happen
+        elseBranch = NULL;
+    }
+    return createIfToken(branches, elseBranch);
+}
+
+Token* parseStatement(ParseState* state) {
+    skipWhitespace(state);
+    if(lookAhead(state, "if")) {
+        return (Token*) parseIfStmt(state);
+    } else {
+        return parseAssignment(state);
+    }
+}
+
+/**
+ * Parses a list of statements. This function does not consume the ending
+ * keyword.
+ *
+ * @param state the ParseState
+ * @param ends contains the keywords that may end the block. "~" must be the
+ *          last string.
  * @param error set to 1 if there's an error. The return value cannot indicate
  *      whether or not there's an error since the function returns NULL on
  *      nonerror conditions
  * @return A list of the rest of the statements in this block. If there are no
  *      more statements, this returns NULL.
  */
-List* parseBlockHelper(ParseState* state, int* error) {
+List* parseBlockHelper(ParseState* state, const char* ends[], int* error) {
     skipWhitespace(state);
-    //end of block
-    if(lookAhead(state, "end")) {
-        //NULL represents an empty list
-        return NULL;
+    //check for the end of the block
+    for(int i = 0; strcmp(ends[i], "~") != 0; i++) {
+        if(lookAhead(state, ends[i])) {
+            //NULL represents an empty list
+            return NULL;
+        }
     }
     //the EOF was reached before the end of the block, error
     if(getChar(state) == 0) {
@@ -467,14 +581,14 @@ List* parseBlockHelper(ParseState* state, int* error) {
         return NULL;
     }
     //not the end, parse the next statement
-    Token* head = parseAssignment(state);
+    Token* head = parseStatement(state);
     if(head == NULL) {
         destroyToken(head);
         *error = 1;
         return NULL;
     }
     //parse the rest of the block recursively
-    List* tail = parseBlockHelper(state, error);
+    List* tail = parseBlockHelper(state, ends, error);
     if(*error) {
         destroyToken(head);
         return NULL;
@@ -486,16 +600,23 @@ List* parseBlockHelper(ParseState* state, int* error) {
 /**
  * Parses a block.
  *
- * <block> ::= <assignment>* end
+ * <block> ::= <assignment>* END1 | END 2 ...
  *
  * The algorithm must be expressed using a stack as the first statements
  * must be passed to consList last so they are the first in the list.
+ *
+ * This function does not consume the ending keyword.
+ *
+ * @param state the ParseState
+ * @param ends contains the keywords that may end the block. "~" must be the
+ *          last string.
+ * @return The resultant block token
  */
-BlockToken* parseBlock(ParseState* state) {
+BlockToken* parseBlock(ParseState* state, const char* ends[]) {
     //parseBlockHelper sets this to 1 if there's an error instead of returning
     //NULL
     int error = 0;
-    List* list = parseBlockHelper(state, &error);
+    List* list = parseBlockHelper(state, ends, &error);
     if(error) {
         return NULL;
     }
@@ -503,6 +624,7 @@ BlockToken* parseBlock(ParseState* state) {
 }
 
 void destroyTokenVoid(void*);
+void destroyIfBranch(void*);
 
 /**
  * Frees a token's memory, it's data's memory and subtokens recursively
@@ -530,10 +652,21 @@ void destroyToken(Token* token) {
         destroyToken(assignment->right);
     } else if(token->type == TOKEN_BLOCK) {
         destroyList(((BlockToken*) token)->children, destroyTokenVoid);
+    } else if(token->type == TOKEN_IF) {
+        IfToken* ifToken = (IfToken*) token;
+        destroyList(ifToken->branches, destroyIfBranch);
+        destroyToken((Token*) ifToken->elseBranch);
     }
     free(token);
 }
 
 void destroyTokenVoid(void* token) {
     destroyToken((Token*) token);
+}
+
+void destroyIfBranch(void* x) {
+    IfBranch* branch = (IfBranch*) x;
+    destroyToken((Token*) branch->condition);
+    destroyToken((Token*) branch->block);
+    free(branch);
 }

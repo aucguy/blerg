@@ -10,5 +10,6 @@ const char* testParseExpression();
 const char* testParseFail();
 const char* testParseAssignments();
 const char* parseTestBlockWithoutEndFails();
+const char* parseTestIfStmt();
 
 #endif /* PARSETEST_H_ */

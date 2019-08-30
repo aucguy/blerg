@@ -15,7 +15,8 @@ typedef enum {
     TOKEN_BINARY_OP,
     TOKEN_UNARY_OP,
     TOKEN_ASSIGNMENT,
-    TOKEN_BLOCK
+    TOKEN_BLOCK,
+    TOKEN_IF
 } TokenType;
 
 /**
@@ -66,6 +67,17 @@ typedef struct {
     List* children;
 } BlockToken;
 
+typedef struct {
+    BlockToken* condition;
+    BlockToken* block;
+} IfBranch;
+
+typedef struct {
+    Token token;
+    List* branches;
+    BlockToken* elseBranch;
+} IfToken;
+
 /**
  * Frees the token, its fields and subtokens.
  */
@@ -95,13 +107,15 @@ BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
 UnaryOpToken* createUnaryOpToken(const char*, Token*);
 AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);
 BlockToken* createBlockToken(List*);
+IfBranch* createIfBranch(BlockToken*, BlockToken*);
+IfToken* createIfToken(List*, BlockToken*);
 
 IntToken* parseInt(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
 Token* parseTerm(ParseState*);
 Token* parseExpression(ParseState*);
-BlockToken* parseBlock(ParseState*);
+BlockToken* parseBlock(ParseState*, const char**);
 #endif
 
 #endif /* PARSE_H_ */
