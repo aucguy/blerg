@@ -165,11 +165,13 @@ void advanceWhile(ParseState* state, const char* chars) {
     }
 }
 
+const char* WHITESPACE_CHARS = " \t\n\r";
+
 /**
  * Advances the current character until after the whitespace.
  */
 void skipWhitespace(ParseState* state) {
-    advanceWhile(state, " \t\n\r");
+    advanceWhile(state, WHITESPACE_CHARS);
 }
 
 /**
@@ -307,11 +309,26 @@ int lookAhead(ParseState* state, const char* str) {
     }
 }
 
+/**
+ * Returns whether or not the next characters matches any of the given strings.
+ */
+int lookAhead(ParseState* state, const char* strs[]) {
+    for(int i = 0; strcmp(strs[i], "~") != 0; i++) {
+        if(lookAhead(state, strs[i])) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 //'end' is not an operator; it signifies that the end of the array of operators
-const int OP_LEVELS = 5;
-const int OP_AMOUNT = 7;
+const int OP_LEVELS = 6;
+const int OP_AMOUNT = 8;
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
+        //' ' is the application operator. It sits invisible between a function
+        //and its argument
+        { " ", "end" },
         { "*", "/", "end" },
         { "+", "-", "end" },
         { "==", "!=", ">", ">=", "<", "<=", "end" },
@@ -320,6 +337,9 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "prefix", "not", "end" },
         { "and", "or", "end" }
 };
+
+const char* KEYWORDS[] = { "if", "then", "do", "elif", "else", "while", "end",
+        "and", "or", "not", "~" };
 
 /**
  * Returns the operator for the given level.
@@ -335,7 +355,20 @@ const char* getOp(ParseState* state, int level) {
         if(strcmp(checking, "prefix") == 0) {
             continue;
         }
-        if(lookAhead(state, checking)) {
+        if(strcmp(checking, " ") == 0) {
+            //the operator is application if the next character is a token.
+            //skip the operator, but don't move the state forward
+            int index = state->index;
+            while(containsChar(WHITESPACE_CHARS, state->src[index])) {
+                index++;
+            }
+            char c = state->src[index];
+            if((c == '(' || c == '"' || containsChar(INT_CHARS, c) ||
+                    containsChar(IDENTIFIER_CHARS, c)) &&
+                    !lookAhead(state, KEYWORDS)) {
+                return newStr(checking);
+            }
+        } else if(lookAhead(state, checking)) {
             return newStr(checking);
         }
     }
@@ -345,15 +378,20 @@ const char* getOp(ParseState* state, int level) {
 /**
  * The following functions parse expressions.
  *
- * <expression0> ::= <factor> (* | / <factor>)*
- * <expression1> ::= <expression0> (+ | - <expression0>)*
- * <expression2> ::= <expression1> (== | != | > | >= | < | <= <expression1>)*
- * <expression3> ::= not* <expression2>
- * <expression4> ::= <expression3> (and | or <expression3)*
+ * <expression0> ::= <factor> (<factor>)?
+ * <expression1> ::= <expression0> (* | / <expression0>)*
+ * <expression2> ::= <expression1> (+ | - <expression1>)*
+ * <expression3> ::= <expression2> (== | != | > | >= | < | <= <expression2>)*
+ * <expression4> ::= not* <expression3>
+ * <expression5> ::= <expression4> (and | or <expression3)*
  *
  * The grammer is repetitive. For binary operations, the grammer is:
  *
- * <expressionX> ::= <expression(X-1)> (OP1 | OP2 ... <expression(X-1)>
+ * <expressionX> ::= <expression(X-1)> (OP1 | OP2 ... <expression(X-1)>)*
+ *
+ * or
+ *
+ * <expressionX> ::= <expression(X-1)> (<expression(X-1)>)?
  *
  * For prefix unary operations:
  *
@@ -379,7 +417,9 @@ Token* parseBinaryOp(ParseState* state, int level) {
 
     const char* op;
     while((op = getOp(state, level)) != NULL) {
-        advance(state, strlen(op));
+        if(strcmp(op, " ") != 0) {
+            advance(state, strlen(op));
+        }
         Token* right = parseExpression(state, level - 1);
         if(right == NULL) {
             free((void*) op);
@@ -603,11 +643,9 @@ Token* parseStatement(ParseState* state) {
 List* parseBlockHelper(ParseState* state, const char* ends[], int* error) {
     skipWhitespace(state);
     //check for the end of the block
-    for(int i = 0; strcmp(ends[i], "~") != 0; i++) {
-        if(lookAhead(state, ends[i])) {
-            //NULL represents an empty list
-            return NULL;
-        }
+    if(lookAhead(state, ends)) {
+        //NULL represents an empty list
+        return NULL;
     }
     //the EOF was reached before the end of the block, error
     if(getChar(state) == 0) {

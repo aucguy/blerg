@@ -107,7 +107,7 @@ void printToken(Token* token, int indent) {
         printf("identifier: %s\n", ((IdentifierToken*) token)->value);
     } else if(token->type == TOKEN_BINARY_OP) {
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
-        printf("binaryOp: %s\n", binaryOp->op);
+        printf("binaryOp: '%s'\n", binaryOp->op);
         printToken(binaryOp->left, indent + 1);
         printToken(binaryOp->right, indent + 1);
     } else if(token->type == TOKEN_UNARY_OP) {
@@ -198,7 +198,7 @@ const char* testParseIdentifier() {
 }
 
 const char* testParseExpression() {
-    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and b == c or not d");
+    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and f b == c or not d");
     Token* parsed = parseExpression(state);
 
     BinaryOpToken* expected = createBinaryOpToken(newStr("or"),
@@ -211,7 +211,9 @@ const char* testParseExpression() {
                                             (Token*) createIntToken(1))),
                             (Token*) createIntToken(5)),
                     (Token*) createBinaryOpToken(newStr("=="),
-                            (Token*) createIdentifierToken(newStr("b")),
+                            (Token*) createBinaryOpToken(newStr(" "),
+                                    (Token*) createIdentifierToken(newStr("f")),
+                                    (Token*) createIdentifierToken(newStr("b"))),
                             (Token*) createIdentifierToken(newStr("c")))),
             (Token*) createUnaryOpToken(newStr("not"),
                     (Token*) createIdentifierToken(newStr("d"))));
