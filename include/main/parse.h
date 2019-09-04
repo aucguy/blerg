@@ -17,7 +17,8 @@ typedef enum {
     TOKEN_ASSIGNMENT,
     TOKEN_BLOCK,
     TOKEN_IF,
-    TOKEN_WHILE
+    TOKEN_WHILE,
+    TOKEN_FUNC
 } TokenType;
 
 /**
@@ -85,6 +86,13 @@ typedef struct {
     BlockToken* body;
 } WhileToken;
 
+typedef struct {
+    Token token;
+    IdentifierToken* name;
+    List* args;
+    BlockToken* body;
+} FuncToken;
+
 /**
  * Frees the token, its fields and subtokens.
  */
@@ -117,6 +125,7 @@ BlockToken* createBlockToken(List*);
 IfBranch* createIfBranch(BlockToken*, BlockToken*);
 IfToken* createIfToken(List*, BlockToken*);
 WhileToken* createWhileToken(BlockToken*, BlockToken*);
+FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
 
 IntToken* parseInt(ParseState*);
 LiteralToken* parseLiteral(ParseState*);

@@ -12,5 +12,6 @@ const char* testParseAssignments();
 const char* parseTestBlockWithoutEndFails();
 const char* parseTestIfStmt();
 const char* parseTestWhileStmt();
+const char* parseTestFunc();
 
 #endif /* PARSETEST_H_ */

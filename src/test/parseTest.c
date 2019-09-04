@@ -6,6 +6,8 @@
 #include "main/parse.h"
 #include "main/util.h"
 
+int tokensEqualVoid(void* a, void* b);
+
 /**
  * Determines if two tokens are equal.
  */
@@ -80,9 +82,19 @@ int tokensEqual(Token* a, Token* b) {
         WhileToken* whileB = (WhileToken*) b;
         return tokensEqual((Token*) whileA->condition, (Token*) whileB->condition) &&
                 tokensEqual((Token*) whileA->body, (Token*) whileB->body);
+    } else if(a->type == TOKEN_FUNC) {
+        FuncToken* funcA = (FuncToken*) a;
+        FuncToken* funcB = (FuncToken*) b;
+        return tokensEqual((Token*) funcA->name, (Token*) funcB->name) &&
+                allList(funcA->args, funcB->args, tokensEqualVoid) &&
+                tokensEqual((Token*) funcA->body, (Token*) funcB->body);
     } else {
         return 0;
     }
+}
+
+int tokensEqualVoid(void* a, void* b) {
+    return tokensEqual((Token*) a, (Token*) b);
 }
 
 void printIndent(int indent) {
@@ -150,6 +162,16 @@ void printToken(Token* token, int indent) {
         printIndent(indent + 1);
         printf("body:\n");
         printToken((Token*) whileStmt->body, indent + 2);
+    } else if(token->type == TOKEN_FUNC) {
+        FuncToken* func = (FuncToken*) token;
+        printf("func: %s", func->name->value);
+        List* node = func->args;
+        while(node != NULL) {
+            printf(" %s", ((IdentifierToken*) node->head)->value);
+            node = node->tail;
+        }
+        printf("\n");
+        printToken((Token*) func->body, indent + 1);
     } else {
         printf("unknown\n");
     }
@@ -343,5 +365,30 @@ const char* parseTestWhileStmt() {
     free(state);
     destroyToken(parsed);
     destroyToken(expected);
+    return NULL;
+}
+
+const char* parseTestFunc() {
+    ParseState* state = createParseState("def add a b do a + b; end end");
+    Token* parsed = (Token*) parseBlock(state, BLOCK_ENDS);
+
+    List* args = consList(createIdentifierToken(newStr("a")),
+            consList(createIdentifierToken(newStr("b")), NULL));
+
+    BinaryOpToken* stmt = createBinaryOpToken(newStr("+"),
+            (Token*) createIdentifierToken(newStr("a")),
+            (Token*) createIdentifierToken(newStr("b")));
+
+    FuncToken* func = createFuncToken(createIdentifierToken(newStr("add")), args,
+            createBlockToken(consList(stmt, NULL)));
+
+    Token* expected = (Token*) createBlockToken(consList(func, NULL));
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    destroyToken(parsed);
+    destroyToken(expected);
+    free(state);
+
     return NULL;
 }

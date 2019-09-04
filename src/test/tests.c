@@ -21,6 +21,7 @@ int runTests() {
     runTest("parseTestBlockWithoutEndFails", parseTestBlockWithoutEndFails(), &status);
     runTest("parseTestIfStmt", parseTestIfStmt(), &status);
     runTest("parseTestWhileStmt", parseTestWhileStmt(), &status);
+    runTest("parseTestFunc", parseTestFunc(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

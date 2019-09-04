@@ -17,6 +17,19 @@ List* consList(void* head, List* tail) {
     return full;
 }
 
+int allList(List* listA, List* listB, int(*predicate)(void*, void*)) {
+    while(listA != NULL && listB != NULL) {
+        if(!predicate(listA->head, listB->head)) {
+            return 0;
+        }
+        listA = listA->tail;
+        listB = listB->tail;
+    }
+
+    return listA == NULL && listB == NULL;
+}
+
+
 void destroyList(List* list, void(*func)(void*)) {
     if(list == NULL) {
         return;

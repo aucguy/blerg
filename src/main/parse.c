@@ -3,6 +3,8 @@
 #include <string.h>
 #include "main/parse.h"
 
+void destroyTokenVoid(void*);
+
 /**
  * Returns whether or not a string contains the given character.
  * Returns false if the character is null.
@@ -122,6 +124,15 @@ WhileToken* createWhileToken(BlockToken* condition, BlockToken* body) {
     WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
     token->token.type = TOKEN_WHILE;
     token->condition = condition;
+    token->body = body;
+    return token;
+}
+
+FuncToken* createFuncToken(IdentifierToken* name, List* args, BlockToken* body) {
+    FuncToken* token = (FuncToken*) malloc(sizeof(FuncToken));
+    token->token.type = TOKEN_FUNC;
+    token->name = name;
+    token->args = args;
     token->body = body;
     return token;
 }
@@ -338,8 +349,8 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "and", "or", "end" }
 };
 
-const char* KEYWORDS[] = { "if", "then", "do", "elif", "else", "while", "end",
-        "and", "or", "not", "~" };
+const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
+        "end", "and", "or", "not", "~" };
 
 /**
  * Returns the operator for the given level.
@@ -616,12 +627,76 @@ WhileToken* parseWhileStmt(ParseState* state) {
     return createWhileToken(conditional, body);
 }
 
+/**
+ * Parses the arguments.
+ *
+ * @param state the ParseState
+ * @param error set to 1 if an error occured
+ * @return the rest of the arguments as a list of IdentifierTokens or NULL if
+ *      there are no more arguments
+ */
+List* parseArgs(ParseState* state, int* error) {
+    skipWhitespace(state);
+    //end of the arguments
+    if(lookAhead(state, "do")) {
+        return NULL;
+    }
+    IdentifierToken* head = parseIdentifier(state);
+    if(head == NULL) {
+        *error = 1;
+        return NULL;
+    }
+    //parse the rest
+    List* tail = parseArgs(state, error);
+    if(*error) {
+        destroyToken((Token*) head);
+        return NULL;
+    }
+    return consList(head, tail);
+}
+
+const char* FUNC_ENDS[] = { "end", "~" };
+
+/**
+ * Parses a function definition
+ */
+FuncToken* parseFuncStmt(ParseState* state) {
+    //check just in case
+    if(!lookAhead(state, "def")) {
+        return NULL;
+    }
+    advance(state, strlen("def"));
+
+    skipWhitespace(state);
+    IdentifierToken* name = parseIdentifier(state);
+    if(name == NULL) {
+        return NULL;
+    }
+
+    int error = 0;
+    List* args = parseArgs(state, &error);
+    if(error || !lookAhead(state, "do")) {
+        destroyToken((Token*) name);
+        return NULL;
+    }
+
+    advance(state, strlen("do"));
+    BlockToken* body = parseBlock(state, FUNC_ENDS);
+    if(body == NULL) {
+        destroyToken((Token*) name);
+        destroyList(args, destroyTokenVoid);
+    }
+    return createFuncToken(name, args, body);
+}
+
 Token* parseStatement(ParseState* state) {
     skipWhitespace(state);
     if(lookAhead(state, "if")) {
         return (Token*) parseIfStmt(state);
     } else if(lookAhead(state, "while")) {
         return (Token*) parseWhileStmt(state);
+    } else if(lookAhead(state, "def")) {
+        return (Token*) parseFuncStmt(state);
     } else {
         return parseAssignment(state);
     }
@@ -732,6 +807,11 @@ void destroyToken(Token* token) {
         WhileToken* whileToken = (WhileToken*) token;
         destroyToken((Token*) whileToken->condition);
         destroyToken((Token*) whileToken->body);
+    } else if(token->type == TOKEN_FUNC) {
+        FuncToken* funcToken = (FuncToken*) token;
+        destroyToken((Token*) funcToken->name);
+        destroyList(funcToken->args, destroyTokenVoid);
+        destroyToken((Token*) funcToken->body);
     }
     free(token);
 }
