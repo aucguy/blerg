@@ -112,6 +112,15 @@ typedef struct {
  * Creates a ParseState from the given source code.
  */
 ParseState* createParseState(const char*);
+
+/**
+ * Parses the module
+ *
+ * @param src the source code for the given module
+ * @return the AST for the source
+ */
+BlockToken* parseModule(const char* src);
+
 #endif
 
 #if INCLUDE_TESTS
@@ -132,7 +141,6 @@ LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
 Token* parseTerm(ParseState*);
 Token* parseExpression(ParseState*);
-BlockToken* parseBlock(ParseState*, const char**);
 #endif
 
 #endif /* PARSE_H_ */

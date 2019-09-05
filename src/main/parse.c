@@ -4,6 +4,9 @@
 #include "main/parse.h"
 
 void destroyTokenVoid(void*);
+void destroyIfBranch(void*);
+BlockToken* parseBlock(ParseState*, const char**);
+
 
 /**
  * Returns whether or not a string contains the given character.
@@ -303,10 +306,15 @@ Token* parseFactor(ParseState* state) {
 }
 
 /**
- * Returns whether or not the next characters matches the given string.
+ * Returns whether or not the next characters matches the given string. If the
+ * string is "0" then the function returns if the end of the source has been
+ * reached.
  */
 int lookAhead(ParseState* state, const char* str) {
     int i = 0;
+    if(strcmp(str, "0") == 0) {
+        return getChar(state) == 0;
+    }
     while(1) {
         char a = str[i];
         char b = state->src[state->index + i];
@@ -322,6 +330,8 @@ int lookAhead(ParseState* state, const char* str) {
 
 /**
  * Returns whether or not the next characters matches any of the given strings.
+ * If zero is present, the function will return true if the end of the source
+ * has been reached.
  */
 int lookAhead(ParseState* state, const char* strs[]) {
     for(int i = 0; strcmp(strs[i], "~") != 0; i++) {
@@ -600,6 +610,11 @@ IfToken* parseIfStmt(ParseState* state) {
         //shouldn't happen
         elseBranch = NULL;
     }
+    if(!lookAhead(state, "end")) {
+        destroyList(branches, destroyIfBranch);
+        destroyToken((Token*) elseBranch);
+    }
+    advance(state, strlen("end"));
     return createIfToken(branches, elseBranch);
 }
 
@@ -682,10 +697,11 @@ FuncToken* parseFuncStmt(ParseState* state) {
 
     advance(state, strlen("do"));
     BlockToken* body = parseBlock(state, FUNC_ENDS);
-    if(body == NULL) {
+    if(body == NULL || !lookAhead(state, "end")) {
         destroyToken((Token*) name);
         destroyList(args, destroyTokenVoid);
     }
+    advance(state, strlen("end"));
     return createFuncToken(name, args, body);
 }
 
@@ -770,8 +786,21 @@ BlockToken* parseBlock(ParseState* state, const char* ends[]) {
     return createBlockToken(list);
 }
 
-void destroyTokenVoid(void*);
-void destroyIfBranch(void*);
+const char* MODULE_ENDS[] = { "0", "~" };
+
+BlockToken* parseModule(const char* src) {
+    ParseState* state = createParseState(src);
+    BlockToken* token = parseBlock(state, MODULE_ENDS);
+    int ended = getChar(state) == 0;
+    free(state);
+    if(!ended) {
+        if(token != NULL) {
+            destroyToken((Token*) token);
+        }
+        return NULL;
+    }
+    return token;
+}
 
 /**
  * Frees a token's memory, it's data's memory and subtokens recursively

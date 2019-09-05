@@ -264,11 +264,8 @@ const char* testParseFail() {
     return NULL;
 }
 
-const char* BLOCK_ENDS[] = { "end", "~" };
-
 const char* testParseAssignments() {
-    ParseState* state = createParseState("a = 1 + 2; b = 3; c; end");
-    BlockToken* parsed = parseBlock(state, BLOCK_ENDS);
+    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c;");
 
     AssignmentToken* stmt1 = createAssignmentToken(
             createIdentifierToken(newStr("a")),
@@ -287,23 +284,19 @@ const char* testParseAssignments() {
 
     assert(tokensEqual((Token*) parsed, (Token*) expected), "incorrect parse");
 
-    free(state);
     destroyToken((Token*) parsed);
     destroyToken((Token*) expected);
     return NULL;
 }
 
-const char* parseTestBlockWithoutEndFails() {
-    ParseState* state = createParseState("a = 1 + 2; b = 3; c;");
-    BlockToken* parsed = parseBlock(state, BLOCK_ENDS);
+const char* parseTestBlockWithEndFails() {
+    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c; end");
     assert(parsed == NULL, "parse succeeded");
-    free(state);
     return NULL;
 }
 
 const char* parseTestIfStmt() {
-    ParseState* state = createParseState("if a > b ; then c = 1; elif d ; then c = 2; else c = 3; end end");
-    BlockToken* parsed = parseBlock(state, BLOCK_ENDS);
+    BlockToken* parsed = parseModule("if a > b ; then c = 1; elif d ; then c = 2; else c = 3; end");
 
     IfBranch* branch1 = createIfBranch(
             createBlockToken(consList(
@@ -333,15 +326,13 @@ const char* parseTestIfStmt() {
     BlockToken* expected = createBlockToken(consList(ifToken, NULL));
     assert(tokensEqual((Token*) parsed, (Token*) expected), "incorrect parse");
 
-    free(state);
     destroyToken((Token*) parsed);
     destroyToken((Token*) expected);
     return NULL;
 }
 
 const char* parseTestWhileStmt() {
-    ParseState* state = createParseState("x = 0; while x < 10; do x = x + 1; end end");
-    Token* parsed = (Token*) parseBlock(state, BLOCK_ENDS);
+    Token* parsed = (Token*) parseModule("x = 0; while x < 10; do x = x + 1; end");
 
     Token* stmt1 = (Token*) createAssignmentToken(
             createIdentifierToken(newStr("x")),
@@ -362,15 +353,13 @@ const char* parseTestWhileStmt() {
     Token* expected = (Token*) createBlockToken(consList(stmt1, consList(stmt2, NULL)));
     assert(tokensEqual(parsed, expected), "incorrect parse");
 
-    free(state);
     destroyToken(parsed);
     destroyToken(expected);
     return NULL;
 }
 
 const char* parseTestFunc() {
-    ParseState* state = createParseState("def add a b do a + b; end end");
-    Token* parsed = (Token*) parseBlock(state, BLOCK_ENDS);
+    Token* parsed = (Token*) parseModule("def add a b do a + b; end");
 
     List* args = consList(createIdentifierToken(newStr("a")),
             consList(createIdentifierToken(newStr("b")), NULL));
@@ -388,7 +377,6 @@ const char* parseTestFunc() {
 
     destroyToken(parsed);
     destroyToken(expected);
-    free(state);
 
     return NULL;
 }

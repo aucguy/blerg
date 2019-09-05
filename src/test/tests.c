@@ -18,7 +18,7 @@ int runTests() {
     runTest("testParseExpression", testParseExpression(), &status);
     runTest("testParseFail", testParseFail(), &status);
     runTest("testParseAssignments", testParseAssignments(), &status);
-    runTest("parseTestBlockWithoutEndFails", parseTestBlockWithoutEndFails(), &status);
+    runTest("parseTestBlockWithEndFails", parseTestBlockWithEndFails(), &status);
     runTest("parseTestIfStmt", parseTestIfStmt(), &status);
     runTest("parseTestWhileStmt", parseTestWhileStmt(), &status);
     runTest("parseTestFunc", parseTestFunc(), &status);
