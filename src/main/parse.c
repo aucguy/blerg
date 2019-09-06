@@ -530,7 +530,7 @@ Token* parseAssignment(ParseState* state) {
         IdentifierToken* identifier = (IdentifierToken*) left;
         return (Token*) createAssignmentToken(identifier, right);
     } else {
-        free(left);
+        destroyToken(left);
         return NULL;
     }
 }
