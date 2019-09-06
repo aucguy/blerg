@@ -88,6 +88,8 @@ int tokensEqual(Token* a, Token* b) {
         return tokensEqual((Token*) funcA->name, (Token*) funcB->name) &&
                 allList(funcA->args, funcB->args, tokensEqualVoid) &&
                 tokensEqual((Token*) funcA->body, (Token*) funcB->body);
+    } else if(a->type == TOKEN_RETURN) {
+        return tokensEqual(((ReturnToken*) a)->body, ((ReturnToken*) b)->body);
     } else {
         return 0;
     }
@@ -172,6 +174,9 @@ void printToken(Token* token, int indent) {
         }
         printf("\n");
         printToken((Token*) func->body, indent + 1);
+    } else if(token->type == TOKEN_RETURN) {
+        printf("return:\n");
+        printToken(((ReturnToken*) token)->body, indent + 1);
     } else {
         printf("unknown\n");
     }
@@ -359,14 +364,15 @@ const char* parseTestWhileStmt() {
 }
 
 const char* parseTestFunc() {
-    Token* parsed = (Token*) parseModule("def add a b do a + b; end");
+    Token* parsed = (Token*) parseModule("def add a b do <- a + b; end");
 
     List* args = consList(createIdentifierToken(newStr("a")),
             consList(createIdentifierToken(newStr("b")), NULL));
 
-    BinaryOpToken* stmt = createBinaryOpToken(newStr("+"),
-            (Token*) createIdentifierToken(newStr("a")),
-            (Token*) createIdentifierToken(newStr("b")));
+    ReturnToken* stmt = createReturnToken(
+            (Token*) createBinaryOpToken(newStr("+"),
+                    (Token*) createIdentifierToken(newStr("a")),
+                    (Token*) createIdentifierToken(newStr("b"))));
 
     FuncToken* func = createFuncToken(createIdentifierToken(newStr("add")), args,
             createBlockToken(consList(stmt, NULL)));

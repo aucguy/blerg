@@ -140,6 +140,13 @@ FuncToken* createFuncToken(IdentifierToken* name, List* args, BlockToken* body) 
     return token;
 }
 
+ReturnToken* createReturnToken(Token* body) {
+    ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
+    token->token.type = TOKEN_RETURN;
+    token->body = body;
+    return token;
+}
+
 ParseState* createParseState(const char* src) {
     ParseState* state = (ParseState*) malloc(sizeof(ParseState));
     state->index = 0;
@@ -613,6 +620,7 @@ IfToken* parseIfStmt(ParseState* state) {
     if(!lookAhead(state, "end")) {
         destroyList(branches, destroyIfBranch);
         destroyToken((Token*) elseBranch);
+        return NULL;
     }
     advance(state, strlen("end"));
     return createIfToken(branches, elseBranch);
@@ -700,9 +708,28 @@ FuncToken* parseFuncStmt(ParseState* state) {
     if(body == NULL || !lookAhead(state, "end")) {
         destroyToken((Token*) name);
         destroyList(args, destroyTokenVoid);
+        return NULL;
     }
     advance(state, strlen("end"));
     return createFuncToken(name, args, body);
+}
+
+ReturnToken* parseReturnStmt(ParseState* state) {
+    if(!lookAhead(state, "<-")) {
+        return NULL;
+    }
+    advance(state, strlen("<-"));
+    Token* body = parseExpression(state);
+    if(body == NULL) {
+        return NULL;
+    }
+    skipWhitespace(state);
+    if(getChar(state) != ';') {
+        destroyToken(body);
+        return NULL;
+    }
+    advance(state);
+    return createReturnToken(body);
 }
 
 Token* parseStatement(ParseState* state) {
@@ -713,6 +740,8 @@ Token* parseStatement(ParseState* state) {
         return (Token*) parseWhileStmt(state);
     } else if(lookAhead(state, "def")) {
         return (Token*) parseFuncStmt(state);
+    } else if(lookAhead(state, "<-")) {
+        return (Token*) parseReturnStmt(state);
     } else {
         return parseAssignment(state);
     }
@@ -841,6 +870,8 @@ void destroyToken(Token* token) {
         destroyToken((Token*) funcToken->name);
         destroyList(funcToken->args, destroyTokenVoid);
         destroyToken((Token*) funcToken->body);
+    } else if(token->type == TOKEN_RETURN) {
+        destroyToken(((ReturnToken*) token)->body);
     }
     free(token);
 }
