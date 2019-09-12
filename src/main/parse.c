@@ -3,6 +3,9 @@
 #include <string.h>
 #include "main/parse.h"
 
+//TODO fix memleaks for incorrect syntax
+//TODO add have parseIdentifier check for keywords
+
 BlockToken* parseBlock(ParseState*, const char**);
 
 /**
