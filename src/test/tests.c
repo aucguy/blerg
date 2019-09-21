@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "test/parseTest.h"
+#include "test/validateTest.h"
 
 void runTest(const char* name, const char* msg, int* status) {
     if(msg != NULL) {
@@ -22,6 +23,8 @@ int runTests() {
     runTest("parseTestIfStmt", parseTestIfStmt(), &status);
     runTest("parseTestWhileStmt", parseTestWhileStmt(), &status);
     runTest("parseTestFunc", parseTestFunc(), &status);
+
+    runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");
