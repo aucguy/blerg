@@ -28,27 +28,16 @@ ParseState* createParseState(const char*);
  */
 BlockToken* parseModule(const char* src);
 
-#endif
-
 #if INCLUDE_TESTS
-IntToken* createIntToken(int);
-LiteralToken* createLiteralToken(const char*);
-IdentifierToken* createIdentifierToken(const char*);
-BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
-UnaryOpToken* createUnaryOpToken(const char*, Token*);
-AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);
-BlockToken* createBlockToken(List*);
-IfBranch* createIfBranch(BlockToken*, BlockToken*);
-IfToken* createIfToken(List*, BlockToken*);
-WhileToken* createWhileToken(BlockToken*, BlockToken*);
-FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
-ReturnToken* createReturnToken(Token* body);
 
 IntToken* parseInt(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
 Token* parseTerm(ParseState*);
 Token* parseExpression(ParseState*);
+
+#endif
+
 #endif
 
 #endif /* PARSE_H_ */

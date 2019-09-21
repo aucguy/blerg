@@ -1,6 +1,7 @@
 #ifndef TOKENS_H_
 #define TOKENS_H_
 
+#include "main/flags.h"
 #include "main/util.h"
 
 /**
@@ -113,5 +114,20 @@ void destroyTokenVoid(void*);
 void destroyIfBranch(void*);
 
 int tokensEqual(Token* a, Token* b);
+
+#if INCLUDE_TESTS
+IntToken* createIntToken(int);
+LiteralToken* createLiteralToken(const char*);
+IdentifierToken* createIdentifierToken(const char*);
+BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
+UnaryOpToken* createUnaryOpToken(const char*, Token*);
+AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);
+BlockToken* createBlockToken(List*);
+IfBranch* createIfBranch(BlockToken*, BlockToken*);
+IfToken* createIfToken(List*, BlockToken*);
+WhileToken* createWhileToken(BlockToken*, BlockToken*);
+FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
+ReturnToken* createReturnToken(Token* body);
+#endif
 
 #endif /* TOKENS_H_ */

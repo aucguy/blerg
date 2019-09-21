@@ -1,6 +1,8 @@
 #define IS_PARSE_IMPL 1
 #include <stdlib.h>
 #include <string.h>
+
+#include "main/tokens.h"
 #include "main/parse.h"
 
 //TODO fix memleaks for incorrect syntax
