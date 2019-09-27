@@ -29,6 +29,15 @@ int allList(List* listA, List* listB, int(*predicate)(void*, void*)) {
     return listA == NULL && listB == NULL;
 }
 
+int allList(List* list, int(*predicate)(void*)) {
+    while(list != NULL) {
+        if(!predicate(list->head)) {
+            return 0;
+        }
+        list = list->tail;
+    }
+    return 1;
+}
 
 void destroyList(List* list, void(*func)(void*)) {
     if(list == NULL) {

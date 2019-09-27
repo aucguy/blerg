@@ -29,3 +29,18 @@ const char* validateTestOnlyFuncsToplevel() {
 
     return NULL;
 }
+
+const char* validateTestNoInnerFuncs() {
+    FuncToken* stmt1 = createSimpleFunc("func1", 1);
+    FuncToken* inner = createSimpleFunc("inner", 0);
+    FuncToken* stmt2 = createFuncToken(createIdentifierToken(newStr("func2")), NULL,
+            createBlockToken(consList(inner, consList(createIntToken(2), NULL))));
+
+    BlockToken* good = createBlockToken(consList(stmt1, NULL));
+    BlockToken* bad = createBlockToken(consList(stmt2, NULL));
+
+    assert(validateNoInnerFuncs(good), "good validation failed");
+    assert(!validateNoInnerFuncs(bad), "bad validation succeeded");
+
+    return NULL;
+}

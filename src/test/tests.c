@@ -25,6 +25,7 @@ int runTests() {
     runTest("parseTestFunc", parseTestFunc(), &status);
 
     runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
+    runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");
