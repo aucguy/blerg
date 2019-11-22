@@ -47,3 +47,33 @@ void destroyList(List* list, void(*func)(void*)) {
     func(list->head);
     free(list);
 }
+
+void nothing(void* x) {}
+
+void destroyShallowList(List* list) {
+    destroyList(list, nothing);
+}
+
+void* lastList(List* list) {
+    while(list->tail != NULL) {
+        list = list->tail;
+    }
+    return list->head;
+}
+
+List* prependReverseList(List* before, List* after) {
+    while(before != NULL) {
+        after = consList(before->head, after);
+        before = before->tail;
+    }
+    return after;
+}
+
+List* reverseList(List* list) {
+    List* reversed = NULL;
+    while(list != NULL) {
+        reversed = consList(list->head, reversed);
+        list = list->tail;
+    }
+    return reversed;
+}

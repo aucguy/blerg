@@ -21,11 +21,16 @@ int equalsIntToken(Token* self, Token* other) {
     return ((IntToken*) self)->value == ((IntToken*) other)->value;
 }
 
+Token* copyIntToken(Token* token) {
+    return (Token*) createIntToken(((IntToken*) token)->value);
+}
+
 Token INT_TYPE = {
         TOKEN_INT,
         destroyIntToken,
         printIntToken,
-        equalsIntToken
+        equalsIntToken,
+        copyIntToken
 };
 
 /**
@@ -53,11 +58,16 @@ int equalsLiteralToken(Token* self, Token* other) {
     return strcmp(((LiteralToken*) self)->value, ((LiteralToken*) other)->value) == 0;
 }
 
+Token* copyLiteralToken(Token* token) {
+    return (Token*) createLiteralToken(newStr(((LiteralToken*) token)->value));
+}
+
 Token LITERAL_TYPE = {
         TOKEN_LITERAL,
         destroyLiteralToken,
         printLiteralToken,
-        equalsLiteralToken
+        equalsLiteralToken,
+        copyLiteralToken
 };
 
 /**
@@ -86,11 +96,16 @@ int equalsIdentifierToken(Token* self, Token* other) {
             ((IdentifierToken*) other)->value) == 0;
 }
 
+Token* copyIdentifierToken(Token* token) {
+    return (Token*) createIdentifierToken(newStr(((IdentifierToken*) token)->value));
+}
+
 Token IDENTIFIER_TYPE = {
         TOKEN_IDENTIFIER,
         destroyIdentifierToken,
         printIdentifierToken,
-        equalsIdentifierToken
+        equalsIdentifierToken,
+        copyIdentifierToken
 };
 
 /**
@@ -128,11 +143,18 @@ int equalsBinaryOpToken(Token* self, Token* other) {
             tokensEqual(selfBinOp->right, otherBinOp->right);
 }
 
+Token* copyBinaryOpToken(Token* self) {
+    BinaryOpToken* binOp = (BinaryOpToken*) self;
+    return (Token*) createBinaryOpToken(newStr(binOp->op),
+            copyToken(binOp->left), copyToken(binOp->right));
+}
+
 Token BINARY_OP_TYPE = {
         TOKEN_BINARY_OP,
         destroyBinaryOpToken,
         printBinaryOpToken,
-        equalsBinaryOpToken
+        equalsBinaryOpToken,
+        copyBinaryOpToken
 };
 
 /**
@@ -171,11 +193,17 @@ int equalsUnaryOpToken(Token* self, Token* other) {
             tokensEqual(selfUnOp->child, otherUnOp->child);
 }
 
+Token* copyUnaryOpToken(Token* self) {
+    UnaryOpToken* unOp = (UnaryOpToken*) self;
+    return (Token*) createUnaryOpToken(newStr(unOp->op), copyToken(unOp->child));
+}
+
 Token UNARY_OP_TYPE = {
         TOKEN_UNARY_OP,
         destroyUnaryOpToken,
         printUnaryOpToken,
-        equalsUnaryOpToken
+        equalsUnaryOpToken,
+        copyUnaryOpToken
 };
 
 /**
@@ -212,11 +240,19 @@ int equalsAssignmentToken(Token* self, Token* other) {
             tokensEqual(selfAssign->right, otherAssign->right);
 }
 
+Token* copyAssignmentToken(Token* self) {
+    AssignmentToken* assign = (AssignmentToken*) self;
+    return (Token*) createAssignmentToken(
+            (IdentifierToken*) copyToken((Token*) assign->left),
+            copyToken(assign->right));
+}
+
 Token ASSIGNMENT_TYPE = {
         TOKEN_ASSIGNMENT,
         destroyAssignmentToken,
         printAssignmentToken,
-        equalsAssignmentToken
+        equalsAssignmentToken,
+        copyAssignmentToken
 };
 
 /**
@@ -420,17 +456,109 @@ int equalsReturnToken(Token* self, Token* other) {
     return tokensEqual(((ReturnToken*) self)->body, ((ReturnToken*) other)->body);
 }
 
+Token* copyReturnToken(Token* self) {
+    ReturnToken* token = (ReturnToken*) self;
+    return (Token*) createReturnToken(copyToken(token->body));
+}
+
 Token RETURN_TYPE = {
         TOKEN_RETURN,
         destroyReturnToken,
         printReturnToken,
-        equalsReturnToken
+        equalsReturnToken,
+        copyReturnToken
 };
 
 ReturnToken* createReturnToken(Token* body) {
     ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
     token->token = RETURN_TYPE;
     token->body = body;
+    return token;
+}
+
+void destroyLabelToken(Token* self) {
+    free((void*) ((LabelToken*) self)->name);
+}
+
+void printLabelToken(Token* self, int indent) {
+    printf("label: %s \n", ((LabelToken*) self)->name);
+}
+
+int equalsLabelToken(Token* self, Token* other) {
+    return strcmp(((LabelToken*) self)->name, ((LabelToken*) other)->name) == 0;
+}
+
+Token LABEL_TYPE = {
+        TOKEN_LABEL,
+        destroyLabelToken,
+        printLabelToken,
+        equalsLabelToken
+};
+
+LabelToken* createLabelToken(const char* name) {
+    LabelToken* token = (LabelToken*) malloc(sizeof(LabelToken));
+    token->token = LABEL_TYPE;
+    token->name = name;
+    return token;
+}
+
+void destroyAbsJumpToken(Token* self) {
+    free((void*) ((AbsJumpToken*) self)->label);
+}
+
+void printAbsJumpToken(Token* self, int indent) {
+    printf("absJump: %s\n", ((AbsJumpToken*) self)->label);
+}
+
+int equalsAbsJumpToken(Token* self, Token* other) {
+    return strcmp(((AbsJumpToken*) self)->label, ((AbsJumpToken*) other)->label) == 0;
+}
+
+Token ABS_JUMP_TYPE = {
+        TOKEN_ABS_JUMP,
+        destroyAbsJumpToken,
+        printAbsJumpToken,
+        equalsAbsJumpToken
+};
+
+AbsJumpToken* createAbsJumpToken(const char* label) {
+    AbsJumpToken* token = (AbsJumpToken*) malloc(sizeof(AbsJumpToken));
+    token->token = ABS_JUMP_TYPE;
+    token->label = label;
+    return token;
+}
+
+void destroyCondJumpToken(Token* self) {
+    CondJumpToken* token = (CondJumpToken*) self;
+    free((void*) token->cond);
+    free((void*) token->label);
+}
+
+void printCondJumpToken(Token* self, int indent) {
+    CondJumpToken* token = (CondJumpToken*) self;
+    printf("condJump: %s, %s, %i\n", token->cond, token->label, token->when);
+}
+
+int equalsCondJumpToken(Token* self, Token* other) {
+    CondJumpToken* a = (CondJumpToken*) self;
+    CondJumpToken* b = (CondJumpToken*) other;
+    return strcmp(a->cond, b->cond) == 0 && strcmp(a->label, b->label) == 0 &&
+            a->when == b->when;
+}
+
+Token COND_JUMP_TYPE = {
+        TOKEN_COND_JUMP,
+        destroyCondJumpToken,
+        printCondJumpToken,
+        equalsCondJumpToken
+};
+
+CondJumpToken* createCondJumpToken(const char* cond, const char* label, int when) {
+    CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
+    token->token = COND_JUMP_TYPE;
+    token->cond = cond;
+    token->label = label;
+    token->when = when;
     return token;
 }
 
@@ -496,4 +624,8 @@ int branchesEqual(void* a, void* b) {
     IfBranch* branchB = (IfBranch*) b;
     return tokensEqual((Token*) branchA->condition, (Token*) branchB->condition) &&
             tokensEqual((Token*) branchA->block, (Token*) branchB->block);
+}
+
+Token* copyToken(Token* token) {
+    return token->copy(token);
 }

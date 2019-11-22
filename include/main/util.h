@@ -43,4 +43,26 @@ int allList(List* list, int(*predicate)(void*));
  */
 void destroyList(List* list, void(*func)(void*));
 
+/**
+ * Frees the list structure, but not its contents.
+ */
+void destroyShallowList(List* list);
+
+/**
+ * Returns the last item in the list.
+ */
+void* lastList(List* list);
+
+/**
+ * Returns a new list with the contents of before prepended to after, but in
+ * reverse order. For example, prependReverseList([1, 2, 3], [4, 5, 6]) ==
+ * [3, 2, 1, 4, 5, 6].
+ */
+List* prependReverseList(List* before, List* after);
+
+/**
+ * Returns the list in reverse. For example reverseList([1, 2, 3]) == [3, 2, 1]
+ */
+List* reverseList(List* list);
+
 #endif /* UTIL_H_ */

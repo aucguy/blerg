@@ -19,7 +19,13 @@ typedef enum {
     TOKEN_IF,
     TOKEN_WHILE,
     TOKEN_FUNC,
-    TOKEN_RETURN
+    TOKEN_RETURN,
+
+    //are not generated via parsing, but are created during transformation
+    //passes
+    TOKEN_LABEL,
+    TOKEN_ABS_JUMP,
+    TOKEN_COND_JUMP
 } TokenType;
 
 /**
@@ -32,6 +38,7 @@ typedef struct Token_ {
     void (*destroy)(struct Token_*);
     void (*print)(struct Token_*, int);
     int (*equals)(struct Token_*, struct Token_*);
+    struct Token_* (*copy)(struct Token_*);
 } Token;
 
 typedef struct {
@@ -102,6 +109,25 @@ typedef struct {
     Token* body;
 } ReturnToken;
 
+typedef struct {
+    Token token;
+    const char* name;
+} LabelToken;
+
+typedef struct {
+    Token token;
+    const char* label;
+} AbsJumpToken;
+
+typedef struct {
+    Token token;
+    const char* cond;
+    const char* label;
+    //if the condition is false and when is 0 then the jump is taken
+    //if the condition is true and when is 1 then the jump is taken
+    int when;
+} CondJumpToken;
+
 void printToken(Token* token, int indent);
 void printToken(Token* token);
 void printIndent(int indent);
@@ -114,6 +140,8 @@ void destroyTokenVoid(void*);
 void destroyIfBranch(void*);
 
 int tokensEqual(Token* a, Token* b);
+
+Token* copyToken(Token*);
 
 #if INCLUDE_TESTS
 IntToken* createIntToken(int);
@@ -129,5 +157,9 @@ WhileToken* createWhileToken(BlockToken*, BlockToken*);
 FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
 ReturnToken* createReturnToken(Token* body);
 #endif
+
+LabelToken* createLabelToken(const char*);
+AbsJumpToken* createAbsJumpToken(const char*);
+CondJumpToken* createCondJumpToken(const char*, const char*, int);
 
 #endif /* TOKENS_H_ */
