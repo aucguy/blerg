@@ -121,13 +121,12 @@ const char* parseTestBlockWithEndFails() {
 }
 
 const char* parseTestIfStmt() {
-    BlockToken* parsed = parseModule("if a > b ; then c = 1; elif d ; then c = 2; else c = 3; end");
+    BlockToken* parsed = parseModule("if a > b then c = 1; elif d then c = 2; else c = 3; end");
 
     IfBranch* branch1 = createIfBranch(
-            createBlockToken(consList(
-                createBinaryOpToken(newStr(">"),
-                        (Token*) createIdentifierToken(newStr("a")),
-                        (Token*) createIdentifierToken(newStr("b"))), NULL)),
+            (Token*) createBinaryOpToken(newStr(">"),
+                    (Token*) createIdentifierToken(newStr("a")),
+                    (Token*) createIdentifierToken(newStr("b"))),
             createBlockToken(consList(
                     createAssignmentToken(
                             createIdentifierToken(newStr("c")),
@@ -135,8 +134,7 @@ const char* parseTestIfStmt() {
 
 
     IfBranch* branch2 = createIfBranch(
-            createBlockToken(consList(
-                (Token*) createIdentifierToken(newStr("d")), NULL)),
+            (Token*) createIdentifierToken(newStr("d")),
             createBlockToken(consList(
                 createAssignmentToken(
                         createIdentifierToken(newStr("c")),
@@ -158,17 +156,16 @@ const char* parseTestIfStmt() {
 }
 
 const char* parseTestWhileStmt() {
-    Token* parsed = (Token*) parseModule("x = 0; while x < 10; do x = x + 1; end");
+    Token* parsed = (Token*) parseModule("x = 0; while x < 10 do x = x + 1; end");
 
     Token* stmt1 = (Token*) createAssignmentToken(
             createIdentifierToken(newStr("x")),
             (Token*) createIntToken(0));
 
     Token* stmt2 = (Token*) createWhileToken(
-            createBlockToken(consList(
-                    createBinaryOpToken(newStr("<"),
-                            (Token*) createIdentifierToken(newStr("x")),
-                            (Token*) createIntToken(10)), NULL)),
+            (Token*) createBinaryOpToken(newStr("<"),
+                    (Token*) createIdentifierToken(newStr("x")),
+                    (Token*) createIntToken(10)),
             createBlockToken(consList(
                     createAssignmentToken(
                             createIdentifierToken(newStr("x")),

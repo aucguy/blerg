@@ -425,7 +425,7 @@ const char* IF_ELSE_ENDS[] = { "end", "~" };
  *      more non-else branches, this returns NULL.
  */
 List* parseIfStmtBranches(ParseState* state, int* error) {
-    BlockToken* condition = parseBlock(state, IF_COND_ENDS);
+    Token* condition = parseExpression(state);
     if(condition == NULL || !lookAhead(state, "then")) {
         *error = 1;
         return NULL;
@@ -506,7 +506,7 @@ WhileToken* parseWhileStmt(ParseState* state) {
     }
     advance(state, strlen("while"));
 
-    BlockToken* conditional = parseBlock(state, WHILE_COND_ENDS);
+    Token* conditional = parseExpression(state);
     if(conditional == NULL || !lookAhead(state, "do")) {
         return NULL;
     }

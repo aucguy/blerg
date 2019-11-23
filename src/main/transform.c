@@ -17,17 +17,6 @@ const char* uniqueName(int* uniqueId) {
     return name;
 }
 
-//this does not correctly process tokens, but the ability to have statements
-//in conditions are going to be removed anyway.
-List* emitCondStmts(BlockToken* block, List* stmts) {
-    List* children = block->children;
-    while(children->tail != NULL) {
-        stmts = consList(children->head, stmts);
-        children = children->tail;
-    }
-    return stmts;
-}
-
 /**
  * Each of the following functions takes a token, and returns a list of tokens
  * that represent it using jumps. In this way, control structures are flattened.
@@ -57,13 +46,11 @@ List* toJumpsBlock(BlockToken* token, int* uniqueId) {
  *
  * becomes
  *
- * $condition1 = a
- * condJump $condition1, $next1, 0
+ * condJump a, $next1, 0
  * statement b
  * goto $end
  * label $next1
- * $condition2 = c
- * condJump $condition2, $next2, 0
+ * condJump c, $next2, 0
  * statement d
  * goto $end
  * label $next2
@@ -83,18 +70,11 @@ List* toJumpsIf(IfToken* token, int* uniqueId) {
     for(List* node = token->branches; node != NULL; node = node->tail) {
         IfBranch* branch = (IfBranch*) node->head;
 
-        //get the condition value
-        stmts = emitCondStmts(branch->condition, stmts);
-        const char* condition = uniqueName(uniqueId);
-        stmts = consList(createAssignmentToken(
-                    createIdentifierToken(newStr(condition)),
-                    copyToken((Token*) lastList(branch->condition->children))
-                ), stmts);
-
         //jump to the next branch if the above condition is false
         const char* nextLabel = uniqueName(uniqueId);
-        CondJumpToken* condJump = createCondJumpToken(newStr(condition),
-                newStr(nextLabel), 0) ;
+        CondJumpToken* condJump = createCondJumpToken(
+                copyToken(branch->condition),
+                newStr(nextLabel), 0);
         stmts = consList(condJump, stmts);
 
         //if the condition is true, the block is executed
@@ -112,7 +92,6 @@ List* toJumpsIf(IfToken* token, int* uniqueId) {
         stmts = consList(createLabelToken(newStr(nextLabel)), stmts);
 
         free((void*) nextLabel);
-        free((void*) condition);
     }
 
     //output the else branch
@@ -146,8 +125,7 @@ List* toJumpsIf(IfToken* token, int* uniqueId) {
  * becomes
  *
  * label $startLabel
- * $condition = a
- * condJump $condition, $endLabel, 0
+ * condJump a, $endLabel, 0
  * b
  * $absJump $startLabel
  * label $endLabel
@@ -160,17 +138,10 @@ List* toJumpsWhile(WhileToken* token, int* uniqueId) {
     //beginning of the control structure; jumped to at the end of the loop
     stmts = consList(createLabelToken(newStr(startLabel)), stmts);
 
-    //output the condition
-    stmts = emitCondStmts(token->condition, stmts);
-    const char* condition = uniqueName(uniqueId);
-    stmts = consList(createAssignmentToken(
-                createIdentifierToken(newStr(condition)),
-                copyToken((Token*) lastList(token->condition->children))
-            ), stmts);
-
     //jump to the end if the condition is false
     const char* endLabel = uniqueName(uniqueId);
-    CondJumpToken* condJump = createCondJumpToken(newStr(condition),
+    CondJumpToken* condJump = createCondJumpToken(
+            copyToken(token->condition),
             newStr(endLabel), 0);
     stmts = consList(condJump, stmts);
 
@@ -184,7 +155,6 @@ List* toJumpsWhile(WhileToken* token, int* uniqueId) {
     stmts = consList(createLabelToken(newStr(endLabel)), stmts);
 
     free((void*) startLabel);
-    free((void*) condition);
     free((void*) endLabel);
 
     List* ret = reverseList(stmts);

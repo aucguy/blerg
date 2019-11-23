@@ -81,7 +81,7 @@ typedef struct {
 } BlockToken;
 
 typedef struct {
-    BlockToken* condition;
+    Token* condition;
     BlockToken* block;
 } IfBranch;
 
@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
     Token token;
-    BlockToken* condition;
+    Token* condition;
     BlockToken* body;
 } WhileToken;
 
@@ -121,7 +121,7 @@ typedef struct {
 
 typedef struct {
     Token token;
-    const char* cond;
+    Token* condition;
     const char* label;
     //if the condition is false and when is 0 then the jump is taken
     //if the condition is true and when is 1 then the jump is taken
@@ -151,15 +151,15 @@ BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
 UnaryOpToken* createUnaryOpToken(const char*, Token*);
 AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);
 BlockToken* createBlockToken(List*);
-IfBranch* createIfBranch(BlockToken*, BlockToken*);
+IfBranch* createIfBranch(Token*, BlockToken*);
 IfToken* createIfToken(List*, BlockToken*);
-WhileToken* createWhileToken(BlockToken*, BlockToken*);
+WhileToken* createWhileToken(Token*, BlockToken*);
 FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
 ReturnToken* createReturnToken(Token* body);
 #endif
 
 LabelToken* createLabelToken(const char*);
 AbsJumpToken* createAbsJumpToken(const char*);
-CondJumpToken* createCondJumpToken(const char*, const char*, int);
+CondJumpToken* createCondJumpToken(Token*, const char*, int);
 
 #endif /* TOKENS_H_ */

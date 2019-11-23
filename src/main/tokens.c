@@ -300,7 +300,7 @@ BlockToken* createBlockToken(List* children) {
     return token;
 }
 
-IfBranch* createIfBranch(BlockToken* condition, BlockToken* block) {
+IfBranch* createIfBranch(Token* condition, BlockToken* block) {
     IfBranch* branch = (IfBranch*) malloc(sizeof(IfBranch));
     branch->condition = condition;
     branch->block = block;
@@ -392,7 +392,7 @@ Token WHILE_TYPE = {
         equalsWhileToken
 };
 
-WhileToken* createWhileToken(BlockToken* condition, BlockToken* body) {
+WhileToken* createWhileToken(Token* condition, BlockToken* body) {
     WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
     token->token = WHILE_TYPE;
     token->condition = condition;
@@ -530,19 +530,20 @@ AbsJumpToken* createAbsJumpToken(const char* label) {
 
 void destroyCondJumpToken(Token* self) {
     CondJumpToken* token = (CondJumpToken*) self;
-    free((void*) token->cond);
+    destroyToken(token->condition);
     free((void*) token->label);
 }
 
 void printCondJumpToken(Token* self, int indent) {
     CondJumpToken* token = (CondJumpToken*) self;
-    printf("condJump: %s, %s, %i\n", token->cond, token->label, token->when);
+    printf("condJump: %s, %i\n", token->label, token->when);
+    printToken(token->condition, indent + 1);
 }
 
 int equalsCondJumpToken(Token* self, Token* other) {
     CondJumpToken* a = (CondJumpToken*) self;
     CondJumpToken* b = (CondJumpToken*) other;
-    return strcmp(a->cond, b->cond) == 0 && strcmp(a->label, b->label) == 0 &&
+    return tokensEqual(a->condition, b->condition) && strcmp(a->label, b->label) == 0 &&
             a->when == b->when;
 }
 
@@ -553,10 +554,10 @@ Token COND_JUMP_TYPE = {
         equalsCondJumpToken
 };
 
-CondJumpToken* createCondJumpToken(const char* cond, const char* label, int when) {
+CondJumpToken* createCondJumpToken(Token* cond, const char* label, int when) {
     CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
     token->token = COND_JUMP_TYPE;
-    token->cond = cond;
+    token->condition = cond;
     token->label = label;
     token->when = when;
     return token;
