@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
+
 #include "main/util.h"
 
-const char* newStr(const char* src) {
+char* newStr(const char* src) {
     int len = sizeof(char) * (strlen(src) + 1);
     char* dst = (char*) malloc(len);
     memcpy(dst, src, len);
@@ -61,6 +62,15 @@ void* lastList(List* list) {
     return list->head;
 }
 
+int lengthList(List* list) {
+    int length = 0;
+    while(list != NULL) {
+        list = list->tail;
+        length++;
+    }
+    return length;
+}
+
 List* prependReverseList(List* before, List* after) {
     while(before != NULL) {
         after = consList(before->head, after);
@@ -77,3 +87,90 @@ List* reverseList(List* list) {
     }
     return reversed;
 }
+
+Map* createMap() {
+    Map* map = (Map*) malloc(sizeof(Map));
+    map->entry = NULL;
+    return map;
+}
+
+void destroyEntry(Entry* entry, void(*destroyKey)(void*), void(*destroyValue)(void*)) {
+    destroyKey(entry->key);
+    destroyValue(entry->value);
+    free(entry);
+}
+
+void destroyMap(Map* map, void(*destroyKey)(void*), void(*destroyValue)(void*)) {
+    destroyEntry(map->entry, destroyKey, destroyValue);
+    free(map);
+}
+
+/**
+ * Compares two boxed integer values
+ */
+int intEq(const void* a, const void* b) {
+    return *((int*) a) == *((int*) b);
+}
+
+/**
+ * Compares two string values
+ */
+int strEq(const void* a, const void* b) {
+    return strcmp((const char*) a, (const char*) b) == 0;
+}
+
+/**
+ * Gets the entry object from the map with the given key or NULL if there is
+ * no such entry.
+ */
+Entry* getEntryMap(Map* map, const void* key, int(*equal)(const void*, const void*)) {
+    for(Entry* i = map->entry; i != NULL; i = i->tail) {
+        if(equal(i->key, key)) {
+            return i;
+        }
+    }
+    return NULL;
+}
+
+void* postGetMap(Entry* entry) {
+    if(entry == NULL) {
+        return NULL;
+    } else {
+        return entry->value;
+    }
+}
+
+void* getMap(Map* map, int key) {
+    return postGetMap(getEntryMap(map, &key, intEq));
+}
+
+void* getMap(Map* map, const char* key) {
+    return postGetMap(getEntryMap(map, key, strEq));
+}
+
+void postPutMap(Map* map, Entry* entry, void* key, void* value) {
+    if(entry == NULL) {
+        entry = (Entry*) malloc(sizeof(Entry));
+        entry->tail = map->entry;
+        entry->key = key;
+        entry->value = value;
+        map->entry = entry;
+    } else {
+        entry->value = value;
+    }
+}
+
+void putMap(Map* map, int key, void* value) {
+    return postPutMap(map, getEntryMap(map, &key, intEq), boxInt(key), value);
+}
+
+void putMap(Map* map, const char* key, void* value) {
+    return postPutMap(map, getEntryMap(map, key, strEq), (void*) key, value);
+}
+
+int* boxInt(int primitive) {
+    int* boxed = (int*) malloc(sizeof(int));
+    *boxed = primitive;
+    return boxed;
+}
+

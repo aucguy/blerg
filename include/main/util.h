@@ -4,7 +4,7 @@
 /**
  * Copies the given string
  */
-const char* newStr(const char* src);
+char* newStr(const char* src);
 
 /**
  * A forward linked list
@@ -54,6 +54,11 @@ void destroyShallowList(List* list);
 void* lastList(List* list);
 
 /**
+ * Returns the length of the list.
+ */
+int lengthList(List* list);
+
+/**
  * Returns a new list with the contents of before prepended to after, but in
  * reverse order. For example, prependReverseList([1, 2, 3], [4, 5, 6]) ==
  * [3, 2, 1, 4, 5, 6].
@@ -64,5 +69,50 @@ List* prependReverseList(List* before, List* after);
  * Returns the list in reverse. For example reverseList([1, 2, 3]) == [3, 2, 1]
  */
 List* reverseList(List* list);
+
+/**
+ * Internal data structure for maps
+ */
+typedef struct Entry_ {
+    struct Entry_* tail;
+    void* key;
+    void* value;
+} Entry;
+
+/**
+ * The map type. Unlike lists, operations on maps mutate the map.
+ */
+typedef struct {
+    Entry* entry;
+} Map;
+
+Map* createMap();
+/**
+ * Destroys the map.
+ *
+ * @param map the map instance to free
+ * @param destroyKey called for each key in the map
+ * @param destroyValue called for each value in the map
+ */
+void destroyMap(Map* map, void(*destroyKey)(void*), void(*destroyValue)(void*));
+
+void* getMap(Map* map, int key);
+void putMap(Map* map, int key, void* value);
+
+void* getMap(Map* map, const char* key);
+//holds the reference to key passed to putMap
+void putMap(Map* mpa, const char* key, void* value);
+
+/**
+ * Allocates memory that holds the given integer value. Useful for storing an
+ * integer where a pointer is expected.
+ */
+int* boxInt(int primitive);
+
+/**
+ * Does nothing. Useful for when a callback is expected, but the caller does
+ * not need one.
+ */
+void nothing(void* x);
 
 #endif /* UTIL_H_ */

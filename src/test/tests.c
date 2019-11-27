@@ -1,7 +1,9 @@
 #include <stdio.h>
+
 #include "test/parseTest.h"
 #include "test/validateTest.h"
 #include "test/transformTest.h"
+#include "test/codegenTest.h"
 
 void runTest(const char* name, const char* msg, int* status) {
     if(msg != NULL) {
@@ -29,6 +31,8 @@ int runTests() {
     runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
+
+    runTest("codegen", codegenTest(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");
