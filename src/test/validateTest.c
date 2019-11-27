@@ -42,5 +42,8 @@ const char* validateTestNoInnerFuncs() {
     assert(validateNoInnerFuncs(good), "good validation failed");
     assert(!validateNoInnerFuncs(bad), "bad validation succeeded");
 
+    destroyToken((Token*) good);
+    destroyToken((Token*) bad);
+
     return NULL;
 }
