@@ -62,12 +62,12 @@ enum INSTRUCTIONS {
  */
 typedef struct {
     //the constant table, constantsLength is the length of constants
-    int constantsLength;
+    unsigned int constantsLength;
     const char** constants;
 
     //the bytecode, bytecodeLength is the length of bytecode
-    int bytecodeLength;
-    const char* bytecode;
+    unsigned int bytecodeLength;
+    const unsigned char* bytecode;
 } Module;
 
 /**
@@ -87,10 +87,10 @@ typedef struct {
      * count the current capacity.
      */
 
-    int constantsLength;
+    unsigned int constantsLength;
     List* constants;
 
-    int bytecodeLength;
+    unsigned int bytecodeLength;
     List* bytecode;
 
     /**

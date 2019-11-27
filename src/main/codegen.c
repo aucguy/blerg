@@ -38,15 +38,29 @@ void destroyModuleBuilder(ModuleBuilder* builder) {
     free(builder);
 }
 
-void emitByte(ModuleBuilder* builder, char byte) {
+void emitByte(ModuleBuilder* builder, unsigned char byte) {
     int segmentOffset = builder->bytecodeLength % SEGMENT_SIZE;
     //if the current bytecode segment has no space left, create a new one
     if(segmentOffset == 0) {
         builder->bytecode = consList(malloc(SEGMENT_SIZE), builder->bytecode);
     }
-    char* currentSegment = (char*) builder->bytecode->head;
+    unsigned char* currentSegment = (unsigned char*) builder->bytecode->head;
     currentSegment[segmentOffset] = byte;
     builder->bytecodeLength++;
+}
+
+void emitInt(ModuleBuilder* builder, int num) {
+    emitByte(builder, (num & 0xFF000000) >> 24);
+    emitByte(builder, (num & 0x00FF0000) >> 16);
+    emitByte(builder, (num & 0x0000FF00) >> 8);
+    emitByte(builder, num & 0x000000FF);
+}
+
+void emitUInt(ModuleBuilder* builder, unsigned int num) {
+    emitByte(builder, (num & 0xFF000000) >> 24);
+    emitByte(builder, (num & 0x00FF0000) >> 16);
+    emitByte(builder, (num & 0x0000FF00) >> 8);
+    emitByte(builder, num & 0x000000FF);
 }
 
 /**
@@ -55,9 +69,9 @@ void emitByte(ModuleBuilder* builder, char byte) {
  * not hold a reference to the constant; it is copied as necessary to the
  * constant table.
  */
-int internConstant(ModuleBuilder* builder, const char* constant) {
+unsigned int internConstant(ModuleBuilder* builder, const char* constant) {
     //find the constant and return its index
-    int i = 0;
+    unsigned int i = 0;
     for(List* segment = builder->constants; segment != NULL; segment = segment->tail) {
         for(int k = 0; k < SEGMENT_SIZE; k++) {
             if(i >= builder->constantsLength) {
@@ -84,13 +98,6 @@ int internConstant(ModuleBuilder* builder, const char* constant) {
     return builder->constantsLength++;
 }
 
-void emitInt(ModuleBuilder* builder, int num) {
-    emitByte(builder, num & 0x000000FF);
-    emitByte(builder, (num & 0x0000FF00) >> 8);
-    emitByte(builder, (num & 0x00FF0000) >> 16);
-    emitByte(builder, (num & 0xFF000000) >> 24);
-}
-
 void emitLabelRef(ModuleBuilder* builder, int label) {
     //record where the label is referenced
     List* value = consList(
@@ -99,7 +106,7 @@ void emitLabelRef(ModuleBuilder* builder, int label) {
     putMap(builder->labelRefs, label, value);
     //emit a dummy address. This will be patched later, even if the label was
     //already emitted.
-    emitInt(builder, 0);
+    emitUInt(builder, 0);
 }
 
 int createLabel(ModuleBuilder* builder) {
@@ -116,9 +123,8 @@ void emitPushInt(ModuleBuilder* builder, int num) {
 }
 
 void emitPushSymbol(ModuleBuilder* builder, const char* symbol) {
-    int index = internConstant(builder, symbol);
     emitByte(builder, OP_PUSH_SYMBOL);
-    emitInt(builder, index);
+    emitUInt(builder, internConstant(builder, symbol));
 }
 
 void emitPushNone(ModuleBuilder* builder) {
@@ -139,16 +145,15 @@ void emitCreateFunc(ModuleBuilder* builder, int location) {
 }
 
 void emitStore(ModuleBuilder* builder, const char* name) {
-    int index = internConstant(builder, name);
     emitByte(builder, OP_STORE);
-    emitInt(builder, index);
+    emitUInt(builder, internConstant(builder, name));
 }
 
 void emitDefFunc(ModuleBuilder* builder, char argNum, const char** args) {
     emitByte(builder, OP_DEF_FUNC);
     emitByte(builder, argNum);
     for(int i = 0; i < argNum; i++) {
-        emitInt(builder, internConstant(builder, args[i]));
+        emitUInt(builder, internConstant(builder, args[i]));
     }
 }
 
@@ -189,18 +194,18 @@ char* compactSegments(int numElems, List* segment, int elemSize) {
 Module* builderToModule(ModuleBuilder* builder) {
     char** constants = (char**) compactSegments(builder->constantsLength,
             builder->constants, sizeof(char*));
-    char* bytecode = compactSegments(builder->bytecodeLength,
-            builder->bytecode, sizeof(char));
+    unsigned char* bytecode = (unsigned char*) compactSegments(builder->bytecodeLength,
+            builder->bytecode, sizeof(unsigned char));
 
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
-        int definition = *((int*) getMap(builder->labelDefs, (char*) i->key));
+        unsigned int definition = *((unsigned int*) getMap(builder->labelDefs, (char*) i->key));
         for(List* k = (List*) i->value; k != NULL; k = k->tail) {
-            int reference = *((int*) k->head);
-            bytecode[reference] = definition & 0x000000FF;
-            bytecode[reference + 1] = (definition & 0x0000FF00) >> 8;
-            bytecode[reference + 2] = (definition & 0x00FF0000) >> 16;
-            bytecode[reference + 3] = (definition & 0xFF000000) >> 24;
+            unsigned int reference = *((int*) k->head);
+            bytecode[reference] = (definition & 0xFF000000) >> 24;
+            bytecode[reference + 1] = (definition & 0x00FF0000) >> 16;
+            bytecode[reference + 2] = (definition & 0x0000FF00) >> 8;
+            bytecode[reference + 3] = definition & 0x000000FF;
         }
     }
 

@@ -8,10 +8,10 @@
 #include "test/tests.h"
 
 int readInt(Module* module, int* index) {
-    int arg = module->bytecode[*index];
-    arg |= module->bytecode[*index + 1] << 8;
-    arg |= module->bytecode[*index + 2] << 16;
-    arg |= module->bytecode[*index + 3] << 24;
+    int arg = module->bytecode[*index] << 24;
+    arg |= module->bytecode[*index + 1] << 16;
+    arg |= module->bytecode[*index + 2] << 8;
+    arg |= module->bytecode[*index + 3];
     *index += 4;
     return arg;
 }
@@ -34,7 +34,7 @@ void printModule(Module* module) {
     int i = 0;
     while(i < module->bytecodeLength) {
         printf("\t %i: \t", i);
-        char opcode = module->bytecode[i++];
+        unsigned char opcode = module->bytecode[i++];
         if(opcode == OP_PUSH_INT) {
             printf("PUSH_INT %i\n", readInt(module, &i));
         } else if(opcode == OP_PUSH_SYMBOL) {
