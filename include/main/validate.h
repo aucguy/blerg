@@ -16,4 +16,10 @@ int validateOnlyFuncsToplevel(BlockToken* module);
  */
 int validateNoInnerFuncs(BlockToken* module);
 
+/**
+ * Checks that a module from parseModule is indeed valid. parseModule does not
+ * reject all invalid modules.
+ */
+int validateModule(BlockToken* module);
+
 #endif /* VALIDATE_H_ */

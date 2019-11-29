@@ -244,3 +244,7 @@ BlockToken* transformControlToJumps(BlockToken* module) {
     int uniqueId = 0;
     return createBlockToken(toJumpsBlock(module, &uniqueId));
 }
+
+BlockToken* transformModule(BlockToken* module) {
+    return transformControlToJumps(module);
+}

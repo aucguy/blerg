@@ -9,7 +9,7 @@ enum INSTRUCTIONS {
     //stack: -> int
     //reads an integer from the bytecode and pushes its value onto the stack
     OP_PUSH_INT,
-    //args: index (int)
+    //args: index (signed int)
     //stack: -> symbol
     //reads an integer from the bytecode, looks it up in the constant table,
     //and pushes the symbol onto the stack
@@ -34,10 +34,24 @@ enum INSTRUCTIONS {
     //scope and whose entry point is the label.
     OP_CREATE_FUNC,
     //args: name (int)
-    //stack: value -> obj
+    //stack: -> value
+    //Looks up the name in the constant table. The instruction then pushes the
+    //local variable with that name in the local scope.
+    OP_LOAD,
+    //args: name (int)
+    //stack: value ->
     //Looks up the name in the constant table. The instruction then assigns the
     //local variable with that name within the local scope.
     OP_STORE,
+    //args: label (int)
+    //Pops a value. If the value is truthy, the instruction jumps to the label.
+    OP_COND_JUMP_TRUE,
+    //args: label (int)
+    //Pops a value. If the value is falsy, the instruction jumps to the label.
+    OP_COND_JUMP_FALSE,
+    //args: label (int)
+    //The instruction jumps to the label unconditionally.
+    OP_ABS_JUMP,
     //This opcode performs no operations, but denotes the beginning of a
     //function. It is used to tell the runtime function object the function's
     //arity and the names to bind the arguments to. The format is
@@ -152,7 +166,27 @@ void emitReturn(ModuleBuilder* builder);
  * function's bytecode.
  */
 void emitCreateFunc(ModuleBuilder* builder, int location);
+
+void emitLoad(ModuleBuilder* builder, const char* name);
 void emitStore(ModuleBuilder* builder, const char* name);
+
+/**
+ * Emits a conditional jump instruction.
+ *
+ * @param builder the ModuleBuilder instance
+ * @param label the label to jump to if the condition holds
+ * @param when if 0 the jump will be taken if the popped value is falsy,
+ *      otherwise, the jump will be taken if the popped value is truthy
+ */
+void emitCondJump(ModuleBuilder* builder, int label, int when);
+
+/**
+ * Emits an unconditional jump instruction
+ *
+ * @param builder the ModuleBuilder instance
+ * @param label the label to jump to unconditionally
+ */
+void emitAbsJump(ModuleBuilder* builder, int label);
 
 /**
  * Emits a function definition instruction.

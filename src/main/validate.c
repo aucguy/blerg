@@ -75,3 +75,7 @@ int noInnerFuncs(Token* token) {
 int validateNoInnerFuncs(BlockToken* module) {
     return allList(module->children, (int (*)(void*)) noInnerFuncs);
 }
+
+int validateModule(BlockToken* module) {
+    return validateOnlyFuncsToplevel(module) && validateNoInnerFuncs(module);
+}

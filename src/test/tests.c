@@ -32,7 +32,8 @@ int runTests() {
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
 
-    runTest("codegen", codegenTest(), &status);
+    runTest("codegenTestSimple", codegenTestSimple(), &status);
+    runTest("codegenTestJumps", codegenTestJumps(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

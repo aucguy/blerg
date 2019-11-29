@@ -95,8 +95,12 @@ Map* createMap() {
 }
 
 void destroyEntry(Entry* entry, void(*destroyKey)(void*), void(*destroyValue)(void*)) {
+    if(entry == NULL) {
+        return;
+    }
     destroyKey(entry->key);
     destroyValue(entry->value);
+    destroyEntry(entry->tail, destroyKey, destroyValue);
     free(entry);
 }
 
