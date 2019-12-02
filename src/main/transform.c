@@ -10,7 +10,7 @@
  * it with '$' and increments uniqueId.
  */
 const char* uniqueName(int* uniqueId) {
-    int length = snprintf(NULL, NULL, "$%d", *uniqueId);
+    int length = snprintf(NULL, 0, "$%d", *uniqueId);
     char* name = (char*) malloc(length + 1);
     sprintf(name, "$%d", *uniqueId);
     (*uniqueId)++;
@@ -229,6 +229,10 @@ List* toJumpsList(List* list, int* uniqueId) {
         case TOKEN_FUNC:
             stmts = consList(toJumpsFunc((FuncToken*) token, uniqueId), stmts);
             break;
+        case TOKEN_LABEL:
+        case TOKEN_ABS_JUMP:
+        case TOKEN_COND_JUMP:
+            break; //shouldn't happen anyway
         }
     }
 

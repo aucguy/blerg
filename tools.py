@@ -28,13 +28,14 @@ def debug_flag(debugging):
         return ''
 
 def include_cmd(src, debugging=False):
-    return 'g++ %s -I"include" -MM -c %s' %(debug_flag(debugging), src)
+    return 'gcc %s -I"include" -MM -c %s' %(debug_flag(debugging), src)
 
 def compile_cmd(src, obj, debugging=False):
-    return 'g++ %s -I"include" -c %s -o %s' %(debug_flag(debugging), src, obj)
+    return f'gcc %s -Wall -Wextra -Wpedantic -I"include" -c %s -o %s' \
+        %(debug_flag(debugging), src, obj)
 
 def link_cmd(executable, objs, debugging=False):
-    return 'g++ %s -o %s %s' %(debug_flag(debugging), executable, ' '.join(objs))
+    return 'gcc %s -o %s %s' %(debug_flag(debugging), executable, ' '.join(objs))
 
 def get_files(dir):
     """

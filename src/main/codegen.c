@@ -102,8 +102,8 @@ void emitLabelRef(ModuleBuilder* builder, int label) {
     //record where the label is referenced
     List* value = consList(
             boxInt(builder->bytecodeLength),
-            (List*) getMap(builder->labelRefs, label));
-    putMap(builder->labelRefs, label, value);
+            (List*) getMapInt(builder->labelRefs, label));
+    putMapInt(builder->labelRefs, label, value);
     //emit a dummy address. This will be patched later, even if the label was
     //already emitted.
     emitUInt(builder, 0);
@@ -114,7 +114,7 @@ int createLabel(ModuleBuilder* builder) {
 }
 
 void emitLabel(ModuleBuilder* builder, int label) {
-    putMap(builder->labelDefs, label, boxInt(builder->bytecodeLength));
+    putMapInt(builder->labelDefs, label, boxInt(builder->bytecodeLength));
 }
 
 void emitPushInt(ModuleBuilder* builder, int num) {
@@ -213,18 +213,18 @@ char* compactSegments(int numElems, List* segment, int elemSize) {
 Module* builderToModule(ModuleBuilder* builder) {
     char** constants = (char**) compactSegments(builder->constantsLength,
             builder->constants, sizeof(char*));
-    unsigned char* bytecode = (unsigned char*) compactSegments(builder->bytecodeLength,
-            builder->bytecode, sizeof(unsigned char));
+    unsigned char* bytecode = (unsigned char*) compactSegments(
+            builder->bytecodeLength, builder->bytecode, sizeof(unsigned char));
 
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
-        unsigned int definition = *((unsigned int*) getMap(builder->labelDefs, (char*) i->key));
+        unsigned int* definition = getMapStr(builder->labelDefs, (char*) i->key);
         for(List* k = (List*) i->value; k != NULL; k = k->tail) {
             unsigned int reference = *((int*) k->head);
-            bytecode[reference] = (definition & 0xFF000000) >> 24;
-            bytecode[reference + 1] = (definition & 0x00FF0000) >> 16;
-            bytecode[reference + 2] = (definition & 0x0000FF00) >> 8;
-            bytecode[reference + 3] = definition & 0x000000FF;
+            bytecode[reference] = (*definition & 0xFF000000) >> 24;
+            bytecode[reference + 1] = (*definition & 0x00FF0000) >> 16;
+            bytecode[reference + 2] = (*definition & 0x0000FF00) >> 8;
+            bytecode[reference + 3] = *definition & 0x000000FF;
         }
     }
 
@@ -251,15 +251,15 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     } else if(token->type == TOKEN_IDENTIFIER) {
         emitLoad(builder, ((IdentifierToken*) token)->value);
     } else if(token->type == TOKEN_LABEL) {
-        int* label = (int*) getMap(labels, ((LabelToken*) token)->name);
+        int* label = (int*) getMapStr(labels, ((LabelToken*) token)->name);
         emitLabel(builder, *label);
     } else if(token->type == TOKEN_ABS_JUMP) {
-        int* label = (int*) getMap(labels, ((AbsJumpToken*) token)->label);
+        int* label = (int*) getMapStr(labels, ((AbsJumpToken*) token)->label);
         emitAbsJump(builder, *label);
     } else if(token->type == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
         compileToken(builder, labels, condJump->condition);
-        int* label = (int*) getMap(labels, condJump->label);
+        int* label = (int*) getMapStr(labels, condJump->label);
         emitCondJump(builder, *label, condJump->when);
     } else if(token->type == TOKEN_BINARY_OP) {
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
@@ -288,7 +288,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
  */
 void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     //record the start of the function
-    emitLabel(builder, *((int*) getMap(globalFuncs, func->name->value)));
+    emitLabel(builder, *((int*) getMapStr(globalFuncs, func->name->value)));
 
     //convert the argument list to an array be passed to emitDefFunc
     int argNum = lengthList(func->args);
@@ -309,7 +309,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
         Token* token = (Token*) list->head;
         if(token->type == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
-            putMap(labels, label->name, boxInt(createLabel(builder)));
+            putMapStr(labels, label->name, boxInt(createLabel(builder)));
         }
     }
 
@@ -336,7 +336,7 @@ Module* compileModule(Token* ast) {
         if(token->type == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
             int label = createLabel(builder);
-            putMap(globalFuncs, newStr(func->name->value), boxInt(label));
+            putMapStr(globalFuncs, newStr(func->name->value), boxInt(label));
             emitCreateFunc(builder, label);
             emitStore(builder, func->name->value);
         }
@@ -360,7 +360,7 @@ Module* compileModule(Token* ast) {
 }
 
 void destroyModule(Module* module) {
-    for(int i = 0; i < module->constantsLength; i++) {
+    for(unsigned int i = 0; i < module->constantsLength; i++) {
         free((void*) module->constants[i]);
     }
     free((void*) module->constants);

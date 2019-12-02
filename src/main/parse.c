@@ -43,17 +43,17 @@ void advance(ParseState* state, int amount) {
 /**
  * Advances the current character for the ParseState by one character.
  */
-void advance(ParseState* state) {
+/*void advance(ParseState* state) {
     state->index++;
-}
+}*/
 
 /**
  * Advances the current character as long as the current character is a given
  * character.
  */
 void advanceWhile(ParseState* state, const char* chars) {
-    while(containsChar(chars, getChar(state)) != NULL) {
-        advance(state);
+    while(containsChar(chars, getChar(state)) != 0) {
+        advance(state, 1);
     }
 }
 
@@ -123,10 +123,10 @@ IntToken* parseInt(ParseState* state) {
  * <literal> ::= ' .* '
  */
 LiteralToken* parseLiteral(ParseState* state) {
-    advance(state); //skip the '
+    advance(state, 1); //skip the '
     int start = state->index;
     while(getChar(state) != '\'' && getChar(state) != 0) {
-        advance(state);
+        advance(state, 1);
     }
 
     //EOF reached without terminating the string
@@ -135,7 +135,7 @@ LiteralToken* parseLiteral(ParseState* state) {
     }
 
     const char* value = sliceStr(state->src, start, state->index);
-    advance(state); //skip the '
+    advance(state, 1); //skip the '
 
     return createLiteralToken(value);
 }
@@ -163,18 +163,18 @@ Token* parseFactor(ParseState* state) {
     skipWhitespace(state);
     char c = getChar(state);
     if(c == '(') {
-        advance(state); //skip the (
+        advance(state, 1); //skip the (
         Token* token = parseExpression(state);
         skipWhitespace(state);
         if(getChar(state) != ')') {
             destroyToken(token);
             return NULL;
         }
-        advance(state); //skip the )
+        advance(state, 1); //skip the )
         return token;
-    } else if(containsChar(INT_CHARS, c) != NULL) {
+    } else if(containsChar(INT_CHARS, c) != 0) {
         return (Token*) parseInt(state);
-    } else if(containsChar(IDENTIFIER_CHARS, c) != NULL) {
+    } else if(containsChar(IDENTIFIER_CHARS, c) != 0) {
         return (Token*) parseIdentifier(state);
     } else if(c == '\'') {
         return (Token*) parseLiteral(state);
@@ -211,7 +211,7 @@ int lookAhead(ParseState* state, const char* str) {
  * If zero is present, the function will return true if the end of the source
  * has been reached.
  */
-int lookAhead(ParseState* state, const char* strs[]) {
+int lookAheadMulti(ParseState* state, const char* strs[]) {
     for(int i = 0; strcmp(strs[i], "~") != 0; i++) {
         if(lookAhead(state, strs[i])) {
             return 1;
@@ -222,8 +222,8 @@ int lookAhead(ParseState* state, const char* strs[]) {
 
 
 //'end' is not an operator; it signifies that the end of the array of operators
-const int OP_LEVELS = 6;
-const int OP_AMOUNT = 8;
+#define OP_LEVELS 6
+#define OP_AMOUNT 8
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         //' ' is the application operator. It sits invisible between a function
         //and its argument
@@ -264,7 +264,7 @@ const char* getOp(ParseState* state, int level) {
             char c = state->src[index];
             if((c == '(' || c == '"' || containsChar(INT_CHARS, c) ||
                     containsChar(IDENTIFIER_CHARS, c)) &&
-                    !lookAhead(state, KEYWORDS)) {
+                    !lookAheadMulti(state, KEYWORDS)) {
                 return newStr(checking);
             }
         } else if(lookAhead(state, checking)) {
@@ -304,10 +304,10 @@ const char* getOp(ParseState* state, int level) {
  * it calls parseExpression, with the level one less than it was passed.
  */
 
-Token* parseExpression(ParseState* state, int level);
+Token* parseExpressionWithLevel(ParseState* state, int level);
 
 Token* parseBinaryOp(ParseState* state, int level) {
-    Token* token = parseExpression(state, level - 1);
+    Token* token = parseExpressionWithLevel(state, level - 1);
     if(token == NULL) {
         return NULL;
     }
@@ -319,7 +319,7 @@ Token* parseBinaryOp(ParseState* state, int level) {
         if(strcmp(op, " ") != 0) {
             advance(state, strlen(op));
         }
-        Token* right = parseExpression(state, level - 1);
+        Token* right = parseExpressionWithLevel(state, level - 1);
         if(right == NULL) {
             free((void*) op);
             destroyToken(token);
@@ -349,18 +349,18 @@ Token* parsePrefixUnaryOp(ParseState* state, int level) {
     const char* op = getOp(state, level);
     if(op != NULL) {
         advance(state, strlen(op));
-        Token* child = parseExpression(state, level);
+        Token* child = parseExpressionWithLevel(state, level);
         if(child == NULL) {
             free((void*) op);
             return NULL;
         }
         return (Token*) createUnaryOpToken(op, child);
     } else {
-        return parseExpression(state, level - 1);
+        return parseExpressionWithLevel(state, level - 1);
     }
 }
 
-Token* parseExpression(ParseState* state, int level) {
+Token* parseExpressionWithLevel(ParseState* state, int level) {
     if(level == -1) {
         return parseFactor(state);
     } else if(strcmp(OP_DATA[level][0], "prefix") == 0) {
@@ -371,7 +371,7 @@ Token* parseExpression(ParseState* state, int level) {
 }
 
 Token* parseExpression(ParseState* state) {
-    return parseExpression(state, OP_LEVELS - 1);
+    return parseExpressionWithLevel(state, OP_LEVELS - 1);
 }
 
 /**
@@ -387,17 +387,17 @@ Token* parseAssignment(ParseState* state) {
     }
     skipWhitespace(state);
     if(getChar(state) == ';') {
-        advance(state); //skip the ;
+        advance(state, 1); //skip the ;
         return left;
     } else if(getChar(state) == '=') {
-        advance(state); //skip the =
+        advance(state, 1); //skip the =
         skipWhitespace(state);
         Token* right = parseExpression(state);
         if(right == NULL || left->type != TOKEN_IDENTIFIER || getChar(state) != ';') {
             free(left);
             return NULL;
         }
-        advance(state); //skip the ;
+        advance(state, 1); //skip the ;
         IdentifierToken* identifier = (IdentifierToken*) left;
         return (Token*) createAssignmentToken(identifier, right);
     } else {
@@ -599,7 +599,7 @@ ReturnToken* parseReturnStmt(ParseState* state) {
         destroyToken(body);
         return NULL;
     }
-    advance(state);
+    advance(state, 1);
     return createReturnToken(body);
 }
 
@@ -634,7 +634,7 @@ Token* parseStatement(ParseState* state) {
 List* parseBlockHelper(ParseState* state, const char* ends[], int* error) {
     skipWhitespace(state);
     //check for the end of the block
-    if(lookAhead(state, ends)) {
+    if(lookAheadMulti(state, ends)) {
         //NULL represents an empty list
         return NULL;
     }

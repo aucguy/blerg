@@ -3,6 +3,8 @@
 #include <string.h>
 #include "main/tokens.h"
 
+#define UNUSED(x) (void)(x)
+
 int tokensEqualVoid(void* a, void* b);
 int branchesEqual(void* a, void* b);
 
@@ -12,8 +14,12 @@ void printIndent(int indent) {
     }
 }
 
-void destroyIntToken(Token* self) {}
+void destroyIntToken(Token* self) {
+    UNUSED(self);
+}
+
 void printIntToken(Token* self, int indent) {
+    UNUSED(indent);
     printf("int: %i\n", ((IntToken*) self)->value);
 }
 
@@ -51,6 +57,7 @@ void destroyLiteralToken(Token* self) {
 }
 
 void printLiteralToken(Token* self, int indent) {
+    UNUSED(indent);
     printf("literal: %s\n", ((LiteralToken*) self)->value);
 }
 
@@ -88,6 +95,7 @@ void destroyIdentifierToken(Token* token) {
 }
 
 void printIdentifierToken(Token* self, int indent) {
+    UNUSED(indent);
     printf("identifier: %s\n", ((IdentifierToken*) self)->value);
 }
 
@@ -131,8 +139,8 @@ void destroyBinaryOpToken(Token* self) {
 void printBinaryOpToken(Token* self, int indent) {
     BinaryOpToken* binaryOp = (BinaryOpToken*) self;
     printf("binaryOp: '%s'\n", binaryOp->op);
-    printToken(binaryOp->left, indent + 1);
-    printToken(binaryOp->right, indent + 1);
+    printTokenWithIndent(binaryOp->left, indent + 1);
+    printTokenWithIndent(binaryOp->right, indent + 1);
 }
 
 int equalsBinaryOpToken(Token* self, Token* other) {
@@ -183,7 +191,7 @@ void destroyUnaryOpToken(Token* self) {
 void printUnaryOpToken(Token* self, int indent) {
     UnaryOpToken* unaryOp = (UnaryOpToken*) self;
     printf("unaryOp: %s\n", unaryOp->op);
-    printToken(unaryOp->child, indent + 1);
+    printTokenWithIndent(unaryOp->child, indent + 1);
 }
 
 int equalsUnaryOpToken(Token* self, Token* other) {
@@ -230,7 +238,7 @@ void destroyAssignmentToken(Token* self) {
 void printAssignmentToken(Token* self, int indent) {
     AssignmentToken* assignment = (AssignmentToken*) self;
     printf("assignment: %s\n", assignment->left->value);
-    printToken(assignment->right, indent + 1);
+    printTokenWithIndent(assignment->right, indent + 1);
 }
 
 int equalsAssignmentToken(Token* self, Token* other) {
@@ -277,12 +285,12 @@ void printBlockToken(Token* self, int indent) {
     BlockToken* block = (BlockToken*) self;
     printf("block:\n");
     for(List* node = block->children; node != NULL; node = node->tail) {
-        printToken((Token*) node->head, indent + 1);
+        printTokenWithIndent((Token*) node->head, indent + 1);
     }
 }
 
 int equalsBlockToken(Token* self, Token* other) {
-    return allList(((BlockToken*) self)->children,
+    return allList2(((BlockToken*) self)->children,
             ((BlockToken*) other)->children, tokensEqualVoid);
 }
 
@@ -290,7 +298,8 @@ Token BLOCK_TYPE = {
         TOKEN_BLOCK,
         destroyBlockToken,
         printBlockToken,
-        equalsBlockToken
+        equalsBlockToken,
+        NULL
 };
 
 BlockToken* createBlockToken(List* children) {
@@ -320,21 +329,21 @@ void printIfToken(Token* self, int indent) {
         IfBranch* branch = (IfBranch*) node->head;
         printIndent(indent + 1);
         printf("condition:\n");
-        printToken((Token*) branch->condition, indent + 2);
+        printTokenWithIndent((Token*) branch->condition, indent + 2);
         printIndent(indent + 1);
         printf("body:\n");
-        printToken((Token*) branch->block, indent + 2);
+        printTokenWithIndent((Token*) branch->block, indent + 2);
     }
     printIndent(indent + 1);
     printf("else:\n");
-    printToken((Token*) ifStmt->elseBranch, indent + 2);
+    printTokenWithIndent((Token*) ifStmt->elseBranch, indent + 2);
 }
 
 int equalsIfToken(Token* self, Token* other) {
     IfToken* selfIf = (IfToken*) self;
     IfToken* otherIf = (IfToken*) other;
 
-    if(!allList(selfIf->branches, otherIf->branches, branchesEqual)) {
+    if(!allList2(selfIf->branches, otherIf->branches, branchesEqual)) {
         return 0;
     }
     if(selfIf->elseBranch == NULL && otherIf->elseBranch == NULL) {
@@ -347,7 +356,8 @@ Token IF_TYPE = {
         TOKEN_IF,
         destroyIfToken,
         printIfToken,
-        equalsIfToken
+        equalsIfToken,
+        NULL
 };
 
 IfToken* createIfToken(List* branches, BlockToken* elseBranch) {
@@ -370,11 +380,11 @@ void printWhileToken(Token* self, int indent) {
 
     printIndent(indent + 1);
     printf("condition:\n");
-    printToken((Token*) whileStmt->condition, indent + 2);
+    printTokenWithIndent((Token*) whileStmt->condition, indent + 2);
 
     printIndent(indent + 1);
     printf("body:\n");
-    printToken((Token*) whileStmt->body, indent + 2);
+    printTokenWithIndent((Token*) whileStmt->body, indent + 2);
 }
 
 int equalsWhileToken(Token* self, Token* other) {
@@ -389,7 +399,8 @@ Token WHILE_TYPE = {
         TOKEN_WHILE,
         destroyWhileToken,
         printWhileToken,
-        equalsWhileToken
+        equalsWhileToken,
+        NULL
 };
 
 WhileToken* createWhileToken(Token* condition, BlockToken* body) {
@@ -416,14 +427,14 @@ void printFuncToken(Token* self, int indent) {
         node = node->tail;
     }
     printf("\n");
-    printToken((Token*) func->body, indent + 1);
+    printTokenWithIndent((Token*) func->body, indent + 1);
 }
 
 int equalsFuncToken(Token* self, Token* other) {
     FuncToken* selfFunc = (FuncToken*) self;
     FuncToken* otherFunc = (FuncToken*) other;
     return tokensEqual((Token*) selfFunc->name, (Token*) otherFunc->name) &&
-            allList(selfFunc->args, otherFunc->args, tokensEqualVoid) &&
+            allList2(selfFunc->args, otherFunc->args, tokensEqualVoid) &&
             tokensEqual((Token*) selfFunc->body, (Token*) otherFunc->body);
 }
 
@@ -431,7 +442,8 @@ Token FUNC_TYPE = {
         TOKEN_FUNC,
         destroyFuncToken,
         printFuncToken,
-        equalsFuncToken
+        equalsFuncToken,
+        NULL
 };
 
 FuncToken* createFuncToken(IdentifierToken* name, List* args, BlockToken* body) {
@@ -449,7 +461,7 @@ void destroyReturnToken(Token* self) {
 
 void printReturnToken(Token* self, int indent) {
     printf("return:\n");
-    printToken(((ReturnToken*) self)->body, indent + 1);
+    printTokenWithIndent(((ReturnToken*) self)->body, indent + 1);
 }
 
 int equalsReturnToken(Token* self, Token* other) {
@@ -481,6 +493,7 @@ void destroyLabelToken(Token* self) {
 }
 
 void printLabelToken(Token* self, int indent) {
+    UNUSED(indent);
     printf("label: %s \n", ((LabelToken*) self)->name);
 }
 
@@ -492,7 +505,8 @@ Token LABEL_TYPE = {
         TOKEN_LABEL,
         destroyLabelToken,
         printLabelToken,
-        equalsLabelToken
+        equalsLabelToken,
+        NULL
 };
 
 LabelToken* createLabelToken(const char* name) {
@@ -507,6 +521,7 @@ void destroyAbsJumpToken(Token* self) {
 }
 
 void printAbsJumpToken(Token* self, int indent) {
+    UNUSED(indent);
     printf("absJump: %s\n", ((AbsJumpToken*) self)->label);
 }
 
@@ -518,7 +533,8 @@ Token ABS_JUMP_TYPE = {
         TOKEN_ABS_JUMP,
         destroyAbsJumpToken,
         printAbsJumpToken,
-        equalsAbsJumpToken
+        equalsAbsJumpToken,
+        NULL
 };
 
 AbsJumpToken* createAbsJumpToken(const char* label) {
@@ -537,7 +553,7 @@ void destroyCondJumpToken(Token* self) {
 void printCondJumpToken(Token* self, int indent) {
     CondJumpToken* token = (CondJumpToken*) self;
     printf("condJump: %s, %i\n", token->label, token->when);
-    printToken(token->condition, indent + 1);
+    printTokenWithIndent(token->condition, indent + 1);
 }
 
 int equalsCondJumpToken(Token* self, Token* other) {
@@ -551,7 +567,8 @@ Token COND_JUMP_TYPE = {
         TOKEN_COND_JUMP,
         destroyCondJumpToken,
         printCondJumpToken,
-        equalsCondJumpToken
+        equalsCondJumpToken,
+        NULL
 };
 
 CondJumpToken* createCondJumpToken(Token* cond, const char* label, int when) {
@@ -589,7 +606,7 @@ void destroyIfBranch(void* x) {
 /**
  * Prints the given token. Subchildren are indented.
  */
-void printToken(Token* token, int indent) {
+void printTokenWithIndent(Token* token, int indent) {
     printIndent(indent);
 
     if(token == NULL) {
@@ -602,7 +619,7 @@ void printToken(Token* token, int indent) {
 }
 
 void printToken(Token* token) {
-    printToken(token, 0);
+    printTokenWithIndent(token, 0);
 }
 
 /**

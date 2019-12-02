@@ -128,7 +128,7 @@ typedef struct {
     int when;
 } CondJumpToken;
 
-void printToken(Token* token, int indent);
+void printTokenWithIndent(Token* token, int indent);
 void printToken(Token* token);
 void printIndent(int indent);
 

@@ -18,7 +18,7 @@ List* consList(void* head, List* tail) {
     return full;
 }
 
-int allList(List* listA, List* listB, int(*predicate)(void*, void*)) {
+int allList2(List* listA, List* listB, int(*predicate)(void*, void*)) {
     while(listA != NULL && listB != NULL) {
         if(!predicate(listA->head, listB->head)) {
             return 0;
@@ -49,7 +49,9 @@ void destroyList(List* list, void(*func)(void*)) {
     free(list);
 }
 
-void nothing(void* x) {}
+void nothing(void* x) {
+    (void)(x);
+}
 
 void destroyShallowList(List* list) {
     destroyList(list, nothing);
@@ -144,11 +146,11 @@ void* postGetMap(Entry* entry) {
     }
 }
 
-void* getMap(Map* map, int key) {
+void* getMapInt(Map* map, int key) {
     return postGetMap(getEntryMap(map, &key, intEq));
 }
 
-void* getMap(Map* map, const char* key) {
+void* getMapStr(Map* map, const char* key) {
     return postGetMap(getEntryMap(map, key, strEq));
 }
 
@@ -164,12 +166,12 @@ void postPutMap(Map* map, Entry* entry, void* key, void* value) {
     }
 }
 
-void putMap(Map* map, int key, void* value) {
-    return postPutMap(map, getEntryMap(map, &key, intEq), boxInt(key), value);
+void putMapInt(Map* map, int key, void* value) {
+    postPutMap(map, getEntryMap(map, &key, intEq), boxInt(key), value);
 }
 
-void putMap(Map* map, const char* key, void* value) {
-    return postPutMap(map, getEntryMap(map, key, strEq), (void*) key, value);
+void putMapStr(Map* map, const char* key, void* value) {
+    postPutMap(map, getEntryMap(map, key, strEq), (void*) key, value);
 }
 
 int* boxInt(int primitive) {

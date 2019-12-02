@@ -28,7 +28,7 @@ List* consList(void* head, List* tail);
  * predicate returns true for all invocations. Also, the function will return
  * false if the lists are of different lengths.
  */
-int allList(List* listA, List* listB, int(*predicate)(void*, void*));
+int allList2(List* listA, List* listB, int(*predicate)(void*, void*));
 
 /**
  * Returns true if all the items in the list satisfy the predicate. For each
@@ -96,12 +96,12 @@ Map* createMap();
  */
 void destroyMap(Map* map, void(*destroyKey)(void*), void(*destroyValue)(void*));
 
-void* getMap(Map* map, int key);
-void putMap(Map* map, int key, void* value);
+void* getMapInt(Map* map, int key);
+void putMapInt(Map* map, int key, void* value);
 
-void* getMap(Map* map, const char* key);
+void* getMapStr(Map* map, const char* key);
 //holds the reference to key passed to putMap
-void putMap(Map* mpa, const char* key, void* value);
+void putMapStr(Map* map, const char* key, void* value);
 
 /**
  * Allocates memory that holds the given integer value. Useful for storing an

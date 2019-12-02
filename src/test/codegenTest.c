@@ -9,7 +9,7 @@
 
 #include "test/tests.h"
 
-int readInt(Module* module, int* index) {
+int readInt(Module* module, unsigned int* index) {
     int arg = module->bytecode[*index] << 24;
     arg |= module->bytecode[*index + 1] << 16;
     arg |= module->bytecode[*index + 2] << 8;
@@ -18,7 +18,7 @@ int readInt(Module* module, int* index) {
     return arg;
 }
 
-const char* getConstant(Module* module, int arg) {
+const char* getConstant(Module* module, unsigned int arg) {
     if(arg < module->constantsLength) {
         return module->constants[arg];
     } else {
@@ -26,7 +26,7 @@ const char* getConstant(Module* module, int arg) {
     }
 }
 
-void printIndexArgOp(const char* opName, Module* module, int* index) {
+void printIndexArgOp(const char* opName, Module* module, unsigned int* index) {
     int arg = readInt(module, index);
     const char* constant = getConstant(module, arg);
     printf("%s %i (%s)\n", opName, arg, constant);
@@ -34,12 +34,12 @@ void printIndexArgOp(const char* opName, Module* module, int* index) {
 
 void printModule(Module* module) {
     printf("constants: %i\n", module->constantsLength);
-    for(int i = 0; i < module->constantsLength; i++) {
+    for(unsigned int i = 0; i < module->constantsLength; i++) {
         printf("\t%s\n", module->constants[i]);
     }
 
     printf("bytecode:\n");
-    int i = 0;
+    unsigned int i = 0;
     while(i < module->bytecodeLength) {
         printf("\t %i: \t", i);
         unsigned char opcode = module->bytecode[i++];
@@ -85,7 +85,7 @@ int modulesEqual(Module* a, Module* b) {
         return 0;
     }
 
-    for(int i = 0; i < a->constantsLength; i++) {
+    for(unsigned int i = 0; i < a->constantsLength; i++) {
         if(strcmp(a->constants[i], b->constants[i]) != 0) {
             return 0;
         }
@@ -95,7 +95,7 @@ int modulesEqual(Module* a, Module* b) {
         return 0;
     }
 
-    for(int i = 0; i < a->bytecodeLength; i++) {
+    for(unsigned int i = 0; i < a->bytecodeLength; i++) {
         if(a->bytecode[i] != b->bytecode[i]) {
             return 0;
         }
