@@ -14,6 +14,7 @@ enum INSTRUCTIONS {
     //reads an integer from the bytecode, looks it up in the constant table,
     //and pushes the symbol onto the stack
     OP_PUSH_SYMBOL,
+    OP_PUSH_LITERAL,
     //args:
     //stack: -> None
     //pushes the None object onto the stack
@@ -157,6 +158,7 @@ void emitPushInt(ModuleBuilder* builder, int num);
  * symbol. If necessary, it will create a copy to store in the constants table.
  */
 void emitPushSymbol(ModuleBuilder* builder, const char* symbol);
+void emitPushLiteral(ModuleBuilder* builder, const char* literal);
 void emitPushNone(ModuleBuilder* builder);
 void emitCall(ModuleBuilder* builder);
 void emitReturn(ModuleBuilder* builder);

@@ -34,6 +34,7 @@ int runTests() {
 
     runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);
+    runTest("codegenTestLiteralUnaryOp", codegenTestLiteralUnaryOp(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

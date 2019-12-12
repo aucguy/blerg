@@ -3,5 +3,6 @@
 
 const char* codegenTestSimple();
 const char* codegenTestJumps();
+const char* codegenTestLiteralUnaryOp();
 
 #endif /* CODEGENTEST_H_ */

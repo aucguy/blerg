@@ -127,6 +127,11 @@ void emitPushSymbol(ModuleBuilder* builder, const char* symbol) {
     emitUInt(builder, internConstant(builder, symbol));
 }
 
+void emitPushLiteral(ModuleBuilder* builder, const char* literal) {
+    emitByte(builder, OP_PUSH_LITERAL);
+    emitUInt(builder, internConstant(builder, literal));
+}
+
 void emitPushNone(ModuleBuilder* builder) {
     emitByte(builder, OP_PUSH_NONE);
 }
@@ -248,6 +253,8 @@ Module* builderToModule(ModuleBuilder* builder) {
 void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     if(token->type == TOKEN_INT) {
         emitPushInt(builder, ((IntToken*) token)->value);
+    } else if(token->type == TOKEN_LITERAL) {
+        emitPushLiteral(builder, ((LiteralToken*) token)->value);
     } else if(token->type == TOKEN_IDENTIFIER) {
         emitLoad(builder, ((IdentifierToken*) token)->value);
     } else if(token->type == TOKEN_LABEL) {
@@ -261,6 +268,11 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         compileToken(builder, labels, condJump->condition);
         int* label = (int*) getMapStr(labels, condJump->label);
         emitCondJump(builder, *label, condJump->when);
+    } else if(token->type == TOKEN_UNARY_OP) {
+        UnaryOpToken* unaryOp = (UnaryOpToken*) token;
+        compileToken(builder, labels, unaryOp->child);
+        emitPushSymbol(builder, unaryOp->op);
+        emitCall(builder);
     } else if(token->type == TOKEN_BINARY_OP) {
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
         compileToken(builder, labels, binaryOp->left);

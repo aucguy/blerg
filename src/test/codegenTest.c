@@ -47,6 +47,8 @@ void printModule(Module* module) {
             printf("PUSH_INT %i\n", readInt(module, &i));
         } else if(opcode == OP_PUSH_SYMBOL) {
             printIndexArgOp("PUSH_SYMBOL", module, &i);
+        } else if(opcode == OP_PUSH_LITERAL) {
+            printIndexArgOp("PUSH_LITERAL", module, &i);
         } else if(opcode == OP_PUSH_NONE) {
             printf("PUSH_NONE\n");
         } else if(opcode == OP_CALL) {
@@ -192,6 +194,46 @@ const char* codegenTestJumps() {
     emitReturn(builder);
 
     emitLabel(builder, endLabel);
+    emitPushNone(builder);
+    emitReturn(builder);
+
+    Module* expected = builderToModule(builder);
+    destroyModuleBuilder(builder);
+
+    assert(modulesEqual(compiled, expected), "modules not equal");
+
+    destroyModule(compiled);
+    destroyModule(expected);
+
+    return NULL;
+}
+
+const char* codegenTestLiteralUnaryOp() {
+    BlockToken* ast = parseModule("def main x do <- not 'hello'; end");
+    assert(validateModule(ast), "invalid ast");
+    Token* transformed = (Token*) transformModule(ast);
+    destroyToken((Token*) ast);
+    Module* compiled = compileModule(transformed);
+    destroyToken(transformed);
+
+
+    ModuleBuilder* builder = createModuleBuilder();
+    int mainEntry = createLabel(builder);
+    emitCreateFunc(builder, mainEntry);
+    emitStore(builder, "main");
+    emitPushNone(builder);
+    emitReturn(builder);
+
+    emitLabel(builder, mainEntry);
+    const char* args[1] = {
+            "x"
+    };
+    emitDefFunc(builder, 1, args);
+    emitPushLiteral(builder, "hello");
+    emitPushSymbol(builder, "not");
+    emitCall(builder);
+    emitReturn(builder);
+
     emitPushNone(builder);
     emitReturn(builder);
 
