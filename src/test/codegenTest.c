@@ -5,6 +5,7 @@
 #include "main/parse.h"
 #include "main/validate.h"
 #include "main/transform.h"
+#include "main/bytecode.h"
 #include "main/codegen.h"
 
 #include "test/tests.h"

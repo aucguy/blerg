@@ -3,8 +3,10 @@
 #include "main/parse.h"
 #include "main/validate.h"
 #include "main/transform.h"
+#include "main/bytecode.h"
 #include "main/codegen.h"
 #include "main/execute.h"
+
 #include "test/tests.h"
 
 Module* sourceToModule(const char* src) {

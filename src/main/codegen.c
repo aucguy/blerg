@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "main/bytecode.h"
 #include "main/codegen.h"
 
 //when the module is being compiled, the constant table and the bytecode are

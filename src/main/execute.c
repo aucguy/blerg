@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
+#include "main/bytecode.h"
 #include "main/execute.h"
-#include "main/codegen.h"
 
 ThingType* createThingType() {
     ThingType* type = malloc(sizeof(ThingType));
