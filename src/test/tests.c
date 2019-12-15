@@ -4,6 +4,7 @@
 #include "test/validateTest.h"
 #include "test/transformTest.h"
 #include "test/codegenTest.h"
+#include "test/executeTest.h"
 
 void runTest(const char* name, const char* msg, int* status) {
     if(msg != NULL) {
@@ -35,6 +36,8 @@ int runTests() {
     runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);
     runTest("codegenTestLiteralUnaryOp", codegenTestLiteralUnaryOp(), &status);
+
+    runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

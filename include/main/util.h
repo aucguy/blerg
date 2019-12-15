@@ -87,6 +87,13 @@ typedef struct {
 } Map;
 
 Map* createMap();
+
+/**
+ * Creates a shallow copy of the map. The structure is copied, but the keys and
+ * values are not.
+ */
+Map* copyMap(Map* map);
+
 /**
  * Destroys the map.
  *

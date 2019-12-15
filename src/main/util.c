@@ -96,6 +96,23 @@ Map* createMap() {
     return map;
 }
 
+Entry* copyEntry(Entry* original) {
+    if(original == NULL) {
+        return NULL;
+    }
+    Entry* copy = (Entry*) malloc(sizeof(Entry));
+    copy->key = original->key;
+    copy->value = original->value;
+    copy->tail = copyEntry(original->tail);
+    return copy;
+}
+
+Map* copyMap(Map* original) {
+    Map* copy = (Map*) malloc(sizeof(Map));
+    copy->entry = copyEntry(original->entry);
+    return copy;
+}
+
 void destroyEntry(Entry* entry, void(*destroyKey)(void*), void(*destroyValue)(void*)) {
     if(entry == NULL) {
         return;
