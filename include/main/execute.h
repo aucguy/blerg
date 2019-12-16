@@ -93,8 +93,9 @@ int thingAsInt(Thing* thing);
 
 /**
  * Executes the given module. The function executes the bytecode at index 0
- * until the module returns. Instead of returning the top of the stack, the
- * function returns the scope wrapped in an ObjectThing.
+ * until the module returns. Instead of normally returning the value returned',
+ * (the top of the stack), the function returns the scope wrapped in an
+ * ObjectThing.
  *
  * @param runtime the runtime object
  * @param module the module whose global scope is to be determined. Execution
@@ -104,5 +105,20 @@ int thingAsInt(Thing* thing);
  * @return the global scope as an ObjectThing, or NULL upon error.
  */
 Thing* executeModule(Runtime* runtime, Module* module, int* error);
+
+/**
+ * Calls the given function with the given arguments. Currently, partial
+ * application is not supported, so the number of arguments supplied must match
+ * the arity of the function.
+ *
+ * @param runtime the runtime object
+ * @param thing the function thing to invoke
+ * @param argNo the number of arguments
+ * @param args an array of Thing* whose length is argNo
+ * @param error set to a nonzero value if an error occurs during execution
+ * @return the thing returned by the function
+ */
+Thing* callFunction(Runtime* runtime, Thing* func, int argNo,
+        Thing** args, int* error);
 
 #endif /* EXECUTE_H_ */

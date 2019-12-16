@@ -44,3 +44,27 @@ const char* executeTestGlobalHasMainFunc() {
     deinitExecute();
     return NULL;
 }
+
+const char* executeTestMainFuncReturns1() {
+    initExecute();
+    Runtime* runtime = createRuntime();
+    int error = 0;
+    Module* module = sourceToModule("def main x do <- 1; end");
+    assert(module != NULL, "error in source code");
+
+    Thing* global = executeModule(runtime, module, &error);
+    Thing* mainFunc = getObjectProperty(global, "main");
+    Thing** args = malloc(sizeof(Thing*) * 1);
+    args[0] = runtime->noneThing;
+    Thing* retVal = callFunction(runtime, mainFunc, 1, args, &error);
+    assert(error == 0 , "failed to execute the function");
+
+    assert(typeOfThing(retVal) == THING_TYPE_INT, "return value is not an integer");
+    assert(thingAsInt(retVal) == 1, "return value is not 1");
+
+    free(args);
+    destroyModule(module);
+    destroyRuntime(runtime);
+    deinitExecute();
+    return NULL;
+}

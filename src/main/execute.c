@@ -88,6 +88,10 @@ void destroyScope(void* scope) {
     free(scope);
 }
 
+void setScopeLocal(Scope* scope, const char* name, Thing* value) {
+    putMapStr(scope->locals, name, value);
+}
+
 /**
  * Creates a thing. If the runtime is destroyed, the object will also be
  * destroyed.
@@ -139,6 +143,11 @@ Thing* createIntThing(Runtime* runtime, int value) {
     IntThing* intThing = thingCustomData(thing);
     intThing->value = value;
     return thing;
+}
+
+int thingAsInt(Thing* thing) {
+    IntThing* data = thingCustomData(thing);
+    return data->value;
 }
 
 /**
@@ -207,11 +216,11 @@ typedef struct {
 /**
  * Creates a StackFrame for the invocation of the function.
  */
-StackFrame* createFuncStackFrame(Runtime* runtime, FuncThing* func) {
+StackFrame* createStackFrame(Module* module, unsigned int index, Scope* scope) {
     StackFrame* frame = malloc(sizeof(StackFrame));
-    frame->module = func->module;
-    frame->index = func->entry;
-    frame->scope = createScope(runtime, func->parentScope);
+    frame->module = module;
+    frame->index = index;
+    frame->scope = scope;
     return frame;
 }
 
@@ -281,14 +290,26 @@ int readI32Frame(StackFrame* frame) {
 }
 
 /**
+ * Reads an unsigned int operand at the given index in the given module.
+ */
+unsigned int readU32Module(Module* module, unsigned int index) {
+    unsigned int arg = module->bytecode[index] << 24;
+    arg |= module->bytecode[index + 1] << 16;
+    arg |= module->bytecode[index + 2] << 8;
+    arg |= module->bytecode[index + 3];
+    return arg;
+}
+
+const char* readConstantModule(Module* module, unsigned int index) {
+    return module->constants[readU32Module(module, index)];
+}
+
+/**
  * Reads an unsigned int operand from the bytecode. Advances the index past the
  * operand.
  */
 unsigned int readU32Frame(StackFrame* frame) {
-    unsigned int arg = frame->module->bytecode[frame->index] << 24;
-    arg |= frame->module->bytecode[frame->index + 1] << 16;
-    arg |= frame->module->bytecode[frame->index + 2] << 8;
-    arg |= frame->module->bytecode[frame->index + 3];
+    unsigned int arg = readU32Module(frame->module, frame->index);
     frame->index += 4;
     return arg;
 }
@@ -301,26 +322,32 @@ const char* readConstant(StackFrame* frame) {
     return frame->module->constants[readU32Frame(frame)];
 }
 
-/**
- * Executes the given given function. This function is used internally. Instead
- * use executeModule or executeFunction to execute bytecode.
- *
- * @param runtime the runtime object
- * @param func the function to execute
- * @param error set to a nonzero value upon error
- * @param flag if 1, the local scope of the function is returned, otherwise
- *          whatever the function returned is returned.
- */
-Thing* executeFuncSpecial(Runtime* runtime, Thing* func, int* error, int flag) {
-    if(typeOfThing(func) != THING_TYPE_FUNC) {
-        *error = 1;
-        return NULL;
-    }
+typedef struct {
+    Runtime* runtime;
+    Module* entryModule;
+    unsigned int entryIndex;
+    Scope* bottomScope;
+} ExecCodeArgs;
 
-    FuncThing* funcThing = thingCustomData(func);
+/**
+ * Executes the given bytecode. Since there are so many arguments, the
+ * arguments are stored in a struct.
+ *
+ * @param allArgs.runtime the runtime object
+ * @param allArgs.entryModule the module of the code being executed
+ * @param allArgs.entryIndex the index to start execution
+ * @param allArgs.bottomScope the scope that the code is executed under. It is
+ *          the scope of the bottom stackframe.
+ * @param error set to a nonzero value upon error
+ * @returns the value returned from the invocation / bottom stackframe.
+ */
+Thing* executeCode(ExecCodeArgs allArgs, int* error) {
+    Runtime* runtime = allArgs.runtime;
+
     int initStackFrameSize = stackFrameSize(runtime);
-    pushStackFrame(runtime, createFuncStackFrame(runtime, funcThing));
-    Scope* global = currentStackFrame(runtime)->scope;
+
+    pushStackFrame(runtime, createStackFrame(allArgs.entryModule,
+            allArgs.entryIndex, allArgs.bottomScope));
 
     while(stackFrameSize(runtime) > initStackFrameSize) {
         StackFrame* currentFrame = currentStackFrame(runtime);
@@ -345,18 +372,55 @@ Thing* executeFuncSpecial(Runtime* runtime, Thing* func, int* error, int flag) {
             const char* constant = readConstant(currentFrame);
             Thing* value = popStack(runtime);
             putMapStr(currentFrame->scope->locals, constant, value);
+        } else {
+            //unknown opcode
+            *error = 1;
+            return NULL;
         }
     }
 
-    if(flag) {
-        return createObjectThingFromMap(runtime, global->locals);
-    } else {
-        return popStack(runtime);
-    }
+    return popStack(runtime);
 }
 
 Thing* executeModule(Runtime* runtime, Module* module, int* error) {
-    //wrap the module in a function
-    Thing* entry = createFuncThing(runtime, 0, module, NULL);
-    return executeFuncSpecial(runtime, entry, error, 1);
+    ExecCodeArgs allArgs;
+    allArgs.runtime = runtime;
+    allArgs.entryModule = module;
+    allArgs.entryIndex = 0;
+    //modules have no global scope.
+    allArgs.bottomScope = createScope(runtime, NULL);
+    executeCode(allArgs, error);
+    return createObjectThingFromMap(runtime, allArgs.bottomScope->locals);
+}
+
+Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args, int* error) {
+    if(typeOfThing(func) != THING_TYPE_FUNC) {
+        *error = 1;
+        return NULL;
+    }
+    FuncThing* funcThing = thingCustomData(func);
+    int index = funcThing->entry;
+    if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
+        *error = 1;
+        return NULL;
+    }
+    //currently partial application is not supported, the the number of
+    //arguments provided must match the arity of the function
+    if(funcThing->module->bytecode[index++] != argNo) {
+        *error = 1;
+        return NULL;
+    }
+    //assign the arguments provided to the names of the variables in the local
+    //scope.
+    Scope* scope = createScope(runtime, funcThing->parentScope);
+    for(int i = 0; i < argNo; i++) {
+        setScopeLocal(scope, readConstantModule(funcThing->module, index), args[i]);
+        index += 4;
+    }
+    ExecCodeArgs allArgs;
+    allArgs.runtime = runtime;
+    allArgs.entryModule = funcThing->module;
+    allArgs.entryIndex = index;
+    allArgs.bottomScope = scope;
+    return executeCode(allArgs, error);
 }

@@ -2,5 +2,6 @@
 #define EXECUTETEST_H_
 
 const char* executeTestGlobalHasMainFunc();
+const char* executeTestMainFuncReturns1();
 
 #endif /* EXECUTETEST_H_ */
