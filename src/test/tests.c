@@ -28,12 +28,12 @@ int runTests() {
     runTest("parseTestWhileStmt", parseTestWhileStmt(), &status);
     runTest("parseTestFunc", parseTestFunc(), &status);
 
-    /*runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
+    runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
     runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
 
-    runTest("codegenTestSimple", codegenTestSimple(), &status);
+    /*runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);
     runTest("codegenTestLiteralUnaryOp", codegenTestLiteralUnaryOp(), &status);
 

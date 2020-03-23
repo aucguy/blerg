@@ -3,12 +3,13 @@
 #include "main/parse.h"
 #include "main/tokens.h"
 #include "main/transform.h"
+#include "main/util.h"
 
 #include "test/transformTest.h"
 #include "test/tests.h"
 
 const char* transformTestControlToJumps() {
-    Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = 2; else c = 3; end end d = 4; end");
+    Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end");
     Token* transformed = (Token*) transformControlToJumps((BlockToken*) parsed);
 
     List* args = consList(createIdentifierToken(newStr("z")), NULL);
@@ -18,7 +19,9 @@ const char* transformTestControlToJumps() {
         (Token*) createLabelToken(newStr("$0")),
         (Token*) createCondJumpToken((Token*) createIntToken(0), newStr("$1"), 0),
         (Token*) createCondJumpToken((Token*) createIntToken(0), newStr("$2"), 0),
-        (Token*) createAssignmentToken(createIdentifierToken(newStr("b")), (Token*) createIntToken(2)),
+        (Token*) createAssignmentToken(createIdentifierToken(newStr("b")), (Token*) createCallToken(
+                consList(createIdentifierToken(newStr("g")),
+                consList((Token*) createIntToken(2), NULL)))),
         (Token*) createAbsJumpToken(newStr("$3")),
         (Token*) createLabelToken(newStr("$2")),
         (Token*) createAssignmentToken(createIdentifierToken(newStr("c")), (Token*) createIntToken(3)),

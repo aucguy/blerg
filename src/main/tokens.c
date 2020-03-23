@@ -162,9 +162,17 @@ int equalsCallToken(Token* self, Token* other) {
     return childrenA == NULL && childrenB == NULL;
 }
 
+List* copyTokenList(List* old) {
+    if(old == NULL) {
+        return NULL;
+    } else {
+        return consList(copyToken(old->head), copyTokenList(old->tail));
+    }
+}
+
 Token* copyCallToken(Token* self) {
-    //TODO
-    return NULL;
+    List* children = copyTokenList(((CallToken*) self)->children);
+    return (Token*) createCallToken(children);
 }
 
 Token CALL_TYPE = {
