@@ -223,6 +223,7 @@ typedef struct {
     const char* value;
 } SymbolThing;
 
+//this is now incorrect without currying
 Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
     Thing* operation = args[0];
     Thing* operand = args[1];

@@ -183,6 +183,23 @@ Token* parseFactor(ParseState* state) {
     }
 }
 
+//'end' is not an operator; it signifies that the end of the array of operators
+#define OP_LEVELS 5
+#define OP_AMOUNT 8
+const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
+        //' ' is the application operator. It sits invisible between a function
+        { "*", "/", "end" },
+        { "+", "-", "end" },
+        { "==", "!=", ">", ">=", "<", "<=", "end" },
+        //the 'prefix' isn't an operator; it signifies that this level contains
+        //prefix unary operators.
+        { "prefix", "not", "end" },
+        { "and", "or", "end" }
+};
+
+const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
+        "end", "and", "or", "not", "~" };
+
 /**
  * Returns whether or not the next characters matches the given string. If the
  * string is "0" then the function returns if the end of the source has been
@@ -220,25 +237,38 @@ int lookAheadMulti(ParseState* state, const char* strs[]) {
     return 0;
 }
 
+int factorAhead(ParseState* state) {
+    char c = getChar(state);
+    return c == '(' || c == '\'' || containsChar(INT_CHARS, c) != 0 ||
+            (containsChar(IDENTIFIER_CHARS, c) != 0 &&
+                    !lookAheadMulti(state, KEYWORDS));
+}
 
-//'end' is not an operator; it signifies that the end of the array of operators
-#define OP_LEVELS 6
-#define OP_AMOUNT 8
-const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
-        //' ' is the application operator. It sits invisible between a function
-        //and its argument
-        { " ", "end" },
-        { "*", "/", "end" },
-        { "+", "-", "end" },
-        { "==", "!=", ">", ">=", "<", "<=", "end" },
-        //the 'prefix' isn't an operator; it signifies that this level contains
-        //prefix unary operators.
-        { "prefix", "not", "end" },
-        { "and", "or", "end" }
-};
+Token* parseCall(ParseState* state) {
+    skipWhitespace(state);
+    //the first token may just be by itself or be the function in the call
+    Token* first = parseFactor(state);
+    if(first == NULL) {
+        return NULL;
+    }
 
-const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
-        "end", "and", "or", "not", "~" };
+    skipWhitespace(state);
+    //check if its a lone factor or a function call
+    if(!factorAhead(state)) {
+        return first;
+    }
+
+    //its a function call
+    List* children = consList(first, NULL);
+    while(factorAhead(state)) {
+        children = consList(parseFactor(state), children);
+        skipWhitespace(state);
+    }
+
+    List* reversed = reverseList(children);
+    destroyShallowList(children);
+    return (Token*) createCallToken(reversed);
+}
 
 /**
  * Returns the operator for the given level.
@@ -255,6 +285,7 @@ const char* getOp(ParseState* state, int level) {
             continue;
         }
         if(strcmp(checking, " ") == 0) {
+            //unused branch
             //the operator is application if the next character is a token.
             //skip the operator, but don't move the state forward
             int index = state->index;
@@ -362,7 +393,7 @@ Token* parsePrefixUnaryOp(ParseState* state, int level) {
 
 Token* parseExpressionWithLevel(ParseState* state, int level) {
     if(level == -1) {
-        return parseFactor(state);
+        return parseCall(state);
     } else if(strcmp(OP_DATA[level][0], "prefix") == 0) {
         return parsePrefixUnaryOp(state, level);
     } else {

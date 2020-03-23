@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "main/tokens.h"
+#include "main/util.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -126,6 +127,58 @@ IdentifierToken* createIdentifierToken(const char* value) {
     IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
     token->token = IDENTIFIER_TYPE;
     token->value = value;
+    return token;
+}
+
+void destroyCallToken(Token* self) {
+    List* children = ((CallToken*) self)->children;
+    while(children != NULL) {
+        destroyToken(children->head);
+        children = children->tail;
+    }
+    destroyShallowList(((CallToken*) self)->children);
+}
+
+void printCallToken(Token* self, int indent) {
+    printf("call:\n");
+    List* children = ((CallToken*) self)->children;
+    while(children != NULL) {
+        printTokenWithIndent(children->head, indent + 1);
+        children = children->tail;
+    }
+}
+int equalsCallToken(Token* self, Token* other) {
+    List* childrenA = ((CallToken*) self)->children;
+    List* childrenB = ((CallToken*) other)->children;
+
+    while(childrenA != NULL && childrenB != NULL) {
+        if(!tokensEqual(childrenA->head, childrenB->head)) {
+            return 0;
+        }
+        childrenA = childrenA->tail;
+        childrenB = childrenB->tail;
+    }
+
+    return childrenA == NULL && childrenB == NULL;
+}
+
+Token* copyCallToken(Token* self) {
+    //TODO
+    return NULL;
+}
+
+Token CALL_TYPE = {
+        TOKEN_CALL,
+        destroyCallToken,
+        printCallToken,
+        equalsCallToken,
+        copyCallToken
+};
+
+CallToken* createCallToken(List* children) {
+    CallToken* token = (CallToken*) malloc(sizeof(CallToken));
+    token->token = CALL_TYPE;
+    token->children = children;
     return token;
 }
 

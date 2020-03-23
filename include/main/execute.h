@@ -10,6 +10,8 @@
  * ObjectThing. Each thing is stored as a Thing struct followed by custom data
  * which is specificed by its type (Int, Literal, Func, Object, etc).
  *
+ * The following does not apply
+ *
  * Additionally, there are currently some restrictions on which how code can
  * execute. This will later be removed.
  *
@@ -47,6 +49,7 @@ typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
     void (*destroy)(struct Thing*);
+    //correct despite the change of design not to curry
     Thing* (*call)(Runtime*, Thing*, Thing**, int*);
     unsigned char (*arity)();
 } ThingType;
@@ -54,9 +57,11 @@ typedef struct {
 //different builtin types. Initialized in initExecute.
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
+//without currying, there will be symbols, but for now this should be removed
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
+//without currying, there will be partials, used differently, this should be removed
 ThingType* THING_TYPE_PARTIAL;
 
 /**

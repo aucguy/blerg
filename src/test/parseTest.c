@@ -45,7 +45,7 @@ const char* testParseIdentifier() {
 }
 
 const char* testParseExpression() {
-    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and f b == c or not d");
+    ParseState* state = createParseState("2 * ( a + 1 ) > 5 and f b z == c or not d");
     Token* parsed = parseExpression(state);
 
     BinaryOpToken* expected = createBinaryOpToken(newStr("or"),
@@ -58,9 +58,10 @@ const char* testParseExpression() {
                                             (Token*) createIntToken(1))),
                             (Token*) createIntToken(5)),
                     (Token*) createBinaryOpToken(newStr("=="),
-                            (Token*) createBinaryOpToken(newStr(" "),
-                                    (Token*) createIdentifierToken(newStr("f")),
-                                    (Token*) createIdentifierToken(newStr("b"))),
+                    		(Token*) createCallToken(
+                    		        consList(createIdentifierToken(newStr("f")),
+                    				consList(createIdentifierToken(newStr("b")),
+                    				consList(createIdentifierToken(newStr("z")), NULL)))),
                             (Token*) createIdentifierToken(newStr("c")))),
             (Token*) createUnaryOpToken(newStr("not"),
                     (Token*) createIdentifierToken(newStr("d"))));
