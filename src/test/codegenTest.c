@@ -19,6 +19,15 @@ int readInt(Module* module, unsigned int* index) {
     return arg;
 }
 
+unsigned int readUInt(Module* module, unsigned int* index) {
+    unsigned int arg = module->bytecode[*index] << 24;
+    arg |= module->bytecode[*index + 1] << 16;
+    arg |= module->bytecode[*index + 2] << 8;
+    arg |= module->bytecode[*index + 3];
+    *index += 4;
+    return arg;
+}
+
 const char* getConstant(Module* module, unsigned int arg) {
     if(arg < module->constantsLength) {
         return module->constants[arg];
@@ -46,14 +55,14 @@ void printModule(Module* module) {
         unsigned char opcode = module->bytecode[i++];
         if(opcode == OP_PUSH_INT) {
             printf("PUSH_INT %i\n", readInt(module, &i));
-        } else if(opcode == OP_PUSH_SYMBOL) {
-            printIndexArgOp("PUSH_SYMBOL", module, &i);
+        } else if(opcode == OP_PUSH_BUILTIN) {
+            printIndexArgOp("PUSH_BUILTIN", module, &i);
         } else if(opcode == OP_PUSH_LITERAL) {
             printIndexArgOp("PUSH_LITERAL", module, &i);
         } else if(opcode == OP_PUSH_NONE) {
             printf("PUSH_NONE\n");
         } else if(opcode == OP_CALL) {
-            printf("CALL\n");
+            printf("CALL %i\n", readUInt(module, &i));
         } else if(opcode == OP_RETURN) {
             printf("RETURN\n");
         } else if(opcode == OP_CREATE_FUNC) {
@@ -126,11 +135,12 @@ const char* codegenTestSimple() {
             "x"
     };
     emitDefFunc(builder, 1, args);
+    emitPushBuiltin(builder, "+");
     emitPushInt(builder, 1);
-    emitPushSymbol(builder, "+");
-    emitCall(builder);
     emitPushInt(builder, 2);
-    emitCall(builder);
+    emitCall(builder, 2);
+    //emitPushInt(builder, 2);
+    //emitCall(builder);
     emitReturn(builder);
     emitPushNone(builder);
     emitReturn(builder);
@@ -167,11 +177,11 @@ const char* codegenTestJumps() {
             "n"
     };
     emitDefFunc(builder, 1, args);
+    emitPushBuiltin(builder, "==");
     emitLoad(builder, "n");
-    emitPushSymbol(builder, "==");
-    emitCall(builder);
     emitPushInt(builder, 0);
-    emitCall(builder);
+    //emitCall(builder);
+    emitCall(builder, 2);
     int elseLabel = createLabel(builder);
     emitCondJump(builder, elseLabel, 0);
 
@@ -181,17 +191,17 @@ const char* codegenTestJumps() {
     emitAbsJump(builder, endLabel);
 
     emitLabel(builder, elseLabel);
+    emitPushBuiltin(builder, "*");
     emitLoad(builder, "n");
-    emitPushSymbol(builder, "*");
-    emitCall(builder);
+    //emitCall(builder);
     emitLoad(builder, "factorial");
+    emitPushBuiltin(builder, "-");
     emitLoad(builder, "n");
-    emitPushSymbol(builder, "-");
-    emitCall(builder);
+    //emitCall(builder);
     emitPushInt(builder, 1);
-    emitCall(builder);
-    emitCall(builder);
-    emitCall(builder);
+    emitCall(builder, 2);
+    emitCall(builder, 1);
+    emitCall(builder, 2);
     emitReturn(builder);
 
     emitLabel(builder, endLabel);
@@ -230,9 +240,9 @@ const char* codegenTestLiteralUnaryOp() {
             "x"
     };
     emitDefFunc(builder, 1, args);
+    emitPushBuiltin(builder, "not");
     emitPushLiteral(builder, "hello");
-    emitPushSymbol(builder, "not");
-    emitCall(builder);
+    emitCall(builder, 1);
     emitReturn(builder);
 
     emitPushNone(builder);

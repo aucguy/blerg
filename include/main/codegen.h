@@ -74,13 +74,14 @@ void emitLabel(ModuleBuilder* builder, int label);
 void emitPushInt(ModuleBuilder* builder, int num);
 
 /**
- * Emits a PUSH_SYMBOL instruction. The function does not hold a reference to
+ * TODO fix documentation
+ * Emits a PUSH_BUILTIN instruction. The function does not hold a reference to
  * symbol. If necessary, it will create a copy to store in the constants table.
  */
-void emitPushSymbol(ModuleBuilder* builder, const char* symbol);
+void emitPushBuiltin(ModuleBuilder* builder, const char* name);
 void emitPushLiteral(ModuleBuilder* builder, const char* literal);
 void emitPushNone(ModuleBuilder* builder);
-void emitCall(ModuleBuilder* builder);
+void emitCall(ModuleBuilder* builder, unsigned int arity);
 void emitReturn(ModuleBuilder* builder);
 
 /**

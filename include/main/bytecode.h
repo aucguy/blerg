@@ -9,17 +9,17 @@ enum INSTRUCTIONS {
     //args: index (signed int)
     //stack: -> symbol
     //reads an integer from the bytecode, looks it up in the constant table,
-    //and pushes the symbol onto the stack
-    OP_PUSH_SYMBOL,
+    //and pushes the associated builtin value onto the stack.
+    OP_PUSH_BUILTIN,
     OP_PUSH_LITERAL,
     //args:
     //stack: -> None
     //pushes the None object onto the stack
     OP_PUSH_NONE,
-    //args:
-    //stack: f x -> y
-    //pops x then f off the stack, calls f with x and then pushes the returned
-    //value onto the stack.
+    //args: arity (int)
+    //stack: f x_1 x_2 ... x_n -> y
+    //pops each x and f off the stack, calls f with each x and then pushes the
+    //returned value onto the stack.
     OP_CALL,
     //args:
     //stack: x ->

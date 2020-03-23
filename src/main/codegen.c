@@ -124,9 +124,9 @@ void emitPushInt(ModuleBuilder* builder, int num) {
     emitInt(builder, num);
 }
 
-void emitPushSymbol(ModuleBuilder* builder, const char* symbol) {
-    emitByte(builder, OP_PUSH_SYMBOL);
-    emitUInt(builder, internConstant(builder, symbol));
+void emitPushBuiltin(ModuleBuilder* builder, const char* name) {
+    emitByte(builder, OP_PUSH_BUILTIN);
+    emitUInt(builder, internConstant(builder, name));
 }
 
 void emitPushLiteral(ModuleBuilder* builder, const char* literal) {
@@ -138,8 +138,9 @@ void emitPushNone(ModuleBuilder* builder) {
     emitByte(builder, OP_PUSH_NONE);
 }
 
-void emitCall(ModuleBuilder* builder) {
+void emitCall(ModuleBuilder* builder, unsigned int arity) {
     emitByte(builder, OP_CALL);
+    emitUInt(builder, arity);
 }
 
 void emitReturn(ModuleBuilder* builder) {
@@ -270,22 +271,34 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         compileToken(builder, labels, condJump->condition);
         int* label = (int*) getMapStr(labels, condJump->label);
         emitCondJump(builder, *label, condJump->when);
+    } else if(token->type == TOKEN_CALL) {
+        CallToken* call = (CallToken*) token;
+        List* children = call->children;
+        unsigned int count = 0;
+        while(children != NULL) {
+            compileToken(builder, labels, children->head);
+            children = children->tail;
+            count++;
+        }
+        emitCall(builder, count - 1);
     } else if(token->type == TOKEN_UNARY_OP) {
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
+        emitPushBuiltin(builder, unaryOp->op);
         compileToken(builder, labels, unaryOp->child);
-        emitPushSymbol(builder, unaryOp->op);
-        emitCall(builder);
+        emitCall(builder, 1);
     } else if(token->type == TOKEN_BINARY_OP) {
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
+        emitPushBuiltin(builder, binaryOp->op);
         compileToken(builder, labels, binaryOp->left);
         //the " " operator is really just a function call, so it does not
         //need to be passed to the left operand
-        if(strcmp(binaryOp->op, " ") != 0) {
-            emitPushSymbol(builder, binaryOp->op);
-            emitCall(builder);
-        }
+        //unused
+        //if(strcmp(binaryOp->op, " ") != 0) {
+        //    emitPushSymbol(builder, binaryOp->op);
+        //    emitCall(builder);
+        //}
         compileToken(builder, labels, binaryOp->right);
-        emitCall(builder);
+        emitCall(builder, 2);
     } else if(token->type == TOKEN_RETURN) {
         ReturnToken* ret = (ReturnToken*) token;
         compileToken(builder, labels, ret->body);

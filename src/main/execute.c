@@ -552,9 +552,10 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
         if(opcode == OP_PUSH_INT) {
             int value = readI32Frame(currentFrame);
             pushStack(runtime, createIntThing(runtime, value));
-        } else if(opcode == OP_PUSH_SYMBOL) {
-            const char* constant = readConstant(currentFrame);
-            pushStack(runtime, createSymbolThing(runtime, constant));
+        //TODO fix
+        //} else if(opcode == OP_PUSH_SYMBOL) {
+        //    const char* constant = readConstant(currentFrame);
+        //    pushStack(runtime, createSymbolThing(runtime, constant));
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
         } else if(opcode == OP_RETURN) {

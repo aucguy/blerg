@@ -33,11 +33,11 @@ int runTests() {
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
 
-    /*runTest("codegenTestSimple", codegenTestSimple(), &status);
+    runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);
     runTest("codegenTestLiteralUnaryOp", codegenTestLiteralUnaryOp(), &status);
 
-    runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
+    /*runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
     runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);*/
     //runTest("executeTestAddFunction", executeTestAddFunction(), &status);
 
