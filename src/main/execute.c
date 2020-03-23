@@ -1,7 +1,10 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "main/bytecode.h"
 #include "main/execute.h"
+
+#define UNUSED(x) (void)(x)
 
 ThingType* createThingType() {
     ThingType* type = malloc(sizeof(ThingType));
@@ -9,19 +12,44 @@ ThingType* createThingType() {
     return type;
 }
 
-void setDestroyThingType(ThingType* type, void(*destroy)(Thing*)) {
+void setDestroyThingType(ThingType* type, void (*destroy)(Thing*)) {
     type->destroy = destroy;
 }
 
-ThingType* typeOfThing(Thing* thing) {
-    return thing->type;
+void setCallThingType(ThingType* type, Thing* (*call)(Runtime*, Thing*, Thing**, int*)) {
+    type->call = call;
+}
+
+void setArityThingType(ThingType* type, unsigned char (*arity)(Thing*)) {
+    type->arity = arity;
 }
 
 void destroySimpleThing(Thing* thing) {
     free(thing);
 }
 
+Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, int* error) {
+    UNUSED(runtime);
+    UNUSED(thing);
+    UNUSED(args);
+    *error = 1;
+    return NULL;
+}
+
+unsigned char arityOne(Thing* thing) {
+    UNUSED(thing);
+    return 1;
+}
+
+unsigned char arityTwo(Thing* thing) {
+    UNUSED(thing);
+    return 2;
+}
+
+Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error);
+
 void destroyObjectThing(Thing* thing);
+void destroyPartialThing(Thing* thing);
 
 static int initialized = 0;
 
@@ -29,15 +57,35 @@ void initExecute() {
     if(!initialized) {
         THING_TYPE_NONE = createThingType();
         setDestroyThingType(THING_TYPE_NONE, destroySimpleThing);
+        setCallThingType(THING_TYPE_NONE, errorCall);
+        setArityThingType(THING_TYPE_NONE, arityOne);
+
+        THING_TYPE_SYMBOL = createThingType();
+        setDestroyThingType(THING_TYPE_SYMBOL, destroySimpleThing);
+        setCallThingType(THING_TYPE_SYMBOL, errorCall);
+        setArityThingType(THING_TYPE_SYMBOL, arityOne);
 
         THING_TYPE_INT = createThingType();
         setDestroyThingType(THING_TYPE_INT, destroySimpleThing);
+        setCallThingType(THING_TYPE_INT, intCall);
+        setArityThingType(THING_TYPE_INT, arityTwo);
 
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
+        setCallThingType(THING_TYPE_OBJ, errorCall);
+        setArityThingType(THING_TYPE_OBJ, arityOne);
 
         THING_TYPE_FUNC = createThingType();
         setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
+        setCallThingType(THING_TYPE_FUNC, errorCall);
+        setArityThingType(THING_TYPE_FUNC, arityOne);
+
+        THING_TYPE_PARTIAL = createThingType();
+        setDestroyThingType(THING_TYPE_PARTIAL, destroyPartialThing);
+        //these can be null since the interpreter handles partials specially
+        //so these will never be accessed.
+        setCallThingType(THING_TYPE_PARTIAL, NULL);
+        setArityThingType(THING_TYPE_PARTIAL, NULL);
 
         initialized = 1;
     }
@@ -51,14 +99,24 @@ void deinitExecute() {
         free(THING_TYPE_INT);
         THING_TYPE_INT = NULL;
 
+        free(THING_TYPE_SYMBOL);
+        THING_TYPE_SYMBOL = NULL;
+
         free(THING_TYPE_OBJ);
         THING_TYPE_OBJ = NULL;
 
         free(THING_TYPE_FUNC);
         THING_TYPE_FUNC = NULL;
 
+        free(THING_TYPE_PARTIAL);
+        THING_TYPE_PARTIAL = NULL;
+
         initialized = 0;
     }
+}
+
+ThingType* typeOfThing(Thing* thing) {
+    return thing->type;
 }
 
 /**
@@ -86,6 +144,17 @@ Scope* createScope(Runtime* runtime, Scope* parent) {
 void destroyScope(void* scope) {
     destroyMap(((Scope*) scope)->locals, nothing, nothing);
     free(scope);
+}
+
+Thing* getScopeValue(Scope* scope, const char* name) {
+    Thing* value = getMapStr(scope->locals, name);
+    if(value != NULL) {
+        return value;
+    } else if(scope->locals != NULL) {
+        return getScopeValue(scope->parent, name);
+    } else {
+        return NULL;
+    }
 }
 
 void setScopeLocal(Scope* scope, const char* name, Thing* value) {
@@ -150,6 +219,36 @@ int thingAsInt(Thing* thing) {
     return data->value;
 }
 
+typedef struct {
+    const char* value;
+} SymbolThing;
+
+Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
+    Thing* operation = args[0];
+    Thing* operand = args[1];
+    if(typeOfThing(operation) != THING_TYPE_SYMBOL) {
+        *error = 1;
+        return NULL;
+    }
+    SymbolThing* symbol = thingCustomData(operation);
+    if(strcmp(symbol->value, "+") != 0) {
+        *error = 1;
+        return NULL;
+    }
+    if(typeOfThing(operand) != THING_TYPE_INT) {
+        *error = 1;
+        return NULL;
+    }
+    return createIntThing(runtime, thingAsInt(self) + thingAsInt(operand));
+}
+
+Thing* createSymbolThing(Runtime* runtime, const char* value) {
+    Thing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
+    SymbolThing* symbolThing = thingCustomData(thing);
+    symbolThing->value = value;
+    return thing;
+}
+
 /**
  * Used for module objects and object literals. Associates strings with things.
  */
@@ -200,10 +299,64 @@ Thing* createFuncThing(Runtime* runtime, unsigned int entry,
 }
 
 /**
- * Holds one item of the call stack. This keeps track of the current execution
- * state for a given invocation. Multiple of these can exist as functions call
- * other functions.
+ * PartialThing represents a partial application of a function. If a function's
+ * arguments are not fully applied during a call operation, its arguments are
+ * stored in a PartialThing.
  */
+typedef struct {
+    //the function to call once all the arguments are provided
+    Thing* func;
+    //the number of arguments applied in this partial application
+    unsigned char provided;
+    //an array of arguments applied in this partial application. The length is
+    //equal to provided.
+    Thing** applied;
+} PartialThing;
+
+Thing* createPartialThing(Runtime* runtime, Thing* func, unsigned char provided, Thing** applied) {
+    Thing* thing = createThing(runtime, THING_TYPE_PARTIAL, sizeof(PartialThing));
+    PartialThing* partialThing = thingCustomData(thing);
+    partialThing->func = func;
+    partialThing->provided = provided;
+    partialThing->applied = applied;
+    return thing;
+}
+
+void destroyPartialThing(Thing* thing) {
+    PartialThing* partialThing = thingCustomData(thing);
+    free(partialThing->applied);
+    free(thing);
+}
+
+/**
+ * Creates an array of things whose length is 1 and whose sole element is the
+ * given argument
+ */
+Thing** createSingletonThingArray(Thing* thing) {
+    Thing** array = malloc(sizeof(Thing*));
+    array[0] = thing;
+    return array;
+}
+
+/**
+ * Copies the array, extends the new array by one element and sets that element
+ * to add.
+ *
+ * @param length the number of elements in original
+ * @param original the elements that should be the start of the returned array
+ * @param add the last element of the returned array
+ * @return an array whose length is length + 1, whose ith element is
+ *      original[i] for 0 <= i < length and original[length] = add.
+ */
+Thing** appendThingArray(unsigned int length, Thing** original, Thing* add) {
+    Thing** modified = malloc(sizeof(Thing*) * (length + 1));
+    for(unsigned int i = 0; i < length; i++) {
+        modified[i] = original[i];
+    }
+    modified[length] = add;
+    return modified;
+}
+
 typedef struct {
     //the module that is currently executing.
     Module* module;
@@ -211,16 +364,49 @@ typedef struct {
     unsigned int index;
     //the current scope
     Scope* scope;
+} StackFrameDef;
+
+typedef struct {
+    char dummy;
+} StackFrameNative;
+
+typedef enum {
+    STACK_FRAME_DEF,
+    STACK_FRAME_NATIVE
+} STACK_FRAME_TYPE;
+
+/**
+ * Holds one item of the call stack. This keeps track of the current execution
+ * state for a given invocation. Multiple of these can exist as functions call
+ * other functions.
+ *
+ * There are two different types of stack frames; one for blerg code and one
+ * for native code. The blerg code type keeps track of the execution state,
+ * while the native code type simply denotes that native code is being executed.
+ */
+typedef struct {
+    STACK_FRAME_TYPE type;
+    union {
+        StackFrameDef def;
+        StackFrameNative native;
+    };
 } StackFrame;
 
 /**
  * Creates a StackFrame for the invocation of the function.
  */
-StackFrame* createStackFrame(Module* module, unsigned int index, Scope* scope) {
+StackFrame* createStackFrameDef(Module* module, unsigned int index, Scope* scope) {
     StackFrame* frame = malloc(sizeof(StackFrame));
-    frame->module = module;
-    frame->index = index;
-    frame->scope = scope;
+    frame->type = STACK_FRAME_DEF;
+    frame->def.module = module;
+    frame->def.index = index;
+    frame->def.scope = scope;
+    return frame;
+}
+
+StackFrame* createStackFrameNative() {
+    StackFrame* frame = malloc(sizeof(StackFrame));
+    frame->type = STACK_FRAME_NATIVE;
     return frame;
 }
 
@@ -281,11 +467,13 @@ Thing* popStack(Runtime* runtime) {
  * Reads an int operand from the bytecode. Advances the index past the operand.
  */
 int readI32Frame(StackFrame* frame) {
-    int arg = frame->module->bytecode[frame->index] << 24;
-    arg |= frame->module->bytecode[frame->index + 1] << 16;
-    arg |= frame->module->bytecode[frame->index + 2] << 8;
-    arg |= frame->module->bytecode[frame->index + 3];
-    frame->index += 4;
+    const unsigned char* bytecode = frame->def.module->bytecode;
+    unsigned char index = frame->def.index;
+    int arg = bytecode[index] << 24;
+    arg |= bytecode[index + 1] << 16;
+    arg |= bytecode[index + 2] << 8;
+    arg |= bytecode[index + 3];
+    frame->def.index += 4;
     return arg;
 }
 
@@ -309,8 +497,8 @@ const char* readConstantModule(Module* module, unsigned int index) {
  * operand.
  */
 unsigned int readU32Frame(StackFrame* frame) {
-    unsigned int arg = readU32Module(frame->module, frame->index);
-    frame->index += 4;
+    unsigned int arg = readU32Module(frame->def.module, frame->def.index);
+    frame->def.index += 4;
     return arg;
 }
 
@@ -319,7 +507,7 @@ unsigned int readU32Frame(StackFrame* frame) {
  * index past the operand.
  */
 const char* readConstant(StackFrame* frame) {
-    return frame->module->constants[readU32Frame(frame)];
+    return frame->def.module->constants[readU32Frame(frame)];
 }
 
 typedef struct {
@@ -346,17 +534,26 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
 
     int initStackFrameSize = stackFrameSize(runtime);
 
-    pushStackFrame(runtime, createStackFrame(allArgs.entryModule,
+    pushStackFrame(runtime, createStackFrameDef(allArgs.entryModule,
             allArgs.entryIndex, allArgs.bottomScope));
 
     while(stackFrameSize(runtime) > initStackFrameSize) {
         StackFrame* currentFrame = currentStackFrame(runtime);
-        Module* module = currentFrame->module;
-        unsigned char opcode = module->bytecode[currentFrame->index++];
+        //sanity check, native frames should end before the interpreter loop.
+        //if this fails then there is some sort of internal error.
+        if(currentFrame->type != STACK_FRAME_DEF) {
+            *error = 1;
+            return NULL;
+        }
+        Module* module = currentFrame->def.module;
+        unsigned char opcode = module->bytecode[currentFrame->def.index++];
 
         if(opcode == OP_PUSH_INT) {
             int value = readI32Frame(currentFrame);
             pushStack(runtime, createIntThing(runtime, value));
+        } else if(opcode == OP_PUSH_SYMBOL) {
+            const char* constant = readConstant(currentFrame);
+            pushStack(runtime, createSymbolThing(runtime, constant));
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
         } else if(opcode == OP_RETURN) {
@@ -365,13 +562,56 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
             pushStack(runtime, retVal);
         } else if(opcode == OP_CREATE_FUNC) {
             int entry = readU32Frame(currentFrame);
-            Scope* scope = currentFrame->scope;
+            Scope* scope = currentFrame->def.scope;
             Thing* toPush = createFuncThing(runtime, entry, module, scope);
             pushStack(runtime, toPush);
+        } else if(opcode == OP_LOAD) {
+            const char* constant = readConstant(currentFrame);
+            pushStack(runtime, getScopeValue(currentFrame->def.scope, constant));
         } else if(opcode == OP_STORE) {
             const char* constant = readConstant(currentFrame);
             Thing* value = popStack(runtime);
-            putMapStr(currentFrame->scope->locals, constant, value);
+            putMapStr(currentFrame->def.scope->locals, constant, value);
+        } else if(opcode == OP_CALL) {
+            Thing* arg = popStack(runtime);
+            Thing* called = popStack(runtime);
+
+            Thing* func = NULL;
+            unsigned char provided = 0;
+            Thing** applied = NULL;
+            if(typeOfThing(called) == THING_TYPE_PARTIAL) {
+                PartialThing* partial = thingCustomData(called);
+                provided = partial->provided + 1;
+                applied = appendThingArray(partial->provided, partial->applied,
+                        arg);
+                func = partial->func;
+            } else {
+                provided = 1;
+                applied = createSingletonThingArray(arg);
+                func = called;
+            }
+
+            if(provided == func->type->arity(func)) {
+                if(typeOfThing(func) == THING_TYPE_FUNC) {
+                    //calling functions defined in blerg from blerg code is not
+                    //yet supported.
+                    *error = 1;
+                    return NULL;
+                } else {
+                    pushStackFrame(runtime, createStackFrameNative());
+                    Thing* retVal = func->type->call(runtime, func, applied, error);
+                    if(*error) {
+                        return NULL;
+                    }
+                    pushStack(runtime, retVal);
+                    popStackFrame(runtime);
+                }
+                free(applied);
+            } else {
+                Thing* partial = createPartialThing(runtime, func,
+                        provided, applied);
+                pushStack(runtime, partial);
+            }
         } else {
             //unknown opcode
             *error = 1;
@@ -393,7 +633,9 @@ Thing* executeModule(Runtime* runtime, Module* module, int* error) {
     return createObjectThingFromMap(runtime, allArgs.bottomScope->locals);
 }
 
-Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args, int* error) {
+Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args,
+        int* error) {
+    //currently, native code can only call blerg code
     if(typeOfThing(func) != THING_TYPE_FUNC) {
         *error = 1;
         return NULL;
@@ -404,8 +646,8 @@ Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args, int*
         *error = 1;
         return NULL;
     }
-    //currently partial application is not supported, the the number of
-    //arguments provided must match the arity of the function
+    //currently partial application native code is not supported, so the number
+    //of arguments provided must match the arity of the function
     if(funcThing->module->bytecode[index++] != argNo) {
         *error = 1;
         return NULL;
@@ -414,7 +656,8 @@ Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args, int*
     //scope.
     Scope* scope = createScope(runtime, funcThing->parentScope);
     for(int i = 0; i < argNo; i++) {
-        setScopeLocal(scope, readConstantModule(funcThing->module, index), args[i]);
+        const char* constant = readConstantModule(funcThing->module, index);
+        setScopeLocal(scope, constant, args[i]);
         index += 4;
     }
     ExecCodeArgs allArgs;

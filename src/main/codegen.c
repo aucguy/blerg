@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "main/bytecode.h"
 #include "main/codegen.h"
@@ -309,7 +310,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     List* arg = func->args;
     for(int i = 0; i < argNum; i++) {
         args[i] = (char*) ((IdentifierToken*) arg->head)->value;
-        arg = func->args;
+        arg = arg->tail;
     }
     //indicate the beginning of the function
     emitDefFunc(builder, argNum, (const char**) args);

@@ -9,6 +9,18 @@
  * So there are IntThing, LiteralThing, FuncThing (results of defs) and
  * ObjectThing. Each thing is stored as a Thing struct followed by custom data
  * which is specificed by its type (Int, Literal, Func, Object, etc).
+ *
+ * Additionally, there are currently some restrictions on which how code can
+ * execute. This will later be removed.
+ *
+ * 1) Native code can only call blerg code. Passing a thing that does not
+ * represent code defined in blerg to callFunction will result in an error.
+ *
+ * 2) Blerg code cannot call other blerg code. Attempting to call a function
+ * that was defined in blerg will result in an error.
+ *
+ * 3) The number of arguments supplied to callFunction must match the arity of
+ * the provided function. Partial application in this case is not supported.
  */
 
 /**
@@ -24,6 +36,7 @@ void initExecute();
  */
 void deinitExecute();
 
+typedef struct Runtime Runtime;
 typedef struct Thing Thing;
 
 /**
@@ -33,14 +46,18 @@ typedef struct Thing Thing;
 typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
-    void(*destroy)(struct Thing*);
+    void (*destroy)(struct Thing*);
+    Thing* (*call)(Runtime*, Thing*, Thing**, int*);
+    unsigned char (*arity)();
 } ThingType;
 
 //different builtin types. Initialized in initExecute.
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
+ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
+ThingType* THING_TYPE_PARTIAL;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -53,7 +70,7 @@ struct Thing {
  * The runtime object type. This is a singleton that stores information
  * pertaining to the execution and is used in many different operations.
  */
-typedef struct {
+struct Runtime {
     //Stacks are stored as lists. The first item is the top of the stack.
     //List of StackFrames.
     List* stackFrame;
@@ -68,10 +85,12 @@ typedef struct {
     List* allocatedThings;
     //list of allocated scopes. They are deleted once the runtime is destroyed.
     List* allocatedScopes;
-} Runtime;
+};
 
 Runtime* createRuntime();
 void destroyRuntime(Runtime* runtime);
+
+Thing* createIntThing(Runtime* runtime, int value);
 
 /**
  * Gets the value associated with the given name in the given ObjectThing. If
@@ -107,7 +126,7 @@ int thingAsInt(Thing* thing);
 Thing* executeModule(Runtime* runtime, Module* module, int* error);
 
 /**
- * Calls the given function with the given arguments. Currently, partial
+ * Calls the given thing with the given arguments. Currently, partial
  * application is not supported, so the number of arguments supplied must match
  * the arity of the function.
  *

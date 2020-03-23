@@ -68,3 +68,32 @@ const char* executeTestMainFuncReturns1() {
     deinitExecute();
     return NULL;
 }
+
+const char* executeTestAddFunction() {
+    initExecute();
+    Runtime* runtime = createRuntime();
+    int error = 0;
+    Module* module = sourceToModule("def add x y do <- x + y; end");
+    assert(module != NULL, "error in source code");
+
+    Thing* global = executeModule(runtime, module, &error);
+    assert(error == 0, "error executing global scope");
+    assert(typeOfThing(global) == THING_TYPE_OBJ, "global scope is not an object");
+    Thing* addFunc = getObjectProperty(global, "add");
+    assert(addFunc != NULL, "add function not found")
+    assert(typeOfThing(addFunc) == THING_TYPE_FUNC, "add function is not a function");
+
+    Thing** args = malloc(sizeof(Thing*) * 2);
+    args[0] = createIntThing(runtime, 1);
+    args[1] = createIntThing(runtime, 2);
+    Thing* retVal = callFunction(runtime, addFunc, 2, args, &error);
+    assert(error == 0, "error executing add function");
+    assert(typeOfThing(retVal) == THING_TYPE_INT, "returned value is not an integer");
+    assert(thingAsInt(retVal) == 3, "returned value is not 3");
+
+    destroyRuntime(runtime);
+    destroyModule(module);
+    free(args);
+    deinitExecute();
+    return NULL;
+}
