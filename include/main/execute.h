@@ -90,6 +90,7 @@ struct Runtime {
     List* allocatedThings;
     //list of allocated scopes. They are deleted once the runtime is destroyed.
     List* allocatedScopes;
+    Map* builtins;
 };
 
 Runtime* createRuntime();

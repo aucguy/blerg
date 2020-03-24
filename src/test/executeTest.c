@@ -69,7 +69,7 @@ const char* executeTestMainFuncReturns1() {
     return NULL;
 }
 
-/*const char* executeTestAddFunction() {
+const char* executeTestAddFunction() {
     initExecute();
     Runtime* runtime = createRuntime();
     int error = 0;
@@ -96,4 +96,4 @@ const char* executeTestMainFuncReturns1() {
     free(args);
     deinitExecute();
     return NULL;
-}*/
+}

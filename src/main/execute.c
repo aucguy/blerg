@@ -46,7 +46,7 @@ unsigned char arityTwo(Thing* thing) {
     return 2;
 }
 
-Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error);
+Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error);
 
 void destroyObjectThing(Thing* thing);
 void destroyPartialThing(Thing* thing);
@@ -62,13 +62,13 @@ void initExecute() {
 
         THING_TYPE_SYMBOL = createThingType();
         setDestroyThingType(THING_TYPE_SYMBOL, destroySimpleThing);
-        setCallThingType(THING_TYPE_SYMBOL, errorCall);
-        setArityThingType(THING_TYPE_SYMBOL, arityOne);
+        setCallThingType(THING_TYPE_SYMBOL, symbolCall);
+        setArityThingType(THING_TYPE_SYMBOL, arityTwo);
 
         THING_TYPE_INT = createThingType();
         setDestroyThingType(THING_TYPE_INT, destroySimpleThing);
-        setCallThingType(THING_TYPE_INT, intCall);
-        setArityThingType(THING_TYPE_INT, arityTwo);
+        setCallThingType(THING_TYPE_INT, errorCall);
+        setArityThingType(THING_TYPE_INT, arityOne);
 
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
@@ -219,12 +219,8 @@ int thingAsInt(Thing* thing) {
     return data->value;
 }
 
-typedef struct {
-    const char* value;
-} SymbolThing;
-
 //this is now incorrect without currying
-Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
+/*Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
     Thing* operation = args[0];
     Thing* operand = args[1];
     if(typeOfThing(operation) != THING_TYPE_SYMBOL) {
@@ -241,13 +237,38 @@ Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
         return NULL;
     }
     return createIntThing(runtime, thingAsInt(self) + thingAsInt(operand));
+}*/
+
+int symbolId = 0;
+
+int newSymbolId() {
+    return symbolId++;
 }
 
-Thing* createSymbolThing(Runtime* runtime, const char* value) {
+typedef struct {
+    int id;
+} SymbolThing;
+
+Thing* createSymbolThing(Runtime* runtime, int id) {
     Thing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
     SymbolThing* symbolThing = thingCustomData(thing);
-    symbolThing->value = value;
+    symbolThing->id = id;
     return thing;
+}
+
+
+//not properly supported yet
+Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
+    //only ints supported
+    if(typeOfThing(args[0]) != THING_TYPE_INT || typeOfThing(args[1]) != THING_TYPE_INT) {
+        *error = 1;
+        return NULL;
+    }
+
+    int valueA = thingAsInt(args[0]);
+    int valueB = thingAsInt(args[1]);
+
+    return (Thing*) createIntThing(runtime, valueA + valueB);
 }
 
 /**
@@ -418,6 +439,10 @@ Runtime* createRuntime() {
     runtime->allocatedThings = NULL;
     runtime->allocatedScopes = NULL;
     runtime->noneThing = createNoneThing(runtime);
+    runtime->builtins = createMap();
+
+    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, newSymbolId()));
+
     return runtime;
 }
 
@@ -462,6 +487,14 @@ Thing* popStack(Runtime* runtime) {
     runtime->stack = runtime->stack->tail;
     free(toDelete);
     return thing;
+}
+
+Thing* peekStackIndex(Runtime* runtime, int index) {
+    List* stack = runtime->stack;
+    for(int i = 0; i < index; i++) {
+        stack = stack->tail;
+    }
+    return stack->head;
 }
 
 /**
@@ -552,10 +585,12 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
         if(opcode == OP_PUSH_INT) {
             int value = readI32Frame(currentFrame);
             pushStack(runtime, createIntThing(runtime, value));
-        //TODO fix
         //} else if(opcode == OP_PUSH_SYMBOL) {
         //    const char* constant = readConstant(currentFrame);
         //    pushStack(runtime, createSymbolThing(runtime, constant));
+        } else if(opcode == OP_PUSH_BUILTIN) {
+            const char* constant = readConstant(currentFrame);
+            pushStack(runtime, getMapStr(runtime->builtins, constant));
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
         } else if(opcode == OP_RETURN) {
@@ -575,7 +610,24 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
             Thing* value = popStack(runtime);
             putMapStr(currentFrame->def.scope->locals, constant, value);
         } else if(opcode == OP_CALL) {
-            Thing* arg = popStack(runtime);
+            int arity = (unsigned int) readU32Frame(currentFrame);
+            Thing* func = peekStackIndex(runtime, arity);
+            if(typeOfThing(func) == THING_TYPE_FUNC) {
+                //calling functioned defined in blerg from blerg code is not
+                //yet supported.
+                *error = 1;
+                return NULL;
+            } else {
+                Thing** args = malloc(arity * sizeof(Thing*));
+                for(int i = arity - 1; i >= 0; i--) {
+                    args[i] = popStack(runtime);
+                }
+                popStack(runtime); //pop the function
+                Thing* ret = func->type->call(runtime, func, args, &arity);
+                pushStack(runtime, ret);
+                free(args);
+            }
+            /*Thing* arg = popStack(runtime);
             Thing* called = popStack(runtime);
 
             Thing* func = NULL;
@@ -613,7 +665,7 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
                 Thing* partial = createPartialThing(runtime, func,
                         provided, applied);
                 pushStack(runtime, partial);
-            }
+            }*/
         } else {
             //unknown opcode
             *error = 1;

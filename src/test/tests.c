@@ -37,9 +37,9 @@ int runTests() {
     runTest("codegenTestJumps", codegenTestJumps(), &status);
     runTest("codegenTestLiteralUnaryOp", codegenTestLiteralUnaryOp(), &status);
 
-    /*runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
-    runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);*/
-    //runTest("executeTestAddFunction", executeTestAddFunction(), &status);
+    runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
+    runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);
+    runTest("executeTestAddFunction", executeTestAddFunction(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");
