@@ -49,7 +49,6 @@ unsigned char arityTwo(Thing* thing) {
 Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error);
 
 void destroyObjectThing(Thing* thing);
-void destroyPartialThing(Thing* thing);
 
 static int initialized = 0;
 
@@ -80,13 +79,6 @@ void initExecute() {
         setCallThingType(THING_TYPE_FUNC, errorCall);
         setArityThingType(THING_TYPE_FUNC, arityOne);
 
-        THING_TYPE_PARTIAL = createThingType();
-        setDestroyThingType(THING_TYPE_PARTIAL, destroyPartialThing);
-        //these can be null since the interpreter handles partials specially
-        //so these will never be accessed.
-        setCallThingType(THING_TYPE_PARTIAL, NULL);
-        setArityThingType(THING_TYPE_PARTIAL, NULL);
-
         initialized = 1;
     }
 }
@@ -107,9 +99,6 @@ void deinitExecute() {
 
         free(THING_TYPE_FUNC);
         THING_TYPE_FUNC = NULL;
-
-        free(THING_TYPE_PARTIAL);
-        THING_TYPE_PARTIAL = NULL;
 
         initialized = 0;
     }
@@ -335,50 +324,6 @@ typedef struct {
     Thing** applied;
 } PartialThing;
 
-Thing* createPartialThing(Runtime* runtime, Thing* func, unsigned char provided, Thing** applied) {
-    Thing* thing = createThing(runtime, THING_TYPE_PARTIAL, sizeof(PartialThing));
-    PartialThing* partialThing = thingCustomData(thing);
-    partialThing->func = func;
-    partialThing->provided = provided;
-    partialThing->applied = applied;
-    return thing;
-}
-
-void destroyPartialThing(Thing* thing) {
-    PartialThing* partialThing = thingCustomData(thing);
-    free(partialThing->applied);
-    free(thing);
-}
-
-/**
- * Creates an array of things whose length is 1 and whose sole element is the
- * given argument
- */
-Thing** createSingletonThingArray(Thing* thing) {
-    Thing** array = malloc(sizeof(Thing*));
-    array[0] = thing;
-    return array;
-}
-
-/**
- * Copies the array, extends the new array by one element and sets that element
- * to add.
- *
- * @param length the number of elements in original
- * @param original the elements that should be the start of the returned array
- * @param add the last element of the returned array
- * @return an array whose length is length + 1, whose ith element is
- *      original[i] for 0 <= i < length and original[length] = add.
- */
-Thing** appendThingArray(unsigned int length, Thing** original, Thing* add) {
-    Thing** modified = malloc(sizeof(Thing*) * (length + 1));
-    for(unsigned int i = 0; i < length; i++) {
-        modified[i] = original[i];
-    }
-    modified[length] = add;
-    return modified;
-}
-
 typedef struct {
     //the module that is currently executing.
     Module* module;
@@ -585,9 +530,6 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
         if(opcode == OP_PUSH_INT) {
             int value = readI32Frame(currentFrame);
             pushStack(runtime, createIntThing(runtime, value));
-        //} else if(opcode == OP_PUSH_SYMBOL) {
-        //    const char* constant = readConstant(currentFrame);
-        //    pushStack(runtime, createSymbolThing(runtime, constant));
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstant(currentFrame);
             pushStack(runtime, getMapStr(runtime->builtins, constant));
@@ -627,45 +569,7 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
                 pushStack(runtime, ret);
                 free(args);
             }
-            /*Thing* arg = popStack(runtime);
-            Thing* called = popStack(runtime);
 
-            Thing* func = NULL;
-            unsigned char provided = 0;
-            Thing** applied = NULL;
-            if(typeOfThing(called) == THING_TYPE_PARTIAL) {
-                PartialThing* partial = thingCustomData(called);
-                provided = partial->provided + 1;
-                applied = appendThingArray(partial->provided, partial->applied,
-                        arg);
-                func = partial->func;
-            } else {
-                provided = 1;
-                applied = createSingletonThingArray(arg);
-                func = called;
-            }
-
-            if(provided == func->type->arity(func)) {
-                if(typeOfThing(func) == THING_TYPE_FUNC) {
-                    //calling functions defined in blerg from blerg code is not
-                    //yet supported.
-                    *error = 1;
-                    return NULL;
-                } else {
-                    pushStackFrame(runtime, createStackFrameNative());
-                    Thing* retVal = func->type->call(runtime, func, applied, error);
-                    if(*error) {
-                        return NULL;
-                    }
-                    pushStack(runtime, retVal);
-                    popStackFrame(runtime);
-                }
-                free(applied);
-            } else {
-                Thing* partial = createPartialThing(runtime, func,
-                        provided, applied);
-                pushStack(runtime, partial);
-            }*/
         } else {
             //unknown opcode
             *error = 1;

@@ -290,13 +290,6 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
         emitPushBuiltin(builder, binaryOp->op);
         compileToken(builder, labels, binaryOp->left);
-        //the " " operator is really just a function call, so it does not
-        //need to be passed to the left operand
-        //unused
-        //if(strcmp(binaryOp->op, " ") != 0) {
-        //    emitPushSymbol(builder, binaryOp->op);
-        //    emitCall(builder);
-        //}
         compileToken(builder, labels, binaryOp->right);
         emitCall(builder, 2);
     } else if(token->type == TOKEN_RETURN) {

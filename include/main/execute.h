@@ -32,7 +32,7 @@
 void initExecute();
 
 /**
- * Deinitalize this module. Must be called or else memleaks will occur. Once
+ * Deinitialize this module. Must be called or else memleaks will occur. Once
  * called, no other functions in this module may be called until initExecute is
  * called.
  */
@@ -61,8 +61,6 @@ ThingType* THING_TYPE_INT;
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
-//without currying, there will be partials, used differently, this should be removed
-ThingType* THING_TYPE_PARTIAL;
 
 /**
  * Describes an 'object' within the blerg program.

@@ -139,8 +139,6 @@ const char* codegenTestSimple() {
     emitPushInt(builder, 1);
     emitPushInt(builder, 2);
     emitCall(builder, 2);
-    //emitPushInt(builder, 2);
-    //emitCall(builder);
     emitReturn(builder);
     emitPushNone(builder);
     emitReturn(builder);
@@ -180,7 +178,6 @@ const char* codegenTestJumps() {
     emitPushBuiltin(builder, "==");
     emitLoad(builder, "n");
     emitPushInt(builder, 0);
-    //emitCall(builder);
     emitCall(builder, 2);
     int elseLabel = createLabel(builder);
     emitCondJump(builder, elseLabel, 0);
@@ -193,11 +190,9 @@ const char* codegenTestJumps() {
     emitLabel(builder, elseLabel);
     emitPushBuiltin(builder, "*");
     emitLoad(builder, "n");
-    //emitCall(builder);
     emitLoad(builder, "factorial");
     emitPushBuiltin(builder, "-");
     emitLoad(builder, "n");
-    //emitCall(builder);
     emitPushInt(builder, 1);
     emitCall(builder, 2);
     emitCall(builder, 1);

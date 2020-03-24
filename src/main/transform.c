@@ -205,6 +205,7 @@ List* toJumpsList(List* list, int* uniqueId) {
         case TOKEN_INT:
         case TOKEN_LITERAL:
         case TOKEN_IDENTIFIER:
+        case TOKEN_CALL:
         case TOKEN_BINARY_OP:
         case TOKEN_UNARY_OP:
         case TOKEN_ASSIGNMENT:

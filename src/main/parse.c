@@ -284,21 +284,7 @@ const char* getOp(ParseState* state, int level) {
         if(strcmp(checking, "prefix") == 0) {
             continue;
         }
-        if(strcmp(checking, " ") == 0) {
-            //unused branch
-            //the operator is application if the next character is a token.
-            //skip the operator, but don't move the state forward
-            int index = state->index;
-            while(containsChar(WHITESPACE_CHARS, state->src[index])) {
-                index++;
-            }
-            char c = state->src[index];
-            if((c == '(' || c == '"' || containsChar(INT_CHARS, c) ||
-                    containsChar(IDENTIFIER_CHARS, c)) &&
-                    !lookAheadMulti(state, KEYWORDS)) {
-                return newStr(checking);
-            }
-        } else if(lookAhead(state, checking)) {
+        if(lookAhead(state, checking)) {
             return newStr(checking);
         }
     }
@@ -347,9 +333,7 @@ Token* parseBinaryOp(ParseState* state, int level) {
 
     const char* op;
     while((op = getOp(state, level)) != NULL) {
-        if(strcmp(op, " ") != 0) {
-            advance(state, strlen(op));
-        }
+        advance(state, strlen(op));
         Token* right = parseExpressionWithLevel(state, level - 1);
         if(right == NULL) {
             free((void*) op);
