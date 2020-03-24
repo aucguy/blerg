@@ -248,6 +248,7 @@ Thing* createSymbolThing(Runtime* runtime, int id) {
 
 //not properly supported yet
 Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
+    UNUSED(self);
     //only ints supported
     if(typeOfThing(args[0]) != THING_TYPE_INT || typeOfThing(args[1]) != THING_TYPE_INT) {
         *error = 1;
@@ -400,6 +401,7 @@ void destroyRuntime(Runtime* runtime) {
     destroyShallowList(runtime->stack);
     destroyList(runtime->allocatedThings, callDestroyMethod);
     destroyList(runtime->allocatedScopes, destroyScope);
+    destroyMap(runtime->builtins, nothing, nothing);
     free(runtime);
 }
 
