@@ -208,26 +208,6 @@ int thingAsInt(Thing* thing) {
     return data->value;
 }
 
-//this is now incorrect without currying
-/*Thing* intCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
-    Thing* operation = args[0];
-    Thing* operand = args[1];
-    if(typeOfThing(operation) != THING_TYPE_SYMBOL) {
-        *error = 1;
-        return NULL;
-    }
-    SymbolThing* symbol = thingCustomData(operation);
-    if(strcmp(symbol->value, "+") != 0) {
-        *error = 1;
-        return NULL;
-    }
-    if(typeOfThing(operand) != THING_TYPE_INT) {
-        *error = 1;
-        return NULL;
-    }
-    return createIntThing(runtime, thingAsInt(self) + thingAsInt(operand));
-}*/
-
 int symbolId = 0;
 
 int newSymbolId() {
