@@ -6,6 +6,7 @@
 #include "main/bytecode.h"
 #include "main/codegen.h"
 #include "main/execute.h"
+#include "main/thing.h"
 
 #include "test/tests.h"
 
@@ -25,7 +26,7 @@ Module* sourceToModule(const char* src) {
 }
 
 const char* executeTestGlobalHasMainFunc() {
-    initExecute();
+    initThing();
     Runtime* runtime = createRuntime();
     int error = 0;
     Module* module = sourceToModule("def main x do <- 1; end");
@@ -41,12 +42,12 @@ const char* executeTestGlobalHasMainFunc() {
 
     destroyRuntime(runtime);
     destroyModule(module);
-    deinitExecute();
+    deinitThing();
     return NULL;
 }
 
 const char* executeTestMainFuncReturns1() {
-    initExecute();
+    initThing();
     Runtime* runtime = createRuntime();
     int error = 0;
     Module* module = sourceToModule("def main x do <- 1; end");
@@ -65,12 +66,12 @@ const char* executeTestMainFuncReturns1() {
     free(args);
     destroyModule(module);
     destroyRuntime(runtime);
-    deinitExecute();
+    deinitThing();
     return NULL;
 }
 
 const char* executeTestAddFunction() {
-    initExecute();
+    initThing();
     Runtime* runtime = createRuntime();
     int error = 0;
     Module* module = sourceToModule("def add x y do <- x + y; end");
@@ -94,6 +95,6 @@ const char* executeTestAddFunction() {
     destroyRuntime(runtime);
     destroyModule(module);
     free(args);
-    deinitExecute();
+    deinitThing();
     return NULL;
 }

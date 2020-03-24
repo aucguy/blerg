@@ -1,14 +1,14 @@
-#include "main/codegen.h"
-#include "main/util.h"
-
 #ifndef EXECUTE_H_
 #define EXECUTE_H_
+
+#include "main/codegen.h"
+#include "main/util.h"
 
 /**
  * Every 'object' in the language is internally referred to as a 'thing.'
  * So there are IntThing, LiteralThing, FuncThing (results of defs) and
  * ObjectThing. Each thing is stored as a Thing struct followed by custom data
- * which is specificed by its type (Int, Literal, Func, Object, etc).
+ * which is specified by its type (Int, Literal, Func, Object, etc).
  *
  * The following does not apply
  *
@@ -20,54 +20,10 @@
  *
  * 2) Blerg code cannot call other blerg code. Attempting to call a function
  * that was defined in blerg will result in an error.
- *
- * 3) The number of arguments supplied to callFunction must match the arity of
- * the provided function. Partial application in this case is not supported.
  */
 
-/**
- * Initialize this module. Must be called before any other functions in this
- * module are called.
- */
-void initExecute();
-
-/**
- * Deinitialize this module. Must be called or else memleaks will occur. Once
- * called, no other functions in this module may be called until initExecute is
- * called.
- */
-void deinitExecute();
-
-typedef struct Runtime Runtime;
 typedef struct Thing Thing;
-
-/**
- * Each Thing has a type which describes how it behaves and its custom data
- * format.
- */
-typedef struct {
-    //destroys the thing. Should not destroy any references this thing has to
-    //other things.
-    void (*destroy)(struct Thing*);
-    //correct despite the change of design not to curry
-    Thing* (*call)(Runtime*, Thing*, Thing**, int*);
-    unsigned char (*arity)();
-} ThingType;
-
-//different builtin types. Initialized in initExecute.
-ThingType* THING_TYPE_NONE;
-ThingType* THING_TYPE_INT;
-//without currying, there will be symbols, but for now this should be removed
-ThingType* THING_TYPE_SYMBOL;
-ThingType* THING_TYPE_OBJ;
-ThingType* THING_TYPE_FUNC;
-
-/**
- * Describes an 'object' within the blerg program.
- */
-struct Thing {
-    ThingType* type;
-};
+typedef struct Runtime Runtime;
 
 /**
  * The runtime object type. This is a singleton that stores information
@@ -93,20 +49,6 @@ struct Runtime {
 
 Runtime* createRuntime();
 void destroyRuntime(Runtime* runtime);
-
-Thing* createIntThing(Runtime* runtime, int value);
-
-/**
- * Gets the value associated with the given name in the given ObjectThing. If
- * the thing is not an ObjectThing, this results in undefined behavior.
- */
-Thing* getObjectProperty(Thing* thing, const char* name);
-
-/**
- * Returns the type of the given thing. Use this to check its type before
- * passing it to functions which require a certain type.
- */
-ThingType* typeOfThing(Thing* thing);
 
 /**
  * Returns the integer value of the given IntThing. If the thing is not an
@@ -143,5 +85,19 @@ Thing* executeModule(Runtime* runtime, Module* module, int* error);
  */
 Thing* callFunction(Runtime* runtime, Thing* func, int argNo,
         Thing** args, int* error);
+
+/**
+ * Each stackframe and function needs to "remember" things bound to variables.
+ * This is the structure that "remembers" them.
+ */
+typedef struct Scope_ {
+    //the scope that this scope was created in. If a variable is not found
+    //locally, it will be looked up in the parent scope. If null, this scope
+    //has no parent scope.
+    struct Scope_* parent;
+    //Map of const char* to Thing*. Represents variables bound in the current
+    //scope.
+    Map* locals;
+} Scope;
 
 #endif /* EXECUTE_H_ */
