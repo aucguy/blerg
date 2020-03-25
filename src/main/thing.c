@@ -24,7 +24,7 @@ void setArityThingType(ThingType* type, unsigned char (*arity)(Thing*)) {
 }
 
 void destroySimpleThing(Thing* thing) {
-    free(thing);
+    UNUSED(thing);
 }
 
 Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, int* error) {
@@ -103,8 +103,12 @@ void deinitThing() {
     }
 }
 
-ThingType* typeOfThing(Thing* thing) {
-    return thing->type;
+Thing* thingHeaderToCustomData(ThingHeader* header) {
+    return ((char*) header) + sizeof(ThingHeader);
+}
+
+ThingHeader* customDataToThingHeader(Thing* thing) {
+    return (ThingHeader*) (((char*) thing) - sizeof(ThingHeader));
 }
 
 /**
@@ -117,18 +121,21 @@ ThingType* typeOfThing(Thing* thing) {
  *      after the Thing struct.
  */
 Thing* createThing(Runtime* runtime, ThingType* type, size_t size) {
-    Thing* thing = malloc(sizeof(Thing) + size);
-    thing->type = type;
+    ThingHeader* header = malloc(sizeof(ThingHeader) + size);
+    header->type = type;
+    Thing* thing = thingHeaderToCustomData(header);
     runtime->allocatedThings = consList(thing, runtime->allocatedThings);
     return thing;
 }
 
-/**
- * Returns the custom data associated with the thing. The size is the same
- * passed to createThing.
- */
-void* thingCustomData(Thing* thing) {
-    return ((char*) thing) + sizeof(Thing);
+void destroyThing(Thing* thing) {
+    ThingHeader* header = customDataToThingHeader(thing);
+    header->type->destroy((Thing*) thing);
+    free(header);
+}
+
+ThingType* typeOfThing(Thing* thing) {
+    return customDataToThingHeader(thing)->type;
 }
 
 /**
@@ -140,9 +147,8 @@ typedef struct {
 } NoneThing;
 
 Thing* createNoneThing(Runtime* runtime) {
-    Thing* thing = createThing(runtime, THING_TYPE_NONE, sizeof(NoneThing));
-    NoneThing* noneThing = thingCustomData(thing);
-    noneThing->dummy = 0;
+    NoneThing* thing = createThing(runtime, THING_TYPE_NONE, sizeof(NoneThing));
+    thing->dummy = 0;
     return thing;
 }
 
@@ -154,15 +160,13 @@ typedef struct {
 } IntThing;
 
 Thing* createIntThing(Runtime* runtime, int value) {
-    Thing* thing = createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
-    IntThing* intThing = thingCustomData(thing);
-    intThing->value = value;
+    IntThing* thing = createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
+    thing->value = value;
     return thing;
 }
 
 int thingAsInt(Thing* thing) {
-    IntThing* data = thingCustomData(thing);
-    return data->value;
+    return ((IntThing*) thing)->value;
 }
 
 int symbolId = 0;
@@ -176,9 +180,8 @@ typedef struct {
 } SymbolThing;
 
 Thing* createSymbolThing(Runtime* runtime, int id) {
-    Thing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
-    SymbolThing* symbolThing = thingCustomData(thing);
-    symbolThing->id = id;
+    SymbolThing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
+    thing->id = id;
     return thing;
 }
 
@@ -206,29 +209,24 @@ typedef struct {
 } ObjectThing;
 
 Thing* createObjectThingFromMap(Runtime* runtime, Map* map) {
-    Thing* thing = createThing(runtime, THING_TYPE_OBJ, sizeof(ObjectThing));
-    ObjectThing* objThing = thingCustomData(thing);
-    objThing->properties = copyMap(map);
+    ObjectThing* thing = createThing(runtime, THING_TYPE_OBJ, sizeof(ObjectThing));
+    thing->properties = copyMap(map);
     return thing;
 }
 
 void destroyObjectThing(Thing* thing) {
-    ObjectThing* objThing = thingCustomData(thing);
-    destroyMap(objThing->properties, nothing, nothing);
-    free(thing);
+    destroyMap(((ObjectThing*) thing)->properties, nothing, nothing);
 }
 
 Thing* getObjectProperty(Thing* thing, const char* name) {
-    ObjectThing* objThing = (ObjectThing*) thingCustomData(thing);
-    return getMapStr(objThing->properties, name);
+    return getMapStr(((ObjectThing*) thing)->properties, name);
 }
 
 Thing* createFuncThing(Runtime* runtime, unsigned int entry,
         Module* module, Scope* parentScope) {
-    Thing* thing = createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
-    FuncThing* funcThing = thingCustomData(thing);
-    funcThing->entry = entry;
-    funcThing->module = module;
-    funcThing->parentScope = parentScope;
+    FuncThing* thing = createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
+    thing->entry = entry;
+    thing->module = module;
+    thing->parentScope = parentScope;
     return thing;
 }

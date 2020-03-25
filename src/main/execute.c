@@ -100,14 +100,10 @@ Runtime* createRuntime() {
     return runtime;
 }
 
-void callDestroyMethod(void* thing) {
-    ((Thing*) thing)->type->destroy((Thing*) thing);
-}
-
 void destroyRuntime(Runtime* runtime) {
     destroyList(runtime->stackFrame, free);
     destroyShallowList(runtime->stack);
-    destroyList(runtime->allocatedThings, callDestroyMethod);
+    destroyList(runtime->allocatedThings, destroyThing);
     destroyList(runtime->allocatedScopes, destroyScope);
     destroyMap(runtime->builtins, nothing, nothing);
     free(runtime);
@@ -275,7 +271,8 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
                     args[i] = popStack(runtime);
                 }
                 popStack(runtime); //pop the function
-                Thing* ret = func->type->call(runtime, func, args, &arity);
+                ThingHeader* header = customDataToThingHeader(func);
+                Thing* ret = header->type->call(runtime, func, args, &arity);
                 pushStack(runtime, ret);
                 free(args);
             }
@@ -308,7 +305,7 @@ Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args,
         *error = 1;
         return NULL;
     }
-    FuncThing* funcThing = thingCustomData(func);
+    FuncThing* funcThing = func;
     int index = funcThing->entry;
     if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
         *error = 1;

@@ -1,9 +1,9 @@
 #ifndef THING_H_
 #define THING_H_
 
-typedef struct Thing Thing;
 typedef struct Runtime Runtime;
 typedef struct Scope_ Scope;
+typedef void Thing;
 
 /**
  * Initialize this module. Must be called before any other functions in this
@@ -25,7 +25,7 @@ void deinitThing();
 typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
-    void (*destroy)(struct Thing*);
+    void (*destroy)(Thing*);
     //correct despite the change of design not to curry
     Thing* (*call)(Runtime*, Thing*, Thing**, int*);
     unsigned char (*arity)();
@@ -42,9 +42,14 @@ ThingType* THING_TYPE_FUNC;
 /**
  * Describes an 'object' within the blerg program.
  */
-struct Thing {
+typedef struct {
     ThingType* type;
-};
+} ThingHeader;
+
+Thing* thingHeaderToCustomData(ThingHeader* header);
+ThingHeader* customDataToThingHeader(Thing* thing);
+
+void destroyThing(Thing* thing);
 
 Thing* createIntThing(Runtime* runtime, int value);
 
@@ -59,9 +64,6 @@ Thing* getObjectProperty(Thing* thing, const char* name);
  * passing it to functions which require a certain type.
  */
 ThingType* typeOfThing(Thing* thing);
-
-
-void* thingCustomData(Thing* thing);
 
 typedef struct {
     //location of first bytecode of the function

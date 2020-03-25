@@ -22,7 +22,7 @@
  * that was defined in blerg will result in an error.
  */
 
-typedef struct Thing Thing;
+typedef void Thing;
 typedef struct Runtime Runtime;
 
 /**
