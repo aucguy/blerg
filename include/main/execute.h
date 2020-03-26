@@ -1,6 +1,8 @@
 #ifndef EXECUTE_H_
 #define EXECUTE_H_
 
+#include <stdint.h>
+
 #include "main/codegen.h"
 #include "main/util.h"
 
@@ -54,7 +56,7 @@ void destroyRuntime(Runtime* runtime);
  * Returns the integer value of the given IntThing. If the thing is not an
  * IntThing, this results in undefined behavior.
  */
-int thingAsInt(Thing* thing);
+int32_t thingAsInt(Thing* thing);
 
 /**
  * Executes the given module. The function executes the bytecode at index 0
@@ -69,7 +71,7 @@ int thingAsInt(Thing* thing);
  * @param error set to a nonzero value if an error occurs during execution.
  * @return the global scope as an ObjectThing, or NULL upon error.
  */
-Thing* executeModule(Runtime* runtime, Module* module, int* error);
+Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error);
 
 /**
  * Calls the given thing with the given arguments. Currently, partial
@@ -83,8 +85,8 @@ Thing* executeModule(Runtime* runtime, Module* module, int* error);
  * @param error set to a nonzero value if an error occurs during execution
  * @return the thing returned by the function
  */
-Thing* callFunction(Runtime* runtime, Thing* func, int argNo,
-        Thing** args, int* error);
+Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo,
+        Thing** args, uint8_t* error);
 
 /**
  * Each stackframe and function needs to "remember" things bound to variables.

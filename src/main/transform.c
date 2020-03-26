@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "main/util.h"
 #include "main/transform.h"
@@ -9,7 +10,7 @@
  * Used to create a unique name. This function takes an integer, concatenates
  * it with '$' and increments uniqueId.
  */
-const char* uniqueName(int* uniqueId) {
+const char* uniqueName(uint8_t* uniqueId) {
     int length = snprintf(NULL, 0, "$%d", *uniqueId);
     char* name = (char*) malloc(length + 1);
     sprintf(name, "$%d", *uniqueId);
@@ -26,9 +27,9 @@ const char* uniqueName(int* uniqueId) {
  * words, the generated names increase by one each time a new one appears.
  */
 
-List* toJumpsList(List* list, int* uniqueId);
+List* toJumpsList(List* list, uint8_t* uniqueId);
 
-List* toJumpsBlock(BlockToken* token, int* uniqueId) {
+List* toJumpsBlock(BlockToken* token, uint8_t* uniqueId) {
     return toJumpsList(token->children, uniqueId);
 }
 
@@ -61,7 +62,7 @@ List* toJumpsBlock(BlockToken* token, int* uniqueId) {
  * condition check (nextLabel) and the end of each block jumps to the label at
  * the end of the output (endLabel).
  */
-List* toJumpsIf(IfToken* token, int* uniqueId) {
+List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     List* output = NULL;
     List* stmts = NULL;
     //computed lazily to preserve the names of label and conditions
@@ -130,7 +131,7 @@ List* toJumpsIf(IfToken* token, int* uniqueId) {
  * $absJump $startLabel
  * label $endLabel
  */
-List* toJumpsWhile(WhileToken* token, int* uniqueId) {
+List* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     List* output = NULL;
     List* stmts = NULL;
     const char* startLabel = uniqueName(uniqueId);
@@ -166,7 +167,7 @@ List* toJumpsWhile(WhileToken* token, int* uniqueId) {
  * Converts a function token's contents from using control structures to using
  * jumps.
  */
-FuncToken* toJumpsFunc(FuncToken* token, int* uniqueId) {
+FuncToken* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     //copy the arguments since each token holds a unique reference
     List* newArgs = NULL;
     List* oldArgs = token->args;
@@ -193,7 +194,7 @@ FuncToken* toJumpsFunc(FuncToken* token, int* uniqueId) {
  * The uniqueId is used to create a unique name for each generated label and
  * variable. It is modified each time a new name is created.
  */
-List* toJumpsList(List* list, int* uniqueId) {
+List* toJumpsList(List* list, uint8_t* uniqueId) {
     List* stmts = NULL;
 
     for(; list != NULL; list = list->tail) {
@@ -246,7 +247,7 @@ List* toJumpsList(List* list, int* uniqueId) {
  * Converts the module from using control structures to using jumps and labels.
  */
 BlockToken* transformControlToJumps(BlockToken* module) {
-    int uniqueId = 0;
+    uint8_t uniqueId = 0;
     return createBlockToken(toJumpsBlock(module, &uniqueId));
 }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 #include "test/parseTest.h"
 #include "test/validateTest.h"
@@ -6,15 +7,15 @@
 #include "test/codegenTest.h"
 #include "test/executeTest.h"
 
-void runTest(const char* name, const char* msg, int* status) {
+void runTest(const char* name, const char* msg, uint8_t* status) {
     if(msg != NULL) {
         printf("test '%s' failed: %s\n", name, msg);
         *status = 1;
     }
 }
 
-int runTests() {
-    int status = 0;
+uint8_t runTests() {
+    uint8_t status = 0;
     printf("running tests...\n");
 
     runTest("testParseInt", testParseInt(), &status);

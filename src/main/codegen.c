@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdint.h>
 
 #include "main/bytecode.h"
 #include "main/codegen.h"
 
 //when the module is being compiled, the constant table and the bytecode are
 //split into 'segments'. Each segment contains SEGMENT_SIZE elements.
-const int SEGMENT_SIZE = 1024;
+const uint32_t SEGMENT_SIZE = 1024;
 
 ModuleBuilder* createModuleBuilder() {
     ModuleBuilder* builder = (ModuleBuilder*) malloc(sizeof(ModuleBuilder));
@@ -40,25 +40,25 @@ void destroyModuleBuilder(ModuleBuilder* builder) {
     free(builder);
 }
 
-void emitByte(ModuleBuilder* builder, unsigned char byte) {
-    int segmentOffset = builder->bytecodeLength % SEGMENT_SIZE;
+void emitByte(ModuleBuilder* builder, uint8_t byte) {
+    uint32_t segmentOffset = builder->bytecodeLength % SEGMENT_SIZE;
     //if the current bytecode segment has no space left, create a new one
     if(segmentOffset == 0) {
         builder->bytecode = consList(malloc(SEGMENT_SIZE), builder->bytecode);
     }
-    unsigned char* currentSegment = (unsigned char*) builder->bytecode->head;
+    unsigned char* currentSegment = (uint8_t*) builder->bytecode->head;
     currentSegment[segmentOffset] = byte;
     builder->bytecodeLength++;
 }
 
-void emitInt(ModuleBuilder* builder, int num) {
+void emitInt(ModuleBuilder* builder, int32_t num) {
     emitByte(builder, (num & 0xFF000000) >> 24);
     emitByte(builder, (num & 0x00FF0000) >> 16);
     emitByte(builder, (num & 0x0000FF00) >> 8);
     emitByte(builder, num & 0x000000FF);
 }
 
-void emitUInt(ModuleBuilder* builder, unsigned int num) {
+void emitUInt(ModuleBuilder* builder, uint32_t num) {
     emitByte(builder, (num & 0xFF000000) >> 24);
     emitByte(builder, (num & 0x00FF0000) >> 16);
     emitByte(builder, (num & 0x0000FF00) >> 8);
@@ -71,11 +71,11 @@ void emitUInt(ModuleBuilder* builder, unsigned int num) {
  * not hold a reference to the constant; it is copied as necessary to the
  * constant table.
  */
-unsigned int internConstant(ModuleBuilder* builder, const char* constant) {
+uint32_t internConstant(ModuleBuilder* builder, const char* constant) {
     //find the constant and return its index
-    unsigned int i = 0;
+    uint32_t i = 0;
     for(List* segment = builder->constants; segment != NULL; segment = segment->tail) {
-        for(int k = 0; k < SEGMENT_SIZE; k++) {
+        for(uint32_t k = 0; k < SEGMENT_SIZE; k++) {
             if(i >= builder->constantsLength) {
                 break;
             }
@@ -87,7 +87,7 @@ unsigned int internConstant(ModuleBuilder* builder, const char* constant) {
         }
     }
 
-    int segmentOffset = builder->constantsLength % SEGMENT_SIZE;
+    uint32_t segmentOffset = builder->constantsLength % SEGMENT_SIZE;
     //create a new segment if necessary
     if(segmentOffset == 0) {
         char** newSegment = (char**) malloc(SEGMENT_SIZE * sizeof(char*));
@@ -100,26 +100,26 @@ unsigned int internConstant(ModuleBuilder* builder, const char* constant) {
     return builder->constantsLength++;
 }
 
-void emitLabelRef(ModuleBuilder* builder, int label) {
+void emitLabelRef(ModuleBuilder* builder, uint32_t label) {
     //record where the label is referenced
     List* value = consList(
-            boxInt(builder->bytecodeLength),
-            (List*) getMapInt(builder->labelRefs, label));
-    putMapInt(builder->labelRefs, label, value);
+            boxUint32(builder->bytecodeLength),
+            (List*) getMapUint32(builder->labelRefs, label));
+    putMapUint32(builder->labelRefs, label, value);
     //emit a dummy address. This will be patched later, even if the label was
     //already emitted.
     emitUInt(builder, 0);
 }
 
-int createLabel(ModuleBuilder* builder) {
+uint32_t createLabel(ModuleBuilder* builder) {
     return builder->nextLabel++;
 }
 
-void emitLabel(ModuleBuilder* builder, int label) {
-    putMapInt(builder->labelDefs, label, boxInt(builder->bytecodeLength));
+void emitLabel(ModuleBuilder* builder, uint32_t label) {
+    putMapUint32(builder->labelDefs, label, boxUint32(builder->bytecodeLength));
 }
 
-void emitPushInt(ModuleBuilder* builder, int num) {
+void emitPushInt(ModuleBuilder* builder, int32_t num) {
     emitByte(builder, OP_PUSH_INT);
     emitInt(builder, num);
 }
@@ -138,7 +138,7 @@ void emitPushNone(ModuleBuilder* builder) {
     emitByte(builder, OP_PUSH_NONE);
 }
 
-void emitCall(ModuleBuilder* builder, unsigned int arity) {
+void emitCall(ModuleBuilder* builder, uint32_t arity) {
     emitByte(builder, OP_CALL);
     emitUInt(builder, arity);
 }
@@ -147,7 +147,7 @@ void emitReturn(ModuleBuilder* builder) {
     emitByte(builder, OP_RETURN);
 }
 
-void emitCreateFunc(ModuleBuilder* builder, int location) {
+void emitCreateFunc(ModuleBuilder* builder, uint32_t location) {
     emitByte(builder, OP_CREATE_FUNC);
     emitLabelRef(builder, location);
 }
@@ -162,7 +162,7 @@ void emitStore(ModuleBuilder* builder, const char* name) {
     emitUInt(builder, internConstant(builder, name));
 }
 
-void emitCondJump(ModuleBuilder* builder, int label, int when) {
+void emitCondJump(ModuleBuilder* builder, uint32_t label, uint8_t when) {
     if(when) {
         emitByte(builder, OP_COND_JUMP_TRUE);
     } else {
@@ -171,15 +171,15 @@ void emitCondJump(ModuleBuilder* builder, int label, int when) {
     emitLabelRef(builder, label);
 }
 
-void emitAbsJump(ModuleBuilder* builder, int label) {
+void emitAbsJump(ModuleBuilder* builder, uint32_t label) {
     emitByte(builder, OP_ABS_JUMP);
     emitLabelRef(builder, label);
 }
 
-void emitDefFunc(ModuleBuilder* builder, char argNum, const char** args) {
+void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args) {
     emitByte(builder, OP_DEF_FUNC);
     emitByte(builder, argNum);
-    for(int i = 0; i < argNum; i++) {
+    for(uint8_t i = 0; i < argNum; i++) {
         emitUInt(builder, internConstant(builder, args[i]));
     }
 }
@@ -194,19 +194,19 @@ void emitDefFunc(ModuleBuilder* builder, char argNum, const char** args) {
  * @param elemSize the size of each element
  * @return an array of compacted elements
  */
-char* compactSegments(int numElems, List* segment, int elemSize) {
+char* compactSegments(uint32_t numElems, List* segment, uint8_t elemSize) {
     //reverse the segments to the order that they actually occur in
     List* revSegment = reverseList(segment);
     segment = revSegment;
 
     //size of the compacted array in bytes
-    int length = numElems * elemSize;
+    uint32_t length = numElems * elemSize;
 
     //size of each segment in bytes
-    int segmentSize = SEGMENT_SIZE * elemSize;
+    uint32_t segmentSize = SEGMENT_SIZE * elemSize;
     char* compacted = (char*) malloc(length);
-    int i;
-    for(i = 0; i < length - segmentSize; i += segmentSize) {
+    uint32_t i;
+    for(i = 0; i + segmentSize < length; i += segmentSize) {
         memcpy(&compacted[i], segment->head, segmentSize);
         segment = segment->tail;
     }
@@ -221,14 +221,14 @@ char* compactSegments(int numElems, List* segment, int elemSize) {
 Module* builderToModule(ModuleBuilder* builder) {
     char** constants = (char**) compactSegments(builder->constantsLength,
             builder->constants, sizeof(char*));
-    unsigned char* bytecode = (unsigned char*) compactSegments(
+    uint8_t* bytecode = (unsigned char*) compactSegments(
             builder->bytecodeLength, builder->bytecode, sizeof(unsigned char));
 
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
-        unsigned int* definition = getMapStr(builder->labelDefs, (char*) i->key);
+        uint32_t* definition = getMapStr(builder->labelDefs, (char*) i->key);
         for(List* k = (List*) i->value; k != NULL; k = k->tail) {
-            unsigned int reference = *((int*) k->head);
+            uint32_t reference = *((uint32_t*) k->head);
             bytecode[reference] = (*definition & 0xFF000000) >> 24;
             bytecode[reference + 1] = (*definition & 0x00FF0000) >> 16;
             bytecode[reference + 2] = (*definition & 0x0000FF00) >> 8;
@@ -261,20 +261,20 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     } else if(token->type == TOKEN_IDENTIFIER) {
         emitLoad(builder, ((IdentifierToken*) token)->value);
     } else if(token->type == TOKEN_LABEL) {
-        int* label = (int*) getMapStr(labels, ((LabelToken*) token)->name);
+        uint32_t* label = (uint32_t*) getMapStr(labels, ((LabelToken*) token)->name);
         emitLabel(builder, *label);
     } else if(token->type == TOKEN_ABS_JUMP) {
-        int* label = (int*) getMapStr(labels, ((AbsJumpToken*) token)->label);
+        uint32_t* label = (uint32_t*) getMapStr(labels, ((AbsJumpToken*) token)->label);
         emitAbsJump(builder, *label);
     } else if(token->type == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
         compileToken(builder, labels, condJump->condition);
-        int* label = (int*) getMapStr(labels, condJump->label);
+        uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
         emitCondJump(builder, *label, condJump->when);
     } else if(token->type == TOKEN_CALL) {
         CallToken* call = (CallToken*) token;
         List* children = call->children;
-        unsigned int count = 0;
+        uint32_t count = 0;
         while(children != NULL) {
             compileToken(builder, labels, children->head);
             children = children->tail;
@@ -308,13 +308,13 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
  */
 void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     //record the start of the function
-    emitLabel(builder, *((int*) getMapStr(globalFuncs, func->name->value)));
+    emitLabel(builder, *((uint32_t*) getMapStr(globalFuncs, func->name->value)));
 
     //convert the argument list to an array be passed to emitDefFunc
-    int argNum = lengthList(func->args);
+    uint8_t argNum = lengthList(func->args);
     char** args = (char**) malloc(sizeof(char*) * lengthList(func->args));
     List* arg = func->args;
-    for(int i = 0; i < argNum; i++) {
+    for(uint8_t i = 0; i < argNum; i++) {
         args[i] = (char*) ((IdentifierToken*) arg->head)->value;
         arg = arg->tail;
     }
@@ -329,7 +329,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
         Token* token = (Token*) list->head;
         if(token->type == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
-            putMapStr(labels, label->name, boxInt(createLabel(builder)));
+            putMapStr(labels, label->name, boxUint32(createLabel(builder)));
         }
     }
 
@@ -355,8 +355,8 @@ Module* compileModule(Token* ast) {
         Token* token = (Token*) list->head;
         if(token->type == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
-            int label = createLabel(builder);
-            putMapStr(globalFuncs, newStr(func->name->value), boxInt(label));
+            uint32_t label = createLabel(builder);
+            putMapStr(globalFuncs, newStr(func->name->value), boxUint32(label));
             emitCreateFunc(builder, label);
             emitStore(builder, func->name->value);
         }
@@ -380,7 +380,7 @@ Module* compileModule(Token* ast) {
 }
 
 void destroyModule(Module* module) {
-    for(unsigned int i = 0; i < module->constantsLength; i++) {
+    for(uint32_t i = 0; i < module->constantsLength; i++) {
         free((void*) module->constants[i]);
     }
     free((void*) module->constants);

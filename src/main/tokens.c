@@ -1,16 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+
 #include "main/tokens.h"
 #include "main/util.h"
 
 #define UNUSED(x) (void)(x)
 
-int tokensEqualVoid(void* a, void* b);
-int branchesEqual(void* a, void* b);
+uint8_t tokensEqualVoid(void* a, void* b);
+uint8_t branchesEqual(void* a, void* b);
 
-void printIndent(int indent) {
-    for(int i = 0; i < indent; i++) {
+void printIndent(uint8_t indent) {
+    for(uint8_t i = 0; i < indent; i++) {
         printf("    ");
     }
 }
@@ -19,12 +21,12 @@ void destroyIntToken(Token* self) {
     UNUSED(self);
 }
 
-void printIntToken(Token* self, int indent) {
+void printIntToken(Token* self, uint8_t indent) {
     UNUSED(indent);
     printf("int: %i\n", ((IntToken*) self)->value);
 }
 
-int equalsIntToken(Token* self, Token* other) {
+uint8_t equalsIntToken(Token* self, Token* other) {
     return ((IntToken*) self)->value == ((IntToken*) other)->value;
 }
 
@@ -46,7 +48,7 @@ Token INT_TYPE = {
  * @param value the token's value
  * @return the newly created token
  */
-IntToken* createIntToken(int value) {
+IntToken* createIntToken(int32_t value) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
     token->token = INT_TYPE;
     token->value = value;
@@ -57,12 +59,12 @@ void destroyLiteralToken(Token* self) {
     free((void*) ((LiteralToken*) self)->value);
 }
 
-void printLiteralToken(Token* self, int indent) {
+void printLiteralToken(Token* self, uint8_t indent) {
     UNUSED(indent);
     printf("literal: %s\n", ((LiteralToken*) self)->value);
 }
 
-int equalsLiteralToken(Token* self, Token* other) {
+uint8_t equalsLiteralToken(Token* self, Token* other) {
     return strcmp(((LiteralToken*) self)->value, ((LiteralToken*) other)->value) == 0;
 }
 
@@ -95,12 +97,12 @@ void destroyIdentifierToken(Token* token) {
     free((void*) ((IdentifierToken*) token)->value);
 }
 
-void printIdentifierToken(Token* self, int indent) {
+void printIdentifierToken(Token* self, uint8_t indent) {
     UNUSED(indent);
     printf("identifier: %s\n", ((IdentifierToken*) self)->value);
 }
 
-int equalsIdentifierToken(Token* self, Token* other) {
+uint8_t equalsIdentifierToken(Token* self, Token* other) {
     return strcmp(((IdentifierToken*) self)->value,
             ((IdentifierToken*) other)->value) == 0;
 }
@@ -139,7 +141,7 @@ void destroyCallToken(Token* self) {
     destroyShallowList(((CallToken*) self)->children);
 }
 
-void printCallToken(Token* self, int indent) {
+void printCallToken(Token* self, uint8_t indent) {
     printf("call:\n");
     List* children = ((CallToken*) self)->children;
     while(children != NULL) {
@@ -147,7 +149,7 @@ void printCallToken(Token* self, int indent) {
         children = children->tail;
     }
 }
-int equalsCallToken(Token* self, Token* other) {
+uint8_t equalsCallToken(Token* self, Token* other) {
     List* childrenA = ((CallToken*) self)->children;
     List* childrenB = ((CallToken*) other)->children;
 
@@ -197,14 +199,14 @@ void destroyBinaryOpToken(Token* self) {
     destroyToken(binaryOp->right);
 }
 
-void printBinaryOpToken(Token* self, int indent) {
+void printBinaryOpToken(Token* self, uint8_t indent) {
     BinaryOpToken* binaryOp = (BinaryOpToken*) self;
     printf("binaryOp: '%s'\n", binaryOp->op);
     printTokenWithIndent(binaryOp->left, indent + 1);
     printTokenWithIndent(binaryOp->right, indent + 1);
 }
 
-int equalsBinaryOpToken(Token* self, Token* other) {
+uint8_t equalsBinaryOpToken(Token* self, Token* other) {
     BinaryOpToken* selfBinOp = (BinaryOpToken*) self;
     BinaryOpToken* otherBinOp = (BinaryOpToken*) other;
     return strcmp(selfBinOp->op, otherBinOp->op) == 0 &&
@@ -249,13 +251,13 @@ void destroyUnaryOpToken(Token* self) {
     destroyToken(unaryOp->child);
 }
 
-void printUnaryOpToken(Token* self, int indent) {
+void printUnaryOpToken(Token* self, uint8_t indent) {
     UnaryOpToken* unaryOp = (UnaryOpToken*) self;
     printf("unaryOp: %s\n", unaryOp->op);
     printTokenWithIndent(unaryOp->child, indent + 1);
 }
 
-int equalsUnaryOpToken(Token* self, Token* other) {
+uint8_t equalsUnaryOpToken(Token* self, Token* other) {
     UnaryOpToken* selfUnOp = (UnaryOpToken*) self;
     UnaryOpToken* otherUnOp = (UnaryOpToken*) other;
     return strcmp(selfUnOp->op, otherUnOp->op) == 0 &&
@@ -296,13 +298,13 @@ void destroyAssignmentToken(Token* self) {
     destroyToken(assignment->right);
 }
 
-void printAssignmentToken(Token* self, int indent) {
+void printAssignmentToken(Token* self, uint8_t indent) {
     AssignmentToken* assignment = (AssignmentToken*) self;
     printf("assignment: %s\n", assignment->left->value);
     printTokenWithIndent(assignment->right, indent + 1);
 }
 
-int equalsAssignmentToken(Token* self, Token* other) {
+uint8_t equalsAssignmentToken(Token* self, Token* other) {
     AssignmentToken* selfAssign = (AssignmentToken*) self;
     AssignmentToken* otherAssign = (AssignmentToken*) other;
     return tokensEqual((Token*) selfAssign->left, (Token*) otherAssign->left) &&
@@ -342,7 +344,7 @@ void destroyBlockToken(Token* self) {
     destroyList(((BlockToken*) self)->children, destroyTokenVoid);
 }
 
-void printBlockToken(Token* self, int indent) {
+void printBlockToken(Token* self, uint8_t indent) {
     BlockToken* block = (BlockToken*) self;
     printf("block:\n");
     for(List* node = block->children; node != NULL; node = node->tail) {
@@ -350,7 +352,7 @@ void printBlockToken(Token* self, int indent) {
     }
 }
 
-int equalsBlockToken(Token* self, Token* other) {
+uint8_t equalsBlockToken(Token* self, Token* other) {
     return allList2(((BlockToken*) self)->children,
             ((BlockToken*) other)->children, tokensEqualVoid);
 }
@@ -383,7 +385,7 @@ void destroyIfToken(Token* self) {
     destroyToken((Token*) ifToken->elseBranch);
 }
 
-void printIfToken(Token* self, int indent) {
+void printIfToken(Token* self, uint8_t indent) {
     IfToken* ifStmt = (IfToken*) self;
     printf("if:\n");
     for(List* node = ifStmt->branches; node != NULL; node = node->tail) {
@@ -400,7 +402,7 @@ void printIfToken(Token* self, int indent) {
     printTokenWithIndent((Token*) ifStmt->elseBranch, indent + 2);
 }
 
-int equalsIfToken(Token* self, Token* other) {
+uint8_t equalsIfToken(Token* self, Token* other) {
     IfToken* selfIf = (IfToken*) self;
     IfToken* otherIf = (IfToken*) other;
 
@@ -435,7 +437,7 @@ void destroyWhileToken(Token* self) {
     destroyToken((Token*) whileToken->body);
 }
 
-void printWhileToken(Token* self, int indent) {
+void printWhileToken(Token* self, uint8_t indent) {
     WhileToken* whileStmt = (WhileToken*) self;
     printf("while:\n");
 
@@ -448,7 +450,7 @@ void printWhileToken(Token* self, int indent) {
     printTokenWithIndent((Token*) whileStmt->body, indent + 2);
 }
 
-int equalsWhileToken(Token* self, Token* other) {
+uint8_t equalsWhileToken(Token* self, Token* other) {
     WhileToken* selfWhile = (WhileToken*) self;
     WhileToken* otherWhile = (WhileToken*) other;
     return tokensEqual((Token*) selfWhile->condition, (Token*) otherWhile->condition) &&
@@ -479,7 +481,7 @@ void destroyFuncToken(Token* self) {
     destroyToken((Token*) funcToken->body);
 }
 
-void printFuncToken(Token* self, int indent) {
+void printFuncToken(Token* self, uint8_t indent) {
     FuncToken* func = (FuncToken*) self;
     printf("func: %s", func->name->value);
     List* node = func->args;
@@ -491,7 +493,7 @@ void printFuncToken(Token* self, int indent) {
     printTokenWithIndent((Token*) func->body, indent + 1);
 }
 
-int equalsFuncToken(Token* self, Token* other) {
+uint8_t equalsFuncToken(Token* self, Token* other) {
     FuncToken* selfFunc = (FuncToken*) self;
     FuncToken* otherFunc = (FuncToken*) other;
     return tokensEqual((Token*) selfFunc->name, (Token*) otherFunc->name) &&
@@ -520,12 +522,12 @@ void destroyReturnToken(Token* self) {
     destroyToken(((ReturnToken*) self)->body);
 }
 
-void printReturnToken(Token* self, int indent) {
+void printReturnToken(Token* self, uint8_t indent) {
     printf("return:\n");
     printTokenWithIndent(((ReturnToken*) self)->body, indent + 1);
 }
 
-int equalsReturnToken(Token* self, Token* other) {
+uint8_t equalsReturnToken(Token* self, Token* other) {
     return tokensEqual(((ReturnToken*) self)->body, ((ReturnToken*) other)->body);
 }
 
@@ -553,12 +555,12 @@ void destroyLabelToken(Token* self) {
     free((void*) ((LabelToken*) self)->name);
 }
 
-void printLabelToken(Token* self, int indent) {
+void printLabelToken(Token* self, uint8_t indent) {
     UNUSED(indent);
     printf("label: %s \n", ((LabelToken*) self)->name);
 }
 
-int equalsLabelToken(Token* self, Token* other) {
+uint8_t equalsLabelToken(Token* self, Token* other) {
     return strcmp(((LabelToken*) self)->name, ((LabelToken*) other)->name) == 0;
 }
 
@@ -581,12 +583,12 @@ void destroyAbsJumpToken(Token* self) {
     free((void*) ((AbsJumpToken*) self)->label);
 }
 
-void printAbsJumpToken(Token* self, int indent) {
+void printAbsJumpToken(Token* self, uint8_t indent) {
     UNUSED(indent);
     printf("absJump: %s\n", ((AbsJumpToken*) self)->label);
 }
 
-int equalsAbsJumpToken(Token* self, Token* other) {
+uint8_t equalsAbsJumpToken(Token* self, Token* other) {
     return strcmp(((AbsJumpToken*) self)->label, ((AbsJumpToken*) other)->label) == 0;
 }
 
@@ -611,13 +613,13 @@ void destroyCondJumpToken(Token* self) {
     free((void*) token->label);
 }
 
-void printCondJumpToken(Token* self, int indent) {
+void printCondJumpToken(Token* self, uint8_t indent) {
     CondJumpToken* token = (CondJumpToken*) self;
     printf("condJump: %s, %i\n", token->label, token->when);
     printTokenWithIndent(token->condition, indent + 1);
 }
 
-int equalsCondJumpToken(Token* self, Token* other) {
+uint8_t equalsCondJumpToken(Token* self, Token* other) {
     CondJumpToken* a = (CondJumpToken*) self;
     CondJumpToken* b = (CondJumpToken*) other;
     return tokensEqual(a->condition, b->condition) && strcmp(a->label, b->label) == 0 &&
@@ -632,7 +634,7 @@ Token COND_JUMP_TYPE = {
         NULL
 };
 
-CondJumpToken* createCondJumpToken(Token* cond, const char* label, int when) {
+CondJumpToken* createCondJumpToken(Token* cond, const char* label, uint8_t when) {
     CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
     token->token = COND_JUMP_TYPE;
     token->condition = cond;
@@ -667,7 +669,7 @@ void destroyIfBranch(void* x) {
 /**
  * Prints the given token. Subchildren are indented.
  */
-void printTokenWithIndent(Token* token, int indent) {
+void printTokenWithIndent(Token* token, uint8_t indent) {
     printIndent(indent);
 
     if(token == NULL) {
@@ -686,7 +688,7 @@ void printToken(Token* token) {
 /**
  * Determines if two tokens are equal.
  */
-int tokensEqual(Token* a, Token* b) {
+uint8_t tokensEqual(Token* a, Token* b) {
     if(a == NULL || b == NULL || a->type != b->type ||
             a->equals == NULL || b->equals == NULL) {
         return 0;
@@ -694,11 +696,11 @@ int tokensEqual(Token* a, Token* b) {
     return a->equals(a, b);
 }
 
-int tokensEqualVoid(void* a, void* b) {
+uint8_t tokensEqualVoid(void* a, void* b) {
     return tokensEqual((Token*) a, (Token*) b);
 }
 
-int branchesEqual(void* a, void* b) {
+uint8_t branchesEqual(void* a, void* b) {
     IfBranch* branchA = (IfBranch*) a;
     IfBranch* branchB = (IfBranch*) b;
     return tokensEqual((Token*) branchA->condition, (Token*) branchB->condition) &&

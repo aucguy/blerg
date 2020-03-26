@@ -1,6 +1,8 @@
 #ifndef THING_H_
 #define THING_H_
 
+#include <stdint.h>
+
 typedef struct Runtime Runtime;
 typedef struct Scope_ Scope;
 typedef void Thing;
@@ -26,9 +28,8 @@ typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
     void (*destroy)(Thing*);
-    //correct despite the change of design not to curry
-    Thing* (*call)(Runtime*, Thing*, Thing**, int*);
-    unsigned char (*arity)();
+    Thing* (*call)(Runtime*, Thing*, Thing**, uint8_t*);
+    uint8_t (*arity)();
 } ThingType;
 
 //different builtin types. Initialized in initExecute.
@@ -51,7 +52,7 @@ ThingHeader* customDataToThingHeader(Thing* thing);
 
 void destroyThing(Thing* thing);
 
-Thing* createIntThing(Runtime* runtime, int value);
+Thing* createIntThing(Runtime* runtime, int32_t value);
 
 /**
  * Gets the value associated with the given name in the given ObjectThing. If
@@ -75,10 +76,10 @@ typedef struct {
 } FuncThing;
 
 Thing* createNoneThing(Runtime* runtime);
-Thing* createSymbolThing(Runtime* runtime, int id);
-int newSymbolId();
+Thing* createSymbolThing(Runtime* runtime, uint32_t id);
+uint32_t newSymbolId();
 
-Thing* createFuncThing(Runtime* runtime, unsigned int entry,
+Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope);
 
 Thing* createObjectThingFromMap(Runtime* runtime, Map* map);

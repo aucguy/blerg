@@ -1,9 +1,11 @@
+#ifndef CODEGEN_H_
+#define CODEGEN_H_
+
+#include <stdint.h>
+
 #include "main/util.h"
 #include "main/bytecode.h"
 #include "main/parse.h"
-
-#ifndef CODEGEN_H_
-#define CODEGEN_H_
 
 /**
  * Contains an alternative representation of a module as its being built.
@@ -22,10 +24,10 @@ typedef struct {
      * count the current capacity.
      */
 
-    unsigned int constantsLength;
+    uint32_t constantsLength;
     List* constants;
 
-    unsigned int bytecodeLength;
+    uint32_t bytecodeLength;
     List* bytecode;
 
     /**
@@ -44,7 +46,7 @@ typedef struct {
 
     //the next label number. It is incremented by one each time a label is created
     //in order to get a unique label.
-    int nextLabel;
+    uint32_t nextLabel;
 
     //stores the definition of labels.
     //Maps labels (ints) to bytecode positions (ints)
@@ -63,15 +65,15 @@ void destroyModuleBuilder(ModuleBuilder* builder);
  * ModuleBuilders may return the same integer value, but a single
  * ModuleBuilder will always return a different value for each call.
  */
-int createLabel(ModuleBuilder* builder);
+uint32_t createLabel(ModuleBuilder* builder);
 
 /**
  * Defines that a label occurs at the current bytecode position. Note that
  * there is no way to define a label to occur at a point that is not the
  * current position.
  */
-void emitLabel(ModuleBuilder* builder, int label);
-void emitPushInt(ModuleBuilder* builder, int num);
+void emitLabel(ModuleBuilder* builder, uint32_t label);
+void emitPushInt(ModuleBuilder* builder, int32_t num);
 
 /**
  * TODO fix documentation
@@ -81,14 +83,14 @@ void emitPushInt(ModuleBuilder* builder, int num);
 void emitPushBuiltin(ModuleBuilder* builder, const char* name);
 void emitPushLiteral(ModuleBuilder* builder, const char* literal);
 void emitPushNone(ModuleBuilder* builder);
-void emitCall(ModuleBuilder* builder, unsigned int arity);
+void emitCall(ModuleBuilder* builder, uint32_t arity);
 void emitReturn(ModuleBuilder* builder);
 
 /**
  * Emits a CREATE_FUNC instruction. The location is the label just before the
  * function's bytecode.
  */
-void emitCreateFunc(ModuleBuilder* builder, int location);
+void emitCreateFunc(ModuleBuilder* builder, uint32_t location);
 
 void emitLoad(ModuleBuilder* builder, const char* name);
 void emitStore(ModuleBuilder* builder, const char* name);
@@ -101,7 +103,7 @@ void emitStore(ModuleBuilder* builder, const char* name);
  * @param when if 0 the jump will be taken if the popped value is falsy,
  *      otherwise, the jump will be taken if the popped value is truthy
  */
-void emitCondJump(ModuleBuilder* builder, int label, int when);
+void emitCondJump(ModuleBuilder* builder, uint32_t label, uint8_t when);
 
 /**
  * Emits an unconditional jump instruction
@@ -109,7 +111,7 @@ void emitCondJump(ModuleBuilder* builder, int label, int when);
  * @param builder the ModuleBuilder instance
  * @param label the label to jump to unconditionally
  */
-void emitAbsJump(ModuleBuilder* builder, int label);
+void emitAbsJump(ModuleBuilder* builder, uint32_t label);
 
 /**
  * Emits a function definition instruction.
@@ -120,7 +122,7 @@ void emitAbsJump(ModuleBuilder* builder, int label);
  *      reference to the array or any of its elements; it will copy them as
  *      necessary.
  */
-void emitDefFunc(ModuleBuilder* builder, char argNum, const char** args);
+void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args);
 
 /**
  * Turns a ModuleBuilder into a module suitable for interpreting. This compacts

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "main/parse.h"
 #include "main/validate.h"
@@ -10,8 +11,8 @@
 
 #include "test/tests.h"
 
-int readInt(Module* module, unsigned int* index) {
-    int arg = module->bytecode[*index] << 24;
+int32_t readInt(Module* module, uint32_t* index) {
+    int32_t arg = module->bytecode[*index] << 24;
     arg |= module->bytecode[*index + 1] << 16;
     arg |= module->bytecode[*index + 2] << 8;
     arg |= module->bytecode[*index + 3];
@@ -19,8 +20,8 @@ int readInt(Module* module, unsigned int* index) {
     return arg;
 }
 
-unsigned int readUInt(Module* module, unsigned int* index) {
-    unsigned int arg = module->bytecode[*index] << 24;
+uint32_t readUInt(Module* module, uint32_t* index) {
+    uint32_t arg = module->bytecode[*index] << 24;
     arg |= module->bytecode[*index + 1] << 16;
     arg |= module->bytecode[*index + 2] << 8;
     arg |= module->bytecode[*index + 3];
@@ -28,7 +29,7 @@ unsigned int readUInt(Module* module, unsigned int* index) {
     return arg;
 }
 
-const char* getConstant(Module* module, unsigned int arg) {
+const char* getConstant(Module* module, uint32_t arg) {
     if(arg < module->constantsLength) {
         return module->constants[arg];
     } else {
@@ -36,20 +37,20 @@ const char* getConstant(Module* module, unsigned int arg) {
     }
 }
 
-void printIndexArgOp(const char* opName, Module* module, unsigned int* index) {
-    int arg = readInt(module, index);
+void printIndexArgOp(const char* opName, Module* module, uint32_t* index) {
+    uint32_t arg = readUInt(module, index);
     const char* constant = getConstant(module, arg);
     printf("%s %i (%s)\n", opName, arg, constant);
 }
 
 void printModule(Module* module) {
     printf("constants: %i\n", module->constantsLength);
-    for(unsigned int i = 0; i < module->constantsLength; i++) {
+    for(uint32_t i = 0; i < module->constantsLength; i++) {
         printf("\t%s\n", module->constants[i]);
     }
 
     printf("bytecode:\n");
-    unsigned int i = 0;
+    uint32_t i = 0;
     while(i < module->bytecodeLength) {
         printf("\t %i: \t", i);
         unsigned char opcode = module->bytecode[i++];
@@ -78,10 +79,10 @@ void printModule(Module* module) {
         } else if(opcode == OP_ABS_JUMP) {
             printf("OP_ABS_JUMP %i\n", readInt(module, &i));
         } else if(opcode == OP_DEF_FUNC) {
-            int argNum = module->bytecode[i++];
+            uint8_t argNum = module->bytecode[i++];
             printf("DEF_FUNC %i: ", argNum);
-            for(int k = 0; k < argNum; k++) {
-                int arg = readInt(module, &i);
+            for(uint8_t k = 0; k < argNum; k++) {
+                uint32_t arg = readUInt(module, &i);
                 const char* str = getConstant(module, arg);
                 printf("%i (%s), ", arg, str);
             }
@@ -92,12 +93,12 @@ void printModule(Module* module) {
     }
 }
 
-int modulesEqual(Module* a, Module* b) {
+uint8_t modulesEqual(Module* a, Module* b) {
     if(a->constantsLength != b->constantsLength) {
         return 0;
     }
 
-    for(unsigned int i = 0; i < a->constantsLength; i++) {
+    for(uint32_t i = 0; i < a->constantsLength; i++) {
         if(strcmp(a->constants[i], b->constants[i]) != 0) {
             return 0;
         }
@@ -107,7 +108,7 @@ int modulesEqual(Module* a, Module* b) {
         return 0;
     }
 
-    for(unsigned int i = 0; i < a->bytecodeLength; i++) {
+    for(uint32_t i = 0; i < a->bytecodeLength; i++) {
         if(a->bytecode[i] != b->bytecode[i]) {
             return 0;
         }
@@ -123,7 +124,7 @@ const char* codegenTestSimple() {
     ModuleBuilder* builder = createModuleBuilder();
 
     //global object
-    int mainEntry = createLabel(builder);
+    uint32_t mainEntry = createLabel(builder);
     emitCreateFunc(builder, mainEntry);
     emitStore(builder, "main");
     emitPushNone(builder);
@@ -164,7 +165,7 @@ const char* codegenTestJumps() {
 
     ModuleBuilder* builder = createModuleBuilder();
 
-    int factorialEntry = createLabel(builder);
+    uint32_t factorialEntry = createLabel(builder);
     emitCreateFunc(builder, factorialEntry);
     emitStore(builder, "factorial");
     emitPushNone(builder);
@@ -179,12 +180,12 @@ const char* codegenTestJumps() {
     emitLoad(builder, "n");
     emitPushInt(builder, 0);
     emitCall(builder, 2);
-    int elseLabel = createLabel(builder);
+    uint32_t elseLabel = createLabel(builder);
     emitCondJump(builder, elseLabel, 0);
 
     emitPushInt(builder, 0);
     emitReturn(builder);
-    int endLabel = createLabel(builder);
+    uint32_t endLabel = createLabel(builder);
     emitAbsJump(builder, endLabel);
 
     emitLabel(builder, elseLabel);
@@ -224,7 +225,7 @@ const char* codegenTestLiteralUnaryOp() {
 
 
     ModuleBuilder* builder = createModuleBuilder();
-    int mainEntry = createLabel(builder);
+    uint32_t mainEntry = createLabel(builder);
     emitCreateFunc(builder, mainEntry);
     emitStore(builder, "main");
     emitPushNone(builder);

@@ -1,6 +1,8 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <stdint.h>
+
 /**
  * Copies the given string
  */
@@ -28,7 +30,7 @@ List* consList(void* head, List* tail);
  * predicate returns true for all invocations. Also, the function will return
  * false if the lists are of different lengths.
  */
-int allList2(List* listA, List* listB, int(*predicate)(void*, void*));
+uint8_t allList2(List* listA, List* listB, uint8_t(*predicate)(void*, void*));
 
 /**
  * Returns true if all the items in the list satisfy the predicate. For each
@@ -36,7 +38,7 @@ int allList2(List* listA, List* listB, int(*predicate)(void*, void*));
  * the predicate. The function will only return true if the predicate returns
  * true for all invocations.
  */
-int allList(List* list, int(*predicate)(void*));
+uint8_t allList(List* list, uint8_t(*predicate)(void*));
 
 /**
  * Frees the list. The 'func' argument is called for each element.
@@ -56,7 +58,7 @@ void* lastList(List* list);
 /**
  * Returns the length of the list.
  */
-int lengthList(List* list);
+uint32_t lengthList(List* list);
 
 /**
  * Returns a new list with the contents of before prepended to after, but in
@@ -103,8 +105,8 @@ Map* copyMap(Map* map);
  */
 void destroyMap(Map* map, void(*destroyKey)(void*), void(*destroyValue)(void*));
 
-void* getMapInt(Map* map, int key);
-void putMapInt(Map* map, int key, void* value);
+void* getMapUint32(Map* map, uint32_t key);
+void putMapUint32(Map* map, uint32_t key, void* value);
 
 void* getMapStr(Map* map, const char* key);
 //holds the reference to key passed to putMap
@@ -114,7 +116,7 @@ void putMapStr(Map* map, const char* key, void* value);
  * Allocates memory that holds the given integer value. Useful for storing an
  * integer where a pointer is expected.
  */
-int* boxInt(int primitive);
+uint32_t* boxUint32(uint32_t primitive);
 
 /**
  * Does nothing. Useful for when a callback is expected, but the caller does

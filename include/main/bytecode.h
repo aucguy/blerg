@@ -1,12 +1,14 @@
 #ifndef BYTECODE_H_
 #define BYTECODE_H_
 
+#include <stdint.h>
+
 enum INSTRUCTIONS {
-    //args: value (int)
-    //stack: -> int
+    //args: value (uint32)
+    //stack: -> uin32
     //reads an integer from the bytecode and pushes its value onto the stack
     OP_PUSH_INT,
-    //args: index (signed int)
+    //args: index (uint32)
     //stack: -> symbol
     //reads an integer from the bytecode, looks it up in the constant table,
     //and pushes the associated builtin value onto the stack.
@@ -16,7 +18,7 @@ enum INSTRUCTIONS {
     //stack: -> None
     //pushes the None object onto the stack
     OP_PUSH_NONE,
-    //args: arity (int)
+    //args: arity (uint32)
     //stack: f x_1 x_2 ... x_n -> y
     //pops each x and f off the stack, calls f with each x and then pushes the
     //returned value onto the stack.
@@ -26,35 +28,35 @@ enum INSTRUCTIONS {
     //pops x off the stack and returns x. This is the value that is pushed onto
     //the stack in the OP_CALL instruction of the caller.
     OP_RETURN,
-    //args: label (int)
+    //args: label (uint32)
     //stack: -> func
     //creates a new function which inherits the current scope is the current
     //scope and whose entry point is the label.
     OP_CREATE_FUNC,
-    //args: name (int)
+    //args: name (uint32)
     //stack: -> value
     //Looks up the name in the constant table. The instruction then pushes the
     //local variable with that name in the local scope.
     OP_LOAD,
-    //args: name (int)
+    //args: name (uint32)
     //stack: value ->
     //Looks up the name in the constant table. The instruction then assigns the
     //local variable with that name within the local scope.
     OP_STORE,
-    //args: label (int)
+    //args: label (uint32)
     //Pops a value. If the value is truthy, the instruction jumps to the label.
     OP_COND_JUMP_TRUE,
-    //args: label (int)
+    //args: label (uint32)
     //Pops a value. If the value is falsy, the instruction jumps to the label.
     OP_COND_JUMP_FALSE,
-    //args: label (int)
+    //args: label ()
     //The instruction jumps to the label unconditionally.
     OP_ABS_JUMP,
     //This opcode performs no operations, but denotes the beginning of a
     //function. It is used to tell the runtime function object the function's
     //arity and the names to bind the arguments to. The format is
     //
-    //<byte opcode = OP_DEF_FUNC> <int argNum> (<int argNameIndex>)+
+    //<byte opcode = OP_DEF_FUNC> <uint8 argNum> (<uint32 argNameIndex>)+
     //
     //The opcode is followed by an integer operand that denotes the function's
     //arity. Following the arity is a variable number of integer operands whose
@@ -74,11 +76,11 @@ enum INSTRUCTIONS {
  */
 typedef struct {
     //the constant table, constantsLength is the length of constants
-    unsigned int constantsLength;
+    uint32_t constantsLength;
     const char** constants;
 
     //the bytecode, bytecodeLength is the length of bytecode
-    unsigned int bytecodeLength;
+    uint32_t bytecodeLength;
     const unsigned char* bytecode;
 } Module;
 

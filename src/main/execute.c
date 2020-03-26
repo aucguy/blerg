@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "main/bytecode.h"
 #include "main/execute.h"
@@ -37,7 +38,7 @@ typedef struct {
     //the module that is currently executing.
     Module* module;
     //the current bytecode index
-    unsigned int index;
+    uint32_t index;
     //the current scope
     Scope* scope;
 } StackFrameDef;
@@ -71,7 +72,7 @@ typedef struct {
 /**
  * Creates a StackFrame for the invocation of the function.
  */
-StackFrame* createStackFrameDef(Module* module, unsigned int index, Scope* scope) {
+StackFrame* createStackFrameDef(Module* module, uint32_t index, Scope* scope) {
     StackFrame* frame = malloc(sizeof(StackFrame));
     frame->type = STACK_FRAME_DEF;
     frame->def.module = module;
@@ -124,7 +125,7 @@ void popStackFrame(Runtime* runtime) {
     free(toDelete);
 }
 
-int stackFrameSize(Runtime* runtime) {
+uint32_t stackFrameSize(Runtime* runtime) {
     return lengthList(runtime->stackFrame);
 }
 
@@ -140,9 +141,9 @@ Thing* popStack(Runtime* runtime) {
     return thing;
 }
 
-Thing* peekStackIndex(Runtime* runtime, int index) {
+Thing* peekStackIndex(Runtime* runtime, uint32_t index) {
     List* stack = runtime->stack;
-    for(int i = 0; i < index; i++) {
+    for(uint32_t i = 0; i < index; i++) {
         stack = stack->tail;
     }
     return stack->head;
@@ -151,10 +152,10 @@ Thing* peekStackIndex(Runtime* runtime, int index) {
 /**
  * Reads an int operand from the bytecode. Advances the index past the operand.
  */
-int readI32Frame(StackFrame* frame) {
-    const unsigned char* bytecode = frame->def.module->bytecode;
-    unsigned char index = frame->def.index;
-    int arg = bytecode[index] << 24;
+int32_t readI32Frame(StackFrame* frame) {
+    const uint8_t* bytecode = frame->def.module->bytecode;
+    uint32_t index = frame->def.index;
+    int32_t arg = bytecode[index] << 24;
     arg |= bytecode[index + 1] << 16;
     arg |= bytecode[index + 2] << 8;
     arg |= bytecode[index + 3];
@@ -165,15 +166,15 @@ int readI32Frame(StackFrame* frame) {
 /**
  * Reads an unsigned int operand at the given index in the given module.
  */
-unsigned int readU32Module(Module* module, unsigned int index) {
-    unsigned int arg = module->bytecode[index] << 24;
+uint32_t readU32Module(Module* module, uint32_t index) {
+    uint32_t arg = module->bytecode[index] << 24;
     arg |= module->bytecode[index + 1] << 16;
     arg |= module->bytecode[index + 2] << 8;
     arg |= module->bytecode[index + 3];
     return arg;
 }
 
-const char* readConstantModule(Module* module, unsigned int index) {
+const char* readConstantModule(Module* module, uint32_t index) {
     return module->constants[readU32Module(module, index)];
 }
 
@@ -181,8 +182,8 @@ const char* readConstantModule(Module* module, unsigned int index) {
  * Reads an unsigned int operand from the bytecode. Advances the index past the
  * operand.
  */
-unsigned int readU32Frame(StackFrame* frame) {
-    unsigned int arg = readU32Module(frame->def.module, frame->def.index);
+uint32_t readU32Frame(StackFrame* frame) {
+    uint32_t arg = readU32Module(frame->def.module, frame->def.index);
     frame->def.index += 4;
     return arg;
 }
@@ -198,7 +199,7 @@ const char* readConstant(StackFrame* frame) {
 typedef struct {
     Runtime* runtime;
     Module* entryModule;
-    unsigned int entryIndex;
+    uint32_t entryIndex;
     Scope* bottomScope;
 } ExecCodeArgs;
 
@@ -214,10 +215,10 @@ typedef struct {
  * @param error set to a nonzero value upon error
  * @returns the value returned from the invocation / bottom stackframe.
  */
-Thing* executeCode(ExecCodeArgs allArgs, int* error) {
+Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
     Runtime* runtime = allArgs.runtime;
 
-    int initStackFrameSize = stackFrameSize(runtime);
+    uint32_t initStackFrameSize = stackFrameSize(runtime);
 
     pushStackFrame(runtime, createStackFrameDef(allArgs.entryModule,
             allArgs.entryIndex, allArgs.bottomScope));
@@ -234,7 +235,7 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
         unsigned char opcode = module->bytecode[currentFrame->def.index++];
 
         if(opcode == OP_PUSH_INT) {
-            int value = readI32Frame(currentFrame);
+            int32_t value = readI32Frame(currentFrame);
             pushStack(runtime, createIntThing(runtime, value));
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstant(currentFrame);
@@ -246,7 +247,7 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
             popStackFrame(runtime);
             pushStack(runtime, retVal);
         } else if(opcode == OP_CREATE_FUNC) {
-            int entry = readU32Frame(currentFrame);
+            uint32_t entry = readU32Frame(currentFrame);
             Scope* scope = currentFrame->def.scope;
             Thing* toPush = createFuncThing(runtime, entry, module, scope);
             pushStack(runtime, toPush);
@@ -258,7 +259,8 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
             Thing* value = popStack(runtime);
             putMapStr(currentFrame->def.scope->locals, constant, value);
         } else if(opcode == OP_CALL) {
-            int arity = (unsigned int) readU32Frame(currentFrame);
+            //TODO fix conversion
+            uint8_t arity = (unsigned int) readU32Frame(currentFrame);
             Thing* func = peekStackIndex(runtime, arity);
             if(typeOfThing(func) == THING_TYPE_FUNC) {
                 //calling functioned defined in blerg from blerg code is not
@@ -267,8 +269,8 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
                 return NULL;
             } else {
                 Thing** args = malloc(arity * sizeof(Thing*));
-                for(int i = arity - 1; i >= 0; i--) {
-                    args[i] = popStack(runtime);
+                for(uint8_t i = 0; i < arity; i++) {
+                    args[arity - i - 1] = popStack(runtime);
                 }
                 popStack(runtime); //pop the function
                 ThingHeader* header = customDataToThingHeader(func);
@@ -287,7 +289,7 @@ Thing* executeCode(ExecCodeArgs allArgs, int* error) {
     return popStack(runtime);
 }
 
-Thing* executeModule(Runtime* runtime, Module* module, int* error) {
+Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error) {
     ExecCodeArgs allArgs;
     allArgs.runtime = runtime;
     allArgs.entryModule = module;
@@ -298,15 +300,15 @@ Thing* executeModule(Runtime* runtime, Module* module, int* error) {
     return createObjectThingFromMap(runtime, allArgs.bottomScope->locals);
 }
 
-Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args,
-        int* error) {
+Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args,
+        uint8_t* error) {
     //currently, native code can only call blerg code
     if(typeOfThing(func) != THING_TYPE_FUNC) {
         *error = 1;
         return NULL;
     }
     FuncThing* funcThing = func;
-    int index = funcThing->entry;
+    uint32_t index = funcThing->entry;
     if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
         *error = 1;
         return NULL;
@@ -321,7 +323,7 @@ Thing* callFunction(Runtime* runtime, Thing* func, int argNo, Thing** args,
     //assign the arguments provided to the names of the variables in the local
     //scope.
     Scope* scope = createScope(runtime, funcThing->parentScope);
-    for(int i = 0; i < argNo; i++) {
+    for(uint32_t i = 0; i < argNo; i++) {
         const char* constant = readConstantModule(funcThing->module, index);
         setScopeLocal(scope, constant, args[i]);
         index += 4;

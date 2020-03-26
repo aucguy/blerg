@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "main/parse.h"
 #include "main/tokens.h"
@@ -32,8 +33,8 @@ const char* transformTestControlToJumps() {
     };
 
     List* body = NULL;
-    for(int i = 11; i >= 0; i--) {
-        body = consList(stmts[i], body);
+    for(uint8_t i = 12; i != 0; i--) {
+        body = consList(stmts[i - 1], body);
     }
 
     Token* expected = (Token*) createBlockToken(consList(createFuncToken(

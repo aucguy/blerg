@@ -1,4 +1,4 @@
-import os, subprocess, sys, shutil
+import os, os.path, subprocess, sys, shutil
 
 USAGE = 'usage: python3 tools.py [build | buildDebug | clean | test | valgrind | help]'
 
@@ -156,7 +156,8 @@ def build(debugging=False):
     return not failed
 
 def clean():
-    shutil.rmtree('build')
+    if os.path.exists('build'):
+        shutil.rmtree('build')
 
 def test():
     if build(True):

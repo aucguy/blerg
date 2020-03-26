@@ -1,6 +1,7 @@
 #define IS_PARSE_IMPL 1
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "main/tokens.h"
 #include "main/parse.h"
@@ -14,7 +15,7 @@ BlockToken* parseBlock(ParseState*, const char**);
  * Returns whether or not a string contains the given character.
  * Returns false if the character is null.
  */
-int containsChar(const char* chars, char c) {
+uint8_t containsChar(const char* chars, char c) {
     return c != 0 && strchr(chars, c);
 }
 
@@ -36,7 +37,7 @@ char getChar(ParseState* state) {
  * Advances the current character for the ParseState by the given amount of
  * characters.
  */
-void advance(ParseState* state, int amount) {
+void advance(ParseState* state, uint32_t amount) {
     state->index += amount;
 }
 
@@ -75,8 +76,8 @@ void skipWhitespace(ParseState* state) {
  * @return a string containing the characters from the indexes of 'start' to
  *      'end' in 'src'
  */
-char* sliceStr(const char* str, int start, int end) {
-    int len = sizeof(char) * (end - start);
+char* sliceStr(const char* str, uint32_t start, uint32_t end) {
+    uint32_t len = sizeof(char) * (end - start);
     char* extracted = (char*) malloc(len + 1);
     memcpy(extracted, &str[start], len);
     extracted[len] = 0;
@@ -107,7 +108,7 @@ const char* INT_CHARS = "0123456789";
  * <integer> ::= [0-9]+
  */
 IntToken* parseInt(ParseState* state) {
-    int start = state->index;
+    uint32_t start = state->index;
     advanceWhile(state, INT_CHARS);
 
     char* extracted = sliceStr(state->src, start, state->index);
@@ -124,7 +125,7 @@ IntToken* parseInt(ParseState* state) {
  */
 LiteralToken* parseLiteral(ParseState* state) {
     advance(state, 1); //skip the '
-    int start = state->index;
+    uint32_t start = state->index;
     while(getChar(state) != '\'' && getChar(state) != 0) {
         advance(state, 1);
     }
@@ -148,7 +149,7 @@ const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
  * <identifier> ::= [a-zA-Z_]+
  */
 IdentifierToken* parseIdentifier(ParseState* state) {
-    int start = state->index;
+    uint32_t start = state->index;
     advanceWhile(state, IDENTIFIER_CHARS);
 
     return createIdentifierToken(sliceStr(state->src, start, state->index));
@@ -205,8 +206,8 @@ const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
  * string is "0" then the function returns if the end of the source has been
  * reached.
  */
-int lookAhead(ParseState* state, const char* str) {
-    int i = 0;
+uint32_t lookAhead(ParseState* state, const char* str) {
+    uint32_t i = 0;
     if(strcmp(str, "0") == 0) {
         return getChar(state) == 0;
     }
@@ -228,8 +229,8 @@ int lookAhead(ParseState* state, const char* str) {
  * If zero is present, the function will return true if the end of the source
  * has been reached.
  */
-int lookAheadMulti(ParseState* state, const char* strs[]) {
-    for(int i = 0; strcmp(strs[i], "~") != 0; i++) {
+uint8_t lookAheadMulti(ParseState* state, const char* strs[]) {
+    for(uint8_t i = 0; strcmp(strs[i], "~") != 0; i++) {
         if(lookAhead(state, strs[i])) {
             return 1;
         }
@@ -237,7 +238,7 @@ int lookAheadMulti(ParseState* state, const char* strs[]) {
     return 0;
 }
 
-int factorAhead(ParseState* state) {
+uint8_t factorAhead(ParseState* state) {
     char c = getChar(state);
     return c == '(' || c == '\'' || containsChar(INT_CHARS, c) != 0 ||
             (containsChar(IDENTIFIER_CHARS, c) != 0 &&
@@ -273,9 +274,9 @@ Token* parseCall(ParseState* state) {
 /**
  * Returns the operator for the given level.
  */
-const char* getOp(ParseState* state, int level) {
-    for(int i = 0; i < OP_AMOUNT; i++) {
-        const char* checking = OP_DATA[level][i];
+const char* getOp(ParseState* state, uint8_t level) {
+    for(uint8_t i = 0; i < OP_AMOUNT; i++) {
+        const char* checking = OP_DATA[level - 1][i];
         //end the array of operators, exit the function
         if(strcmp(checking, "end") == 0) {
             break;
@@ -321,9 +322,9 @@ const char* getOp(ParseState* state, int level) {
  * it calls parseExpression, with the level one less than it was passed.
  */
 
-Token* parseExpressionWithLevel(ParseState* state, int level);
+Token* parseExpressionWithLevel(ParseState* state, uint8_t level);
 
-Token* parseBinaryOp(ParseState* state, int level) {
+Token* parseBinaryOp(ParseState* state, uint8_t level) {
     Token* token = parseExpressionWithLevel(state, level - 1);
     if(token == NULL) {
         return NULL;
@@ -359,7 +360,7 @@ Token* parseBinaryOp(ParseState* state, int level) {
  *
  * Note that these two are equivalent.
  */
-Token* parsePrefixUnaryOp(ParseState* state, int level) {
+Token* parsePrefixUnaryOp(ParseState* state, uint8_t level) {
     skipWhitespace(state);
     const char* op = getOp(state, level);
     if(op != NULL) {
@@ -375,10 +376,10 @@ Token* parsePrefixUnaryOp(ParseState* state, int level) {
     }
 }
 
-Token* parseExpressionWithLevel(ParseState* state, int level) {
-    if(level == -1) {
+Token* parseExpressionWithLevel(ParseState* state, uint8_t level) {
+    if(level == 0) {
         return parseCall(state);
-    } else if(strcmp(OP_DATA[level][0], "prefix") == 0) {
+    } else if(strcmp("prefix", OP_DATA[level - 1][0]) == 0){
         return parsePrefixUnaryOp(state, level);
     } else {
         return parseBinaryOp(state, level);
@@ -386,7 +387,7 @@ Token* parseExpressionWithLevel(ParseState* state, int level) {
 }
 
 Token* parseExpression(ParseState* state) {
-    return parseExpressionWithLevel(state, OP_LEVELS - 1);
+    return parseExpressionWithLevel(state, OP_LEVELS);
 }
 
 /**
@@ -439,7 +440,7 @@ const char* IF_ELSE_ENDS[] = { "end", "~" };
  * @return A list of the rest of non-else branches in this block. If there are no
  *      more non-else branches, this returns NULL.
  */
-List* parseIfStmtBranches(ParseState* state, int* error) {
+List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
     Token* condition = parseExpression(state);
     if(condition == NULL || !lookAhead(state, "then")) {
         *error = 1;
@@ -487,7 +488,7 @@ IfToken* parseIfStmt(ParseState* state) {
     //an error code is used because parseIfStmtBranches returns NULL when there
     //are no more branches, not for errors. Note that parseIfStmtBranches does
     //not consume elif / else / end.
-    int error = 0;
+    uint8_t error = 0;
     List* branches = parseIfStmtBranches(state, &error);
     if(error) {
         return NULL;
@@ -544,7 +545,7 @@ WhileToken* parseWhileStmt(ParseState* state) {
  * @return the rest of the arguments as a list of IdentifierTokens or NULL if
  *      there are no more arguments
  */
-List* parseArgs(ParseState* state, int* error) {
+List* parseArgs(ParseState* state, uint8_t* error) {
     skipWhitespace(state);
     //end of the arguments
     if(lookAhead(state, "do")) {
@@ -582,7 +583,7 @@ FuncToken* parseFuncStmt(ParseState* state) {
         return NULL;
     }
 
-    int error = 0;
+    uint8_t error = 0;
     List* args = parseArgs(state, &error);
     if(error || !lookAhead(state, "do")) {
         destroyToken((Token*) name);
@@ -646,7 +647,7 @@ Token* parseStatement(ParseState* state) {
  * @return A list of the rest of the statements in this block. If there are no
  *      more statements, this returns NULL.
  */
-List* parseBlockHelper(ParseState* state, const char* ends[], int* error) {
+List* parseBlockHelper(ParseState* state, const char* ends[], uint8_t* error) {
     skipWhitespace(state);
     //check for the end of the block
     if(lookAheadMulti(state, ends)) {
@@ -693,7 +694,7 @@ List* parseBlockHelper(ParseState* state, const char* ends[], int* error) {
 BlockToken* parseBlock(ParseState* state, const char* ends[]) {
     //parseBlockHelper sets this to 1 if there's an error instead of returning
     //NULL
-    int error = 0;
+    uint8_t error = 0;
     List* list = parseBlockHelper(state, ends, &error);
     if(error) {
         return NULL;
@@ -706,7 +707,7 @@ const char* MODULE_ENDS[] = { "0", "~" };
 BlockToken* parseModule(const char* src) {
     ParseState* state = createParseState(src);
     BlockToken* token = parseBlock(state, MODULE_ENDS);
-    int ended = getChar(state) == 0;
+    uint8_t ended = getChar(state) == 0;
     free(state);
     if(!ended) {
         if(token != NULL) {

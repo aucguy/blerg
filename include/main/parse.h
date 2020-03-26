@@ -12,7 +12,7 @@
  */
 typedef struct {
     const char* src;
-    int index;
+    uint32_t index;
 } ParseState;
 
 /**

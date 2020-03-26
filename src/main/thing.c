@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "main/execute.h"
 #include "main/thing.h"
@@ -15,11 +16,11 @@ void setDestroyThingType(ThingType* type, void (*destroy)(Thing*)) {
     type->destroy = destroy;
 }
 
-void setCallThingType(ThingType* type, Thing* (*call)(Runtime*, Thing*, Thing**, int*)) {
+void setCallThingType(ThingType* type, Thing* (*call)(Runtime*, Thing*, Thing**, uint8_t*)) {
     type->call = call;
 }
 
-void setArityThingType(ThingType* type, unsigned char (*arity)(Thing*)) {
+void setArityThingType(ThingType* type, uint8_t (*arity)(Thing*)) {
     type->arity = arity;
 }
 
@@ -27,7 +28,7 @@ void destroySimpleThing(Thing* thing) {
     UNUSED(thing);
 }
 
-Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, int* error) {
+Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t* error) {
     UNUSED(runtime);
     UNUSED(thing);
     UNUSED(args);
@@ -35,21 +36,21 @@ Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, int* error) {
     return NULL;
 }
 
-unsigned char arityOne(Thing* thing) {
+uint8_t arityOne(Thing* thing) {
     UNUSED(thing);
     return 1;
 }
 
-unsigned char arityTwo(Thing* thing) {
+uint8_t arityTwo(Thing* thing) {
     UNUSED(thing);
     return 2;
 }
 
-Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error);
+Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t* error);
 
 void destroyObjectThing(Thing* thing);
 
-static int initialized = 0;
+static uint8_t initialized = 0;
 
 void initThing() {
     if(!initialized) {
@@ -156,30 +157,30 @@ Thing* createNoneThing(Runtime* runtime) {
  * Represents integers found in the source code.
  */
 typedef struct {
-    int value;
+    int32_t value;
 } IntThing;
 
-Thing* createIntThing(Runtime* runtime, int value) {
+Thing* createIntThing(Runtime* runtime, int32_t value) {
     IntThing* thing = createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
     thing->value = value;
     return thing;
 }
 
-int thingAsInt(Thing* thing) {
+int32_t thingAsInt(Thing* thing) {
     return ((IntThing*) thing)->value;
 }
 
-int symbolId = 0;
+uint32_t symbolId = 0;
 
-int newSymbolId() {
+uint32_t newSymbolId() {
     return symbolId++;
 }
 
 typedef struct {
-    int id;
+    uint32_t id;
 } SymbolThing;
 
-Thing* createSymbolThing(Runtime* runtime, int id) {
+Thing* createSymbolThing(Runtime* runtime, uint32_t id) {
     SymbolThing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
     thing->id = id;
     return thing;
@@ -187,7 +188,7 @@ Thing* createSymbolThing(Runtime* runtime, int id) {
 
 
 //not properly supported yet
-Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
+Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t* error) {
     UNUSED(self);
     //only ints supported
     if(typeOfThing(args[0]) != THING_TYPE_INT || typeOfThing(args[1]) != THING_TYPE_INT) {
@@ -195,8 +196,8 @@ Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, int* error) {
         return NULL;
     }
 
-    int valueA = thingAsInt(args[0]);
-    int valueB = thingAsInt(args[1]);
+    int32_t valueA = thingAsInt(args[0]);
+    int32_t valueB = thingAsInt(args[1]);
 
     return (Thing*) createIntThing(runtime, valueA + valueB);
 }
@@ -222,7 +223,7 @@ Thing* getObjectProperty(Thing* thing, const char* name) {
     return getMapStr(((ObjectThing*) thing)->properties, name);
 }
 
-Thing* createFuncThing(Runtime* runtime, unsigned int entry,
+Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope) {
     FuncThing* thing = createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
     thing->entry = entry;

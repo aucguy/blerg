@@ -1,7 +1,9 @@
 #include <stdlib.h>
+#include <stdint.h>
+
 #include "main/tokens.h"
 
-int validateOnlyFuncsToplevel(BlockToken* module) {
+uint8_t validateOnlyFuncsToplevel(BlockToken* module) {
     if(module->token.type != TOKEN_BLOCK) {
         return 0;
     }
@@ -15,13 +17,13 @@ int validateOnlyFuncsToplevel(BlockToken* module) {
     return 1;
 }
 
-int containsNoFuncsBranch(void*);
-int containsNoFuncsVoid(void*);
+uint8_t containsNoFuncsBranch(void*);
+uint8_t containsNoFuncsVoid(void*);
 
 /**
  * Returns true if the token and all of its subtokens are not functions.
  */
-int containsNoFuncs(Token* token) {
+uint8_t containsNoFuncs(Token* token) {
     if(token == NULL) {
         return 1;
     } else if(token->type == TOKEN_BLOCK) {
@@ -41,14 +43,14 @@ int containsNoFuncs(Token* token) {
     }
 }
 
-int containsNoFuncsVoid(void* token) {
+uint8_t containsNoFuncsVoid(void* token) {
     return containsNoFuncs((Token*) token);
 }
 
 /**
  * Returns true if the branch does not contain functions.
  */
-int containsNoFuncsBranch(void* branch) {
+uint8_t containsNoFuncsBranch(void* branch) {
     IfBranch* casted = (IfBranch*) branch;
     return containsNoFuncs((Token*) casted->condition) &&
             containsNoFuncs((Token*) casted->block);
@@ -59,10 +61,10 @@ int containsNoFuncsBranch(void* branch) {
  * matter if the token itself is not a function. This function only works on
  * function tokens.
  */
-int noInnerFuncs(Token* token) {
+uint8_t noInnerFuncs(Token* token) {
     if(token->type == TOKEN_FUNC) {
         if(!allList(((FuncToken*) token)->body->children,
-                (int (*)(void*)) containsNoFuncs)) {
+                (uint8_t (*)(void*)) containsNoFuncs)) {
             return 0;
         }
     }
@@ -72,10 +74,10 @@ int noInnerFuncs(Token* token) {
 /**
  * Returns true if the module contains no inner functions
  */
-int validateNoInnerFuncs(BlockToken* module) {
-    return allList(module->children, (int (*)(void*)) noInnerFuncs);
+uint8_t validateNoInnerFuncs(BlockToken* module) {
+    return allList(module->children, (uint8_t (*)(void*)) noInnerFuncs);
 }
 
-int validateModule(BlockToken* module) {
+uint8_t validateModule(BlockToken* module) {
     return validateOnlyFuncsToplevel(module) && validateNoInnerFuncs(module);
 }

@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "main/util.h"
 
 char* newStr(const char* src) {
-    int len = sizeof(char) * (strlen(src) + 1);
+    uint32_t len = sizeof(char) * (strlen(src) + 1);
     char* dst = (char*) malloc(len);
     memcpy(dst, src, len);
     dst[len - 1] = 0;
@@ -18,7 +19,7 @@ List* consList(void* head, List* tail) {
     return full;
 }
 
-int allList2(List* listA, List* listB, int(*predicate)(void*, void*)) {
+uint8_t allList2(List* listA, List* listB, uint8_t(*predicate)(void*, void*)) {
     while(listA != NULL && listB != NULL) {
         if(!predicate(listA->head, listB->head)) {
             return 0;
@@ -30,7 +31,7 @@ int allList2(List* listA, List* listB, int(*predicate)(void*, void*)) {
     return listA == NULL && listB == NULL;
 }
 
-int allList(List* list, int(*predicate)(void*)) {
+uint8_t allList(List* list, uint8_t(*predicate)(void*)) {
     while(list != NULL) {
         if(!predicate(list->head)) {
             return 0;
@@ -64,8 +65,8 @@ void* lastList(List* list) {
     return list->head;
 }
 
-int lengthList(List* list) {
-    int length = 0;
+uint32_t lengthList(List* list) {
+    uint32_t length = 0;
     while(list != NULL) {
         list = list->tail;
         length++;
@@ -131,14 +132,14 @@ void destroyMap(Map* map, void(*destroyKey)(void*), void(*destroyValue)(void*)) 
 /**
  * Compares two boxed integer values
  */
-int intEq(const void* a, const void* b) {
-    return *((int*) a) == *((int*) b);
+uint8_t intEq(const void* a, const void* b) {
+    return *((uint8_t*) a) == *((uint8_t*) b);
 }
 
 /**
  * Compares two string values
  */
-int strEq(const void* a, const void* b) {
+uint8_t strEq(const void* a, const void* b) {
     return strcmp((const char*) a, (const char*) b) == 0;
 }
 
@@ -146,7 +147,7 @@ int strEq(const void* a, const void* b) {
  * Gets the entry object from the map with the given key or NULL if there is
  * no such entry.
  */
-Entry* getEntryMap(Map* map, const void* key, int(*equal)(const void*, const void*)) {
+Entry* getEntryMap(Map* map, const void* key, uint8_t(*equal)(const void*, const void*)) {
     for(Entry* i = map->entry; i != NULL; i = i->tail) {
         if(equal(i->key, key)) {
             return i;
@@ -163,7 +164,7 @@ void* postGetMap(Entry* entry) {
     }
 }
 
-void* getMapInt(Map* map, int key) {
+void* getMapUint32(Map* map, uint32_t key) {
     return postGetMap(getEntryMap(map, &key, intEq));
 }
 
@@ -183,16 +184,16 @@ void postPutMap(Map* map, Entry* entry, void* key, void* value) {
     }
 }
 
-void putMapInt(Map* map, int key, void* value) {
-    postPutMap(map, getEntryMap(map, &key, intEq), boxInt(key), value);
+void putMapUint32(Map* map, uint32_t key, void* value) {
+    postPutMap(map, getEntryMap(map, &key, intEq), boxUint32(key), value);
 }
 
 void putMapStr(Map* map, const char* key, void* value) {
     postPutMap(map, getEntryMap(map, key, strEq), (void*) key, value);
 }
 
-int* boxInt(int primitive) {
-    int* boxed = (int*) malloc(sizeof(int));
+uint32_t* boxUint32(uint32_t primitive) {
+    uint32_t* boxed = (uint32_t*) malloc(sizeof(uint32_t));
     *boxed = primitive;
     return boxed;
 }

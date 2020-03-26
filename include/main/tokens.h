@@ -1,6 +1,8 @@
 #ifndef TOKENS_H_
 #define TOKENS_H_
 
+#include <stdint.h>
+
 #include "main/flags.h"
 #include "main/util.h"
 
@@ -37,14 +39,14 @@ typedef enum {
 typedef struct Token_ {
     TokenType type;
     void (*destroy)(struct Token_*);
-    void (*print)(struct Token_*, int);
-    int (*equals)(struct Token_*, struct Token_*);
+    void (*print)(struct Token_*, uint8_t);
+    uint8_t (*equals)(struct Token_*, struct Token_*);
     struct Token_* (*copy)(struct Token_*);
 } Token;
 
 typedef struct {
     Token token;
-    int value;
+    int32_t value;
 } IntToken;
 
 typedef struct {
@@ -131,12 +133,12 @@ typedef struct {
     const char* label;
     //if the condition is false and when is 0 then the jump is taken
     //if the condition is true and when is 1 then the jump is taken
-    int when;
+    uint8_t when;
 } CondJumpToken;
 
-void printTokenWithIndent(Token* token, int indent);
+void printTokenWithIndent(Token* token, uint8_t indent);
 void printToken(Token* token);
-void printIndent(int indent);
+void printIndent(uint8_t indent);
 
 /**
  * Frees the token, its fields and subtokens.
@@ -145,12 +147,12 @@ void destroyToken(Token* token);
 void destroyTokenVoid(void*);
 void destroyIfBranch(void*);
 
-int tokensEqual(Token* a, Token* b);
+uint8_t tokensEqual(Token* a, Token* b);
 
 Token* copyToken(Token*);
 
 #if INCLUDE_TESTS
-IntToken* createIntToken(int);
+IntToken* createIntToken(int32_t);
 LiteralToken* createLiteralToken(const char*);
 IdentifierToken* createIdentifierToken(const char*);
 CallToken* createCallToken(List*);
@@ -167,6 +169,6 @@ ReturnToken* createReturnToken(Token* body);
 
 LabelToken* createLabelToken(const char*);
 AbsJumpToken* createAbsJumpToken(const char*);
-CondJumpToken* createCondJumpToken(Token*, const char*, int);
+CondJumpToken* createCondJumpToken(Token*, const char*, uint8_t);
 
 #endif /* TOKENS_H_ */

@@ -28,7 +28,7 @@ Module* sourceToModule(const char* src) {
 const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
-    int error = 0;
+    uint8_t error = 0;
     Module* module = sourceToModule("def main x do <- 1; end");
     assert(module != NULL, "error in source code");
 
@@ -49,7 +49,7 @@ const char* executeTestGlobalHasMainFunc() {
 const char* executeTestMainFuncReturns1() {
     initThing();
     Runtime* runtime = createRuntime();
-    int error = 0;
+    uint8_t error = 0;
     Module* module = sourceToModule("def main x do <- 1; end");
     assert(module != NULL, "error in source code");
 
@@ -73,7 +73,7 @@ const char* executeTestMainFuncReturns1() {
 const char* executeTestAddFunction() {
     initThing();
     Runtime* runtime = createRuntime();
-    int error = 0;
+    uint8_t error = 0;
     Module* module = sourceToModule("def add x y do <- x + y; end");
     assert(module != NULL, "error in source code");
 
