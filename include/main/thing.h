@@ -20,6 +20,8 @@ void initThing();
  */
 void deinitThing();
 
+typedef Thing* (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+
 /**
  * Each Thing has a type which describes how it behaves and its custom data
  * format.
@@ -28,14 +30,13 @@ typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
     void (*destroy)(Thing*);
-    Thing* (*call)(Runtime*, Thing*, Thing**, uint8_t*);
-    uint8_t (*arity)();
+    ExecFunc call;
+    ExecFunc dispatch;
 } ThingType;
 
-//different builtin types. Initialized in initExecute.
+//different builtin types. Initialized in initThing.
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
-//without currying, there will be symbols, but for now this should be removed
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
@@ -76,7 +77,7 @@ typedef struct {
 } FuncThing;
 
 Thing* createNoneThing(Runtime* runtime);
-Thing* createSymbolThing(Runtime* runtime, uint32_t id);
+Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,

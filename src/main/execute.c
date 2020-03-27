@@ -96,7 +96,7 @@ Runtime* createRuntime() {
     runtime->noneThing = createNoneThing(runtime);
     runtime->builtins = createMap();
 
-    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, newSymbolId()));
+    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, newSymbolId(), 2));
 
     return runtime;
 }
@@ -274,7 +274,7 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
                 }
                 popStack(runtime); //pop the function
                 ThingHeader* header = customDataToThingHeader(func);
-                Thing* ret = header->type->call(runtime, func, args, &arity);
+                Thing* ret = header->type->call(runtime, func, args, arity, error);
                 pushStack(runtime, ret);
                 free(args);
             }

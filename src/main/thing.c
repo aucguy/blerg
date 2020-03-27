@@ -16,37 +16,30 @@ void setDestroyThingType(ThingType* type, void (*destroy)(Thing*)) {
     type->destroy = destroy;
 }
 
-void setCallThingType(ThingType* type, Thing* (*call)(Runtime*, Thing*, Thing**, uint8_t*)) {
+void setCallThingType(ThingType* type, ExecFunc call) {
     type->call = call;
 }
 
-void setArityThingType(ThingType* type, uint8_t (*arity)(Thing*)) {
-    type->arity = arity;
+void setDispatchThingType(ThingType* type, ExecFunc dispatch) {
+    type->dispatch = dispatch;
 }
 
 void destroySimpleThing(Thing* thing) {
     UNUSED(thing);
 }
 
-Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t* error) {
+Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity,
+        uint8_t* error) {
     UNUSED(runtime);
     UNUSED(thing);
+    UNUSED(arity);
     UNUSED(args);
     *error = 1;
     return NULL;
 }
 
-uint8_t arityOne(Thing* thing) {
-    UNUSED(thing);
-    return 1;
-}
-
-uint8_t arityTwo(Thing* thing) {
-    UNUSED(thing);
-    return 2;
-}
-
-Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t* error);
+Thing* symbolCall(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+Thing* intDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 
 void destroyObjectThing(Thing* thing);
 
@@ -57,27 +50,27 @@ void initThing() {
         THING_TYPE_NONE = createThingType();
         setDestroyThingType(THING_TYPE_NONE, destroySimpleThing);
         setCallThingType(THING_TYPE_NONE, errorCall);
-        setArityThingType(THING_TYPE_NONE, arityOne);
+        setDispatchThingType(THING_TYPE_NONE, errorCall);
 
         THING_TYPE_SYMBOL = createThingType();
         setDestroyThingType(THING_TYPE_SYMBOL, destroySimpleThing);
         setCallThingType(THING_TYPE_SYMBOL, symbolCall);
-        setArityThingType(THING_TYPE_SYMBOL, arityTwo);
+        setDispatchThingType(THING_TYPE_SYMBOL, symbolCall);
 
         THING_TYPE_INT = createThingType();
         setDestroyThingType(THING_TYPE_INT, destroySimpleThing);
         setCallThingType(THING_TYPE_INT, errorCall);
-        setArityThingType(THING_TYPE_INT, arityOne);
+        setDispatchThingType(THING_TYPE_INT, intDispatch);
 
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
         setCallThingType(THING_TYPE_OBJ, errorCall);
-        setArityThingType(THING_TYPE_OBJ, arityOne);
+        setDispatchThingType(THING_TYPE_OBJ, errorCall);
 
         THING_TYPE_FUNC = createThingType();
         setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
         setCallThingType(THING_TYPE_FUNC, errorCall);
-        setArityThingType(THING_TYPE_FUNC, arityOne);
+        setDispatchThingType(THING_TYPE_FUNC, errorCall);
 
         initialized = 1;
     }
@@ -166,6 +159,21 @@ Thing* createIntThing(Runtime* runtime, int32_t value) {
     return thing;
 }
 
+Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    UNUSED(self);
+    if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_INT ||
+            typeOfThing(args[1]) != THING_TYPE_INT) {
+        *error = 1;
+        return NULL;
+    }
+
+    int32_t valueA = thingAsInt(args[0]);
+    int32_t valueB = thingAsInt(args[1]);
+
+    return (Thing*) createIntThing(runtime, valueA + valueB);
+}
+
 int32_t thingAsInt(Thing* thing) {
     return ((IntThing*) thing)->value;
 }
@@ -178,28 +186,26 @@ uint32_t newSymbolId() {
 
 typedef struct {
     uint32_t id;
+    uint8_t arity;
 } SymbolThing;
 
-Thing* createSymbolThing(Runtime* runtime, uint32_t id) {
-    SymbolThing* thing = createThing(runtime, THING_TYPE_SYMBOL, sizeof(SymbolThing));
+Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
+    SymbolThing* thing = createThing(runtime, THING_TYPE_SYMBOL,
+            sizeof(SymbolThing));
     thing->id = id;
+    thing->arity = arity;
     return thing;
 }
 
 
 //not properly supported yet
-Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t* error) {
-    UNUSED(self);
-    //only ints supported
-    if(typeOfThing(args[0]) != THING_TYPE_INT || typeOfThing(args[1]) != THING_TYPE_INT) {
+Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    if(arity != ((SymbolThing*) self)->arity) {
         *error = 1;
         return NULL;
     }
-
-    int32_t valueA = thingAsInt(args[0]);
-    int32_t valueB = thingAsInt(args[1]);
-
-    return (Thing*) createIntThing(runtime, valueA + valueB);
+    return typeOfThing(args[0])->dispatch(runtime, self, args, arity, error);
 }
 
 /**
@@ -210,7 +216,8 @@ typedef struct {
 } ObjectThing;
 
 Thing* createObjectThingFromMap(Runtime* runtime, Map* map) {
-    ObjectThing* thing = createThing(runtime, THING_TYPE_OBJ, sizeof(ObjectThing));
+    ObjectThing* thing = createThing(runtime, THING_TYPE_OBJ,
+            sizeof(ObjectThing));
     thing->properties = copyMap(map);
     return thing;
 }
