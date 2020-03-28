@@ -98,6 +98,8 @@ Runtime* createRuntime() {
 
     putMapStr(runtime->builtins, "+", createSymbolThing(runtime, SYM_ADD, 2));
     putMapStr(runtime->builtins, "-", createSymbolThing(runtime, SYM_SUB, 2));
+    putMapStr(runtime->builtins, "*", createSymbolThing(runtime, SYM_MUL, 2));
+    putMapStr(runtime->builtins, "/", createSymbolThing(runtime, SYM_DIV, 2));
 
     return runtime;
 }
@@ -281,6 +283,9 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
                 popStack(runtime); //pop the function
                 ThingHeader* header = customDataToThingHeader(func);
                 Thing* ret = header->type->call(runtime, func, args, arity, error);
+                if(*error == 1) {
+                    return NULL;
+                }
                 pushStack(runtime, ret);
                 free(args);
             }

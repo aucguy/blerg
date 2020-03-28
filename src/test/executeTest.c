@@ -155,3 +155,22 @@ const char* executeTestAddSubFunction() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeTestMathExpr() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def math x do <- (x*2 - 5) / 7; end";
+    in.name = "math";
+    in.arity = 1;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createIntThing(in.runtime, 100);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkInt(out.retVal, 27), "returned value is not 27");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

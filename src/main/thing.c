@@ -75,6 +75,8 @@ void initThing() {
 
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
+        SYM_MUL = newSymbolId();
+        SYM_DIV = newSymbolId();
 
         initialized = 1;
     }
@@ -99,6 +101,8 @@ void deinitThing() {
 
         SYM_ADD = 0;
         SYM_SUB = 0;
+        SYM_MUL = 0;
+        SYM_DIV = 0;
 
         initialized = 0;
     }
@@ -185,6 +189,10 @@ Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         out = valueA + valueB;
     } else if(id == SYM_SUB) {
         out = valueA - valueB;
+    } else if(id == SYM_MUL) {
+        out = valueA * valueB;
+    } else if(id == SYM_DIV) {
+        out = valueA / valueB;
     } else {
         *error = 1;
         return NULL;

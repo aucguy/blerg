@@ -80,6 +80,8 @@ Thing* createNoneThing(Runtime* runtime);
 
 uint32_t SYM_ADD;
 uint32_t SYM_SUB;
+uint32_t SYM_MUL;
+uint32_t SYM_DIV;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
