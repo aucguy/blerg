@@ -200,3 +200,22 @@ const char* executeTestStrRet() {
    cleanupExecFunc(in, out);
    return NULL;
 }
+
+const char* executeTestStrConcat() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def greet name do <- 'hello ' + name + '!'; end";
+    in.name = "greet";
+    in.arity = 1;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createStrThing(in.runtime, "Bob", 1);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkStr(out.retVal, "hello Bob!"), "return value is not 'hello Bob!'");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

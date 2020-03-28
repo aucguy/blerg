@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "main/execute.h"
 #include "main/thing.h"
@@ -40,6 +41,8 @@ Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity,
 
 Thing* symbolCall(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 Thing* intDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+Thing* strDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+void destroyStrThing(Thing*);
 uint32_t getSymbolId(Thing* self);
 
 void destroyObjectThing(Thing* thing);
@@ -64,9 +67,9 @@ void initThing() {
         setDispatchThingType(THING_TYPE_INT, intDispatch);
 
         THING_TYPE_STR = createThingType();
-        setDestroyThingType(THING_TYPE_STR, destroySimpleThing);
+        setDestroyThingType(THING_TYPE_STR, destroyStrThing);
         setCallThingType(THING_TYPE_STR, errorCall);
-        setDispatchThingType(THING_TYPE_STR, errorCall);
+        setDispatchThingType(THING_TYPE_STR, strDispatch);
 
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
@@ -215,12 +218,50 @@ int32_t thingAsInt(Thing* thing) {
 
 typedef struct {
     const char* value;
+    uint8_t literal;
 } StrThing;
 
-Thing* createStrThing(Runtime* runtime, const char* value) {
+Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal) {
     StrThing* thing = createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
     thing->value = value;
+    thing->literal = literal != 0; // !=0 makes the value a one or a zero
     return thing;
+}
+
+void destroyStrThing(Thing* self) {
+    StrThing* str = (StrThing*) self;
+    if(!str->literal) {
+        free((char*) str->value);
+    }
+}
+
+Thing* strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    UNUSED(self);
+    if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_STR ||
+            typeOfThing(args[1]) != THING_TYPE_STR ||
+            typeOfThing(self) != THING_TYPE_SYMBOL) {
+        *error = 1;
+        return NULL;
+    }
+
+    const char* valueA = thingAsStr(args[0]);
+    const char* valueB = thingAsStr(args[1]);
+    char* out;
+    uint32_t id = getSymbolId(self);
+
+    if(id == SYM_ADD) {
+        uint32_t len = strlen(valueA) + strlen(valueB);
+        out = malloc(sizeof(char) * (len + 1));
+        out[0] = 0;
+        strcat(out, valueA);
+        strcat(out, valueB);
+    } else {
+        *error = 1;
+        return NULL;
+    }
+
+    return (Thing*) createStrThing(runtime, out, 0);
 }
 
 const char* thingAsStr(Thing* self) {

@@ -249,7 +249,7 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
             }
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_LITERAL) {
-            Thing* value = createStrThing(runtime, readConstant(currentFrame));
+            Thing* value = createStrThing(runtime, readConstant(currentFrame), 1);
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);

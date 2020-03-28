@@ -56,7 +56,7 @@ void destroyThing(Thing* thing);
 
 Thing* createIntThing(Runtime* runtime, int32_t value);
 
-Thing* createStrThing(Runtime* runtime, const char* value);
+Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal);
 
 /**
  * Returns the integer value of the given IntThing. If the thing is not an
