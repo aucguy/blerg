@@ -77,6 +77,10 @@ typedef struct {
 } FuncThing;
 
 Thing* createNoneThing(Runtime* runtime);
+
+uint32_t SYM_ADD;
+uint32_t SYM_SUB;
+
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
 

@@ -96,7 +96,8 @@ Runtime* createRuntime() {
     runtime->noneThing = createNoneThing(runtime);
     runtime->builtins = createMap();
 
-    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, newSymbolId(), 2));
+    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, SYM_ADD, 2));
+    putMapStr(runtime->builtins, "-", createSymbolThing(runtime, SYM_SUB, 2));
 
     return runtime;
 }
@@ -239,7 +240,12 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
             pushStack(runtime, createIntThing(runtime, value));
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstant(currentFrame);
-            pushStack(runtime, getMapStr(runtime->builtins, constant));
+            Thing* value = getMapStr(runtime->builtins, constant);
+            if(value == NULL) {
+                *error = 1;
+                return NULL;
+            }
+            pushStack(runtime, value);
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
         } else if(opcode == OP_RETURN) {
@@ -278,7 +284,6 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
                 pushStack(runtime, ret);
                 free(args);
             }
-
         } else {
             //unknown opcode
             *error = 1;

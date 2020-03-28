@@ -70,27 +70,28 @@ const char* executeTestMainFuncReturns1() {
     return NULL;
 }
 
-const char* executeTestAddFunction() {
+const char* executeTestAddSubFunction() {
     initThing();
     Runtime* runtime = createRuntime();
     uint8_t error = 0;
-    Module* module = sourceToModule("def add x y do <- x + y; end");
+    Module* module = sourceToModule("def add_sub x y z do <- x + y - z; end");
     assert(module != NULL, "error in source code");
 
     Thing* global = executeModule(runtime, module, &error);
     assert(error == 0, "error executing global scope");
     assert(typeOfThing(global) == THING_TYPE_OBJ, "global scope is not an object");
-    Thing* addFunc = getObjectProperty(global, "add");
-    assert(addFunc != NULL, "add function not found")
-    assert(typeOfThing(addFunc) == THING_TYPE_FUNC, "add function is not a function");
+    Thing* addFunc = getObjectProperty(global, "add_sub");
+    assert(addFunc != NULL, "add_sub function not found")
+    assert(typeOfThing(addFunc) == THING_TYPE_FUNC, "add_sub function is not a function");
 
-    Thing** args = malloc(sizeof(Thing*) * 2);
+    Thing** args = malloc(sizeof(Thing*) * 3);
     args[0] = createIntThing(runtime, 1);
     args[1] = createIntThing(runtime, 2);
-    Thing* retVal = callFunction(runtime, addFunc, 2, args, &error);
+    args[2] = createIntThing(runtime, 3);
+    Thing* retVal = callFunction(runtime, addFunc, 3, args, &error);
     assert(error == 0, "error executing add function");
     assert(typeOfThing(retVal) == THING_TYPE_INT, "returned value is not an integer");
-    assert(thingAsInt(retVal) == 3, "returned value is not 3");
+    assert(thingAsInt(retVal) == 0, "returned value is not 0");
 
     destroyRuntime(runtime);
     destroyModule(module);

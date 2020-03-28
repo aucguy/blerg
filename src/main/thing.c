@@ -40,6 +40,7 @@ Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity,
 
 Thing* symbolCall(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 Thing* intDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+uint32_t getSymbolId(Thing* self);
 
 void destroyObjectThing(Thing* thing);
 
@@ -72,6 +73,9 @@ void initThing() {
         setCallThingType(THING_TYPE_FUNC, errorCall);
         setDispatchThingType(THING_TYPE_FUNC, errorCall);
 
+        SYM_ADD = newSymbolId();
+        SYM_SUB = newSymbolId();
+
         initialized = 1;
     }
 }
@@ -92,6 +96,9 @@ void deinitThing() {
 
         free(THING_TYPE_FUNC);
         THING_TYPE_FUNC = NULL;
+
+        SYM_ADD = 0;
+        SYM_SUB = 0;
 
         initialized = 0;
     }
@@ -163,15 +170,27 @@ Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         uint8_t* error) {
     UNUSED(self);
     if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_INT ||
-            typeOfThing(args[1]) != THING_TYPE_INT) {
+            typeOfThing(args[1]) != THING_TYPE_INT ||
+            typeOfThing(self) != THING_TYPE_SYMBOL) {
         *error = 1;
         return NULL;
     }
 
     int32_t valueA = thingAsInt(args[0]);
     int32_t valueB = thingAsInt(args[1]);
+    int32_t out;
+    uint32_t id = getSymbolId(self);
 
-    return (Thing*) createIntThing(runtime, valueA + valueB);
+    if(id == SYM_ADD) {
+        out = valueA + valueB;
+    } else if(id == SYM_SUB) {
+        out = valueA - valueB;
+    } else {
+        *error = 1;
+        return NULL;
+    }
+
+    return (Thing*) createIntThing(runtime, out);
 }
 
 int32_t thingAsInt(Thing* thing) {
@@ -197,6 +216,9 @@ Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
     return thing;
 }
 
+uint32_t getSymbolId(Thing* self) {
+    return ((SymbolThing*) self)->id;
+}
 
 //not properly supported yet
 Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,

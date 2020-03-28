@@ -40,7 +40,7 @@ uint8_t runTests() {
 
     runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
     runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);
-    runTest("executeTestAddFunction", executeTestAddFunction(), &status);
+    runTest("executeTestAddFunction", executeTestAddSubFunction(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");
