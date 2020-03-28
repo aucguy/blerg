@@ -5,5 +5,6 @@ const char* executeTestGlobalHasMainFunc();
 const char* executeTestMainFuncReturns1();
 const char* executeTestAddSubFunction();
 const char* executeTestMathExpr();
+const char* executeTestStrRet();
 
 #endif /* EXECUTETEST_H_ */

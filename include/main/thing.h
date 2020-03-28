@@ -37,6 +37,7 @@ typedef struct {
 //different builtin types. Initialized in initThing.
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
+ThingType* THING_TYPE_STR;
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
@@ -54,6 +55,16 @@ ThingHeader* customDataToThingHeader(Thing* thing);
 void destroyThing(Thing* thing);
 
 Thing* createIntThing(Runtime* runtime, int32_t value);
+
+Thing* createStrThing(Runtime* runtime, const char* value);
+
+/**
+ * Returns the integer value of the given IntThing. If the thing is not an
+ * IntThing, this results in undefined behavior.
+ */
+int32_t thingAsInt(Thing* thing);
+
+const char* thingAsStr(Thing* thing);
 
 /**
  * Gets the value associated with the given name in the given ObjectThing. If

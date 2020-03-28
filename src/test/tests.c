@@ -42,6 +42,7 @@ uint8_t runTests() {
     runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);
     runTest("executeTestAddFunction", executeTestAddSubFunction(), &status);
     runTest("executeTestMathExpr", executeTestMathExpr(), &status);
+    runTest("executeTestStrRet", executeTestStrRet(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

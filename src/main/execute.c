@@ -248,6 +248,9 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
                 return NULL;
             }
             pushStack(runtime, value);
+        } else if(opcode == OP_PUSH_LITERAL) {
+            Thing* value = createStrThing(runtime, readConstant(currentFrame));
+            pushStack(runtime, value);
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
         } else if(opcode == OP_RETURN) {

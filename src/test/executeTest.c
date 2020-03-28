@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "main/parse.h"
 #include "main/validate.h"
@@ -72,7 +73,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
 
     out.retVal = callFunction(in.runtime, func, in.arity, in.args, &error);
     if(error != 0) {
-        out.errorMsg = "error executing add function";
+        out.errorMsg = "error executing function";
         return out;
     }
     return out;
@@ -88,10 +89,16 @@ void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out) {
 uint8_t checkInt(Thing* thing, int32_t num) {
     if(typeOfThing(thing) != THING_TYPE_INT) {
         return 0;
-    } else if(thingAsInt(thing) != num) {
+    } else {
+        return thingAsInt(thing) == num;
+    }
+}
+
+uint8_t checkStr(Thing* thing, const char* str) {
+    if(typeOfThing(thing) != THING_TYPE_STR) {
         return 0;
     } else {
-        return 1;
+        return strcmp(thingAsStr(thing), str) == 0;
     }
 }
 
@@ -173,4 +180,23 @@ const char* executeTestMathExpr() {
 
     cleanupExecFunc(in, out);
     return NULL;
+}
+
+const char* executeTestStrRet() {
+   initThing();
+
+   ExecFuncIn in;
+   in.runtime = createRuntime();
+   in.src = "def main x do <- 'hello world'; end";
+   in.name = "main";
+   in.arity = 1;
+   in.args = malloc(sizeof(Thing*) * in.arity);
+   in.args[0] = in.runtime->noneThing;
+
+   ExecFuncOut out = execFunc(in);
+   assert(out.errorMsg == NULL, out.errorMsg);
+   assert(checkStr(out.retVal, "hello world"), "return value is not 'hello world'");
+
+   cleanupExecFunc(in, out);
+   return NULL;
 }

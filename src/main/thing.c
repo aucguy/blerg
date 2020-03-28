@@ -63,6 +63,11 @@ void initThing() {
         setCallThingType(THING_TYPE_INT, errorCall);
         setDispatchThingType(THING_TYPE_INT, intDispatch);
 
+        THING_TYPE_STR = createThingType();
+        setDestroyThingType(THING_TYPE_STR, destroySimpleThing);
+        setCallThingType(THING_TYPE_STR, errorCall);
+        setDispatchThingType(THING_TYPE_STR, errorCall);
+
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
         setCallThingType(THING_TYPE_OBJ, errorCall);
@@ -89,6 +94,9 @@ void deinitThing() {
 
         free(THING_TYPE_INT);
         THING_TYPE_INT = NULL;
+
+        free(THING_TYPE_STR);
+        THING_TYPE_STR = NULL;
 
         free(THING_TYPE_SYMBOL);
         THING_TYPE_SYMBOL = NULL;
@@ -203,6 +211,20 @@ Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 int32_t thingAsInt(Thing* thing) {
     return ((IntThing*) thing)->value;
+}
+
+typedef struct {
+    const char* value;
+} StrThing;
+
+Thing* createStrThing(Runtime* runtime, const char* value) {
+    StrThing* thing = createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
+    thing->value = value;
+    return thing;
+}
+
+const char* thingAsStr(Thing* self) {
+    return ((StrThing*) self)->value;
 }
 
 uint32_t symbolId = 0;

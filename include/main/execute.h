@@ -53,12 +53,6 @@ Runtime* createRuntime();
 void destroyRuntime(Runtime* runtime);
 
 /**
- * Returns the integer value of the given IntThing. If the thing is not an
- * IntThing, this results in undefined behavior.
- */
-int32_t thingAsInt(Thing* thing);
-
-/**
  * Executes the given module. The function executes the bytecode at index 0
  * until the module returns. Instead of normally returning the value returned',
  * (the top of the stack), the function returns the scope wrapped in an
