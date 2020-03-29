@@ -71,6 +71,11 @@ void initThing() {
         setCallThingType(THING_TYPE_STR, errorCall);
         setDispatchThingType(THING_TYPE_STR, strDispatch);
 
+        THING_TYPE_BOOL = createThingType();
+        setDestroyThingType(THING_TYPE_BOOL, destroySimpleThing);
+        setCallThingType(THING_TYPE_BOOL, errorCall);
+        setDispatchThingType(THING_TYPE_BOOL, errorCall);
+
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
         setCallThingType(THING_TYPE_OBJ, errorCall);
@@ -85,6 +90,7 @@ void initThing() {
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
         SYM_DIV = newSymbolId();
+        SYM_EQ = newSymbolId();
 
         initialized = 1;
     }
@@ -101,6 +107,9 @@ void deinitThing() {
         free(THING_TYPE_STR);
         THING_TYPE_STR = NULL;
 
+        free(THING_TYPE_BOOL);
+        THING_TYPE_BOOL = NULL;
+
         free(THING_TYPE_SYMBOL);
         THING_TYPE_SYMBOL = NULL;
 
@@ -114,6 +123,7 @@ void deinitThing() {
         SYM_SUB = 0;
         SYM_MUL = 0;
         SYM_DIV = 0;
+        SYM_EQ = 0;
 
         initialized = 0;
     }
@@ -193,23 +203,22 @@ Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
     int32_t valueA = thingAsInt(args[0]);
     int32_t valueB = thingAsInt(args[1]);
-    int32_t out;
     uint32_t id = getSymbolId(self);
 
     if(id == SYM_ADD) {
-        out = valueA + valueB;
+        return (Thing*) createIntThing(runtime, valueA + valueB);
     } else if(id == SYM_SUB) {
-        out = valueA - valueB;
+        return (Thing*) createIntThing(runtime, valueA - valueB);
     } else if(id == SYM_MUL) {
-        out = valueA * valueB;
+        return (Thing*) createIntThing(runtime, valueA * valueB);
     } else if(id == SYM_DIV) {
-        out = valueA / valueB;
+        return (Thing*) createIntThing(runtime, valueA / valueB);
+    } else if(id == SYM_EQ) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA == valueB);
     } else {
         *error = 1;
         return NULL;
     }
-
-    return (Thing*) createIntThing(runtime, out);
 }
 
 int32_t thingAsInt(Thing* thing) {
@@ -266,6 +275,20 @@ Thing* strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 const char* thingAsStr(Thing* self) {
     return ((StrThing*) self)->value;
+}
+
+typedef struct {
+    uint8_t value;
+} BoolThing;
+
+Thing* createBoolThing(Runtime* runtime, uint8_t value) {
+    BoolThing* thing = createThing(runtime, THING_TYPE_BOOL, sizeof(BoolThing));
+    thing->value = value != 0; //ensure the value is 0 or 1
+    return thing;
+}
+
+uint8_t thingAsBool(Thing* thing) {
+    return ((BoolThing*) thing)->value;
 }
 
 uint32_t symbolId = 0;

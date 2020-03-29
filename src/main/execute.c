@@ -100,6 +100,7 @@ Runtime* createRuntime() {
     putMapStr(runtime->builtins, "-", createSymbolThing(runtime, SYM_SUB, 2));
     putMapStr(runtime->builtins, "*", createSymbolThing(runtime, SYM_MUL, 2));
     putMapStr(runtime->builtins, "/", createSymbolThing(runtime, SYM_DIV, 2));
+    putMapStr(runtime->builtins, "==", createSymbolThing(runtime, SYM_EQ, 2));
 
     return runtime;
 }

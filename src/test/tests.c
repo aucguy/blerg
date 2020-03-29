@@ -45,6 +45,7 @@ uint8_t runTests() {
     runTest("executeTestMathExpr", executeTestMathExpr(), &status);
     runTest("executeTestStrRet", executeTestStrRet(), &status);
     runTest("executeTestStrConcat", executeTestStrConcat(), &status);
+    runTest("executeTestIntEq", executeTestIntEq(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

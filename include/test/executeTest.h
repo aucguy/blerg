@@ -7,5 +7,6 @@ const char* executeTestAddSubFunction();
 const char* executeTestMathExpr();
 const char* executeTestStrRet();
 const char* executeTestStrConcat();
+const char* executeTestIntEq();
 
 #endif /* EXECUTETEST_H_ */

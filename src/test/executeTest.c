@@ -102,6 +102,14 @@ uint8_t checkStr(Thing* thing, const char* str) {
     }
 }
 
+uint8_t checkBool(Thing* thing, uint8_t value) {
+    if(typeOfThing(thing) != THING_TYPE_BOOL) {
+        return 0;
+    } else {
+        return thingAsBool(thing) == value;
+    }
+}
+
 const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
@@ -215,6 +223,26 @@ const char* executeTestStrConcat() {
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
     assert(checkStr(out.retVal, "hello Bob!"), "return value is not 'hello Bob!'");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestIntEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def equal x y do <- x == y; end";
+    in.name = "equal";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 5);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 1), "return value is not True");
 
     cleanupExecFunc(in, out);
     return NULL;

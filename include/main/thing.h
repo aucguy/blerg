@@ -38,6 +38,7 @@ typedef struct {
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
 ThingType* THING_TYPE_STR;
+ThingType* THING_TYPE_BOOL;
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
@@ -57,6 +58,9 @@ void destroyThing(Thing* thing);
 Thing* createIntThing(Runtime* runtime, int32_t value);
 
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal);
+
+Thing* createBoolThing(Runtime* runtime, uint8_t value);
+uint8_t thingAsBool(Thing* thing);
 
 /**
  * Returns the integer value of the given IntThing. If the thing is not an
@@ -93,6 +97,7 @@ uint32_t SYM_ADD;
 uint32_t SYM_SUB;
 uint32_t SYM_MUL;
 uint32_t SYM_DIV;
+uint32_t SYM_EQ;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
