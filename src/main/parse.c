@@ -188,7 +188,6 @@ Token* parseFactor(ParseState* state) {
 #define OP_LEVELS 5
 #define OP_AMOUNT 8
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
-        //' ' is the application operator. It sits invisible between a function
         { "*", "/", "end" },
         { "+", "-", "end" },
         { "==", "!=", ">", ">=", "<", "<=", "end" },
@@ -410,6 +409,7 @@ Token* parseAssignment(ParseState* state) {
         skipWhitespace(state);
         Token* right = parseExpression(state);
         if(right == NULL || left->type != TOKEN_IDENTIFIER || getChar(state) != ';') {
+            //TODO fix memleak
             free(left);
             return NULL;
         }
@@ -443,12 +443,14 @@ const char* IF_ELSE_ENDS[] = { "end", "~" };
 List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
     Token* condition = parseExpression(state);
     if(condition == NULL || !lookAhead(state, "then")) {
+        //TODO fix memleak
         *error = 1;
         return NULL;
     }
     advance(state, strlen("then"));
     BlockToken* body = parseBlock(state, IF_BODY_ENDS);
     if(body == NULL) {
+        //TODO fix memleak
         *error = 1;
         return NULL;
     }
@@ -459,6 +461,7 @@ List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
         //parse the rest of the branches
         List* tail = parseIfStmtBranches(state, error);
         if(*error) {
+            //TODO fix memleak
             return NULL;
         }
         return consList(head, tail);
@@ -467,6 +470,7 @@ List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
         //don't advance so parseIfStmt knows there is or is not an else branch
         tail = NULL;
     } else {
+        //TODO fix memleak
         *error = 1; //no terminating keyword
         return NULL;
     }
@@ -502,6 +506,7 @@ IfToken* parseIfStmt(ParseState* state) {
         elseBranch = NULL;
     } else {
         //shouldn't happen
+        //TODO exit and warn on this case
         elseBranch = NULL;
     }
     if(!lookAhead(state, "end")) {
@@ -524,12 +529,14 @@ WhileToken* parseWhileStmt(ParseState* state) {
 
     Token* conditional = parseExpression(state);
     if(conditional == NULL || !lookAhead(state, "do")) {
+        //TODO fix memleak
         return NULL;
     }
     advance(state, strlen("do"));
 
     BlockToken* body = parseBlock(state, WHILE_BODY_ENDS);
     if(body == NULL || !lookAhead(state, "end")) {
+        //TODO fix memleak
         return NULL;
     }
     advance(state, strlen("end"));
@@ -564,6 +571,7 @@ List* parseArgs(ParseState* state, uint8_t* error) {
     //parse the rest
     List* tail = parseArgs(state, error);
     if(*error) {
+        //TODO fix memleak
         destroyToken((Token*) head);
         return NULL;
     }
@@ -591,6 +599,7 @@ FuncToken* parseFuncStmt(ParseState* state) {
     uint8_t error = 0;
     List* args = parseArgs(state, &error);
     if(error || !lookAhead(state, "do")) {
+        //TODO fix memleak?
         destroyToken((Token*) name);
         return NULL;
     }
@@ -598,6 +607,7 @@ FuncToken* parseFuncStmt(ParseState* state) {
     advance(state, strlen("do"));
     BlockToken* body = parseBlock(state, FUNC_ENDS);
     if(body == NULL || !lookAhead(state, "end")) {
+        //TODO fix memleak?
         destroyToken((Token*) name);
         destroyList(args, destroyTokenVoid);
         return NULL;
