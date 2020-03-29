@@ -551,6 +551,11 @@ List* parseArgs(ParseState* state, uint8_t* error) {
     if(lookAhead(state, "do")) {
         return NULL;
     }
+
+    skipWhitespace(state);
+    if(!containsChar(IDENTIFIER_CHARS, getChar(state))) {
+        return NULL;
+    }
     IdentifierToken* head = parseIdentifier(state);
     if(head == NULL) {
         *error = 1;

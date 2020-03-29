@@ -205,3 +205,8 @@ const char* parseTestFunc() {
 
     return NULL;
 }
+
+const char* parseTestFuncWithoutDo() {
+    parseModule("def one <- 1; end");
+    return NULL;
+}
