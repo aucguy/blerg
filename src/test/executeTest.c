@@ -247,3 +247,101 @@ const char* executeTestIntEq() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeTestIntNotEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def not_equal x y do <- x != y; end";
+    in.name = "not_equal";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 5);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestIntLessThan() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def less_than x y do <- x < y; end";
+    in.name = "less_than";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 3);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 1), "return value is not True");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestIntLessThanEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def less_than_eq x y do <- x <= y; end";
+    in.name = "less_than_eq";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 3);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 1), "return value is not True");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+const char* executeTestIntGreaterThan() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def greater_than x y do <- x > y; end";
+    in.name = "greater_than";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 3);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+const char* executeTestIntGreaterThanEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def greater_than_eq x y do <- x >= y; end";
+    in.name = "greater_than_eq";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args[0] = createIntThing(in.runtime, 3);
+    in.args[1] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

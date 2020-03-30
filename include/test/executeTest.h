@@ -8,5 +8,10 @@ const char* executeTestMathExpr();
 const char* executeTestStrRet();
 const char* executeTestStrConcat();
 const char* executeTestIntEq();
+const char* executeTestIntNotEq();
+const char* executeTestIntLessThan();
+const char* executeTestIntLessThanEq();
+const char* executeTestIntGreaterThan();
+const char* executeTestIntGreaterThanEq();
 
 #endif /* EXECUTETEST_H_ */

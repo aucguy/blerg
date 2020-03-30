@@ -190,7 +190,7 @@ Token* parseFactor(ParseState* state) {
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "*", "/", "end" },
         { "+", "-", "end" },
-        { "==", "!=", ">", ">=", "<", "<=", "end" },
+        { "==", "!=", ">=", "<=", "<", ">", "end" },
         //the 'prefix' isn't an operator; it signifies that this level contains
         //prefix unary operators.
         { "prefix", "not", "end" },

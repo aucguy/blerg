@@ -91,6 +91,11 @@ void initThing() {
         SYM_MUL = newSymbolId();
         SYM_DIV = newSymbolId();
         SYM_EQ = newSymbolId();
+        SYM_NOT_EQ = newSymbolId();
+        SYM_LESS_THAN = newSymbolId();
+        SYM_LESS_THAN_EQ = newSymbolId();
+        SYM_GREATER_THAN = newSymbolId();
+        SYM_GREATER_THAN_EQ = newSymbolId();
 
         initialized = 1;
     }
@@ -124,6 +129,10 @@ void deinitThing() {
         SYM_MUL = 0;
         SYM_DIV = 0;
         SYM_EQ = 0;
+        SYM_LESS_THAN = 0;
+        SYM_LESS_THAN_EQ = 0;
+        SYM_GREATER_THAN = 0;
+        SYM_GREATER_THAN_EQ = 0;
 
         initialized = 0;
     }
@@ -215,6 +224,16 @@ Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         return (Thing*) createIntThing(runtime, valueA / valueB);
     } else if(id == SYM_EQ) {
         return (Thing*) createBoolThing(runtime, (uint8_t) valueA == valueB);
+    } else if(id == SYM_NOT_EQ) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA != valueB);
+    } else if(id == SYM_LESS_THAN) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA < valueB);
+    } else if(id == SYM_LESS_THAN_EQ) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA <= valueB);
+    } else if(id == SYM_GREATER_THAN) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA > valueB);
+    } else if(id == SYM_GREATER_THAN_EQ) {
+        return (Thing*) createBoolThing(runtime, (uint8_t) valueA >= valueB);
     } else {
         *error = 1;
         return NULL;

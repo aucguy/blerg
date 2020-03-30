@@ -101,6 +101,11 @@ Runtime* createRuntime() {
     putMapStr(runtime->builtins, "*", createSymbolThing(runtime, SYM_MUL, 2));
     putMapStr(runtime->builtins, "/", createSymbolThing(runtime, SYM_DIV, 2));
     putMapStr(runtime->builtins, "==", createSymbolThing(runtime, SYM_EQ, 2));
+    putMapStr(runtime->builtins, "!=", createSymbolThing(runtime, SYM_NOT_EQ, 2));
+    putMapStr(runtime->builtins, "<", createSymbolThing(runtime, SYM_LESS_THAN, 2));
+    putMapStr(runtime->builtins, "<=", createSymbolThing(runtime, SYM_LESS_THAN_EQ, 2));
+    putMapStr(runtime->builtins, ">", createSymbolThing(runtime, SYM_GREATER_THAN, 2));
+    putMapStr(runtime->builtins, ">=", createSymbolThing(runtime, SYM_GREATER_THAN_EQ, 2));
 
     return runtime;
 }
