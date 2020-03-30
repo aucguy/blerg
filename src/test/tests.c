@@ -52,7 +52,8 @@ uint8_t runTests() {
     runTest("executeTestIntLessThanEq", executeTestIntLessThanEq(), &status);
     runTest("executeTestIntGreaterThan", executeTestIntGreaterThan(), &status);
     runTest("executeTestIntGreaterThanEq", executeTestIntGreaterThanEq(), &status);
-
+    runTest("executeTestStrEq", executeTestStrEq(), &status);
+    runTest("executeTestStrNotEq", executeTestStrNotEq(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

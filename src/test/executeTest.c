@@ -236,7 +236,7 @@ const char* executeTestIntEq() {
     in.src = "def equal x y do <- x == y; end";
     in.name = "equal";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
 
@@ -256,7 +256,7 @@ const char* executeTestIntNotEq() {
     in.src = "def not_equal x y do <- x != y; end";
     in.name = "not_equal";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
 
@@ -276,7 +276,7 @@ const char* executeTestIntLessThan() {
     in.src = "def less_than x y do <- x < y; end";
     in.name = "less_than";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
 
@@ -296,7 +296,7 @@ const char* executeTestIntLessThanEq() {
     in.src = "def less_than_eq x y do <- x <= y; end";
     in.name = "less_than_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
 
@@ -315,7 +315,7 @@ const char* executeTestIntGreaterThan() {
     in.src = "def greater_than x y do <- x > y; end";
     in.name = "greater_than";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
 
@@ -334,13 +334,53 @@ const char* executeTestIntGreaterThanEq() {
     in.src = "def greater_than_eq x y do <- x >= y; end";
     in.name = "greater_than_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*)* in.arity);
+    in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
     assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestStrEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def str_eq x y do <- x == y; end";
+    in.name = "str_eq";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createStrThing(in.runtime, "hello", 1);
+    in.args[1] = createStrThing(in.runtime, "world", 1);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestStrNotEq() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def str_not_eq x y do <- x != y; end";
+    in.name = "str_not_eq";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createStrThing(in.runtime, "hello", 1);
+    in.args[1] = createStrThing(in.runtime, "world", 1);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 1), "return value is not True");
 
     cleanupExecFunc(in, out);
     return NULL;

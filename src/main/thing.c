@@ -275,21 +275,24 @@ Thing* strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
     const char* valueA = thingAsStr(args[0]);
     const char* valueB = thingAsStr(args[1]);
-    char* out;
     uint32_t id = getSymbolId(self);
 
     if(id == SYM_ADD) {
         uint32_t len = strlen(valueA) + strlen(valueB);
-        out = malloc(sizeof(char) * (len + 1));
+        char* out = malloc(sizeof(char) * (len + 1));
         out[0] = 0;
         strcat(out, valueA);
         strcat(out, valueB);
+        return (Thing*) createStrThing(runtime, out, 0);
+    } else if(id == SYM_EQ) {
+        return createBoolThing(runtime, strcmp(valueA, valueB) == 0);
+    } else if(id == SYM_NOT_EQ) {
+        return createBoolThing(runtime, strcmp(valueA, valueB) != 0);
     } else {
         *error = 1;
         return NULL;
     }
 
-    return (Thing*) createStrThing(runtime, out, 0);
 }
 
 const char* thingAsStr(Thing* self) {

@@ -13,5 +13,7 @@ const char* executeTestIntLessThan();
 const char* executeTestIntLessThanEq();
 const char* executeTestIntGreaterThan();
 const char* executeTestIntGreaterThanEq();
+const char* executeTestStrEq();
+const char* executeTestStrNotEq();
 
 #endif /* EXECUTETEST_H_ */
