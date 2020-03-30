@@ -210,3 +210,28 @@ const char* parseTestFuncWithoutDo() {
     parseModule("def one <- 1; end");
     return NULL;
 }
+
+const char* parseTestGreaterAndLessThan() {
+    Token* parsed = (Token*) parseModule("def check x do <- 1 <= 2 and 3 >= 4; end");
+
+    Token* ret = (Token*) createReturnToken(
+            (Token*) createBinaryOpToken(newStr("and"),
+                    (Token*) createBinaryOpToken(newStr("<="),
+                            (Token*) createIntToken(1),
+                            (Token*) createIntToken(2)),
+                    (Token*) createBinaryOpToken(newStr(">="),
+                            (Token*) createIntToken(3),
+                            (Token*) createIntToken(4))));
+
+    Token* expected = (Token*) createBlockToken(consList(
+            createFuncToken(
+                    createIdentifierToken(newStr("check")),
+                    consList(createIdentifierToken(newStr("x")), NULL),
+                    createBlockToken(consList(ret, NULL))), NULL));
+
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+    destroyToken(parsed);
+    destroyToken(expected);
+    return NULL;
+}

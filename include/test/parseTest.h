@@ -14,5 +14,6 @@ const char* parseTestIfStmt();
 const char* parseTestWhileStmt();
 const char* parseTestFunc();
 const char* parseTestFuncWithoutDo();
+const char* parseTestGreaterAndLessThan();
 
 #endif /* PARSETEST_H_ */
