@@ -43,6 +43,7 @@ Thing* symbolCall(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 Thing* intDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 Thing* strDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 void destroyStrThing(Thing*);
+Thing* boolDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 uint32_t getSymbolId(Thing* self);
 
 void destroyObjectThing(Thing* thing);
@@ -74,7 +75,7 @@ void initThing() {
         THING_TYPE_BOOL = createThingType();
         setDestroyThingType(THING_TYPE_BOOL, destroySimpleThing);
         setCallThingType(THING_TYPE_BOOL, errorCall);
-        setDispatchThingType(THING_TYPE_BOOL, errorCall);
+        setDispatchThingType(THING_TYPE_BOOL, boolDispatch);
 
         THING_TYPE_OBJ = createThingType();
         setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
@@ -96,6 +97,9 @@ void initThing() {
         SYM_LESS_THAN_EQ = newSymbolId();
         SYM_GREATER_THAN = newSymbolId();
         SYM_GREATER_THAN_EQ = newSymbolId();
+        SYM_ADD = newSymbolId();
+        SYM_OR = newSymbolId();
+        SYM_NOT = newSymbolId();
 
         initialized = 1;
     }
@@ -133,6 +137,9 @@ void deinitThing() {
         SYM_LESS_THAN_EQ = 0;
         SYM_GREATER_THAN = 0;
         SYM_GREATER_THAN_EQ = 0;
+        SYM_ADD = 0;
+        SYM_OR = 0;
+        SYM_NOT = 0;
 
         initialized = 0;
     }
@@ -307,6 +314,43 @@ Thing* createBoolThing(Runtime* runtime, uint8_t value) {
     BoolThing* thing = createThing(runtime, THING_TYPE_BOOL, sizeof(BoolThing));
     thing->value = value != 0; //ensure the value is 0 or 1
     return thing;
+}
+
+Thing* boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
+        *error = 1;
+        return NULL;
+    }
+
+    uint32_t id = getSymbolId(self);
+
+    if(id == SYM_NOT) {
+        if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_BOOL) {
+            *error = 1;
+            return NULL;
+        } else {
+            return createBoolThing(runtime, !thingAsBool(args[0]));
+        }
+    } else {
+        if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_BOOL ||
+                typeOfThing(args[1]) != THING_TYPE_BOOL) {
+            *error = 1;
+            return NULL;
+        }
+
+        uint8_t valueA = thingAsBool(args[0]);
+        uint8_t valueB = thingAsBool(args[1]);
+
+        if(id == SYM_ADD) {
+            return createBoolThing(runtime, valueA && valueB);
+        } else if(id == SYM_OR) {
+            return createBoolThing(runtime, valueA || valueB);
+        } else {
+            *error = 1;
+            return NULL;
+        }
+    }
 }
 
 uint8_t thingAsBool(Thing* thing) {

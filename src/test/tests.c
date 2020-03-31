@@ -54,6 +54,9 @@ uint8_t runTests() {
     runTest("executeTestIntGreaterThanEq", executeTestIntGreaterThanEq(), &status);
     runTest("executeTestStrEq", executeTestStrEq(), &status);
     runTest("executeTestStrNotEq", executeTestStrNotEq(), &status);
+    runTest("executeTestBoolAnd", executeTestBoolAnd(), &status);
+    runTest("executeTestBoolOr", executeTestBoolOr(), &status);
+    runTest("executeTestBoolNot", executeTestBoolNot(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

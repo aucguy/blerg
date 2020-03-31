@@ -15,5 +15,8 @@ const char* executeTestIntGreaterThan();
 const char* executeTestIntGreaterThanEq();
 const char* executeTestStrEq();
 const char* executeTestStrNotEq();
+const char* executeTestBoolAnd();
+const char* executeTestBoolOr();
+const char* executeTestBoolNot();
 
 #endif /* EXECUTETEST_H_ */

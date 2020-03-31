@@ -385,3 +385,63 @@ const char* executeTestStrNotEq() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeTestBoolAnd() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def bool_and x y do <- x and y; end";
+    in.name = "bool_and";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createBoolThing(in.runtime, 1);
+    in.args[1] = createBoolThing(in.runtime, 0);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestBoolOr() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def bool_and x y do <- x or y; end";
+    in.name = "bool_and";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createBoolThing(in.runtime, 1);
+    in.args[1] = createBoolThing(in.runtime, 0);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 1), "return value is not True");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+
+const char* executeTestBoolNot() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def bool_and x y do <- not x; end";
+    in.name = "bool_and";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createBoolThing(in.runtime, 1);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkBool(out.retVal, 0), "return value is not False");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
+

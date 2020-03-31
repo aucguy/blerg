@@ -106,6 +106,9 @@ Runtime* createRuntime() {
     putMapStr(runtime->builtins, "<=", createSymbolThing(runtime, SYM_LESS_THAN_EQ, 2));
     putMapStr(runtime->builtins, ">", createSymbolThing(runtime, SYM_GREATER_THAN, 2));
     putMapStr(runtime->builtins, ">=", createSymbolThing(runtime, SYM_GREATER_THAN_EQ, 2));
+    putMapStr(runtime->builtins, "and", createSymbolThing(runtime, SYM_ADD, 2));
+    putMapStr(runtime->builtins, "or", createSymbolThing(runtime, SYM_OR, 2));
+    putMapStr(runtime->builtins, "not", createSymbolThing(runtime, SYM_NOT, 1));
 
     return runtime;
 }

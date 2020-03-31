@@ -103,6 +103,9 @@ uint32_t SYM_LESS_THAN;
 uint32_t SYM_LESS_THAN_EQ;
 uint32_t SYM_GREATER_THAN;
 uint32_t SYM_GREATER_THAN_EQ;
+uint32_t SYM_ADD;
+uint32_t SYM_OR;
+uint32_t SYM_NOT;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
