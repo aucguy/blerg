@@ -464,3 +464,22 @@ const char* executeTestIfStmt() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeTestAssignment() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def assign x do y = 1; <- y; end";
+    in.name = "assign";
+    in.arity = 1;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = in.runtime->noneThing;
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkInt(out.retVal, 1), "return value is not 1");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

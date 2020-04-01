@@ -19,5 +19,6 @@ const char* executeTestBoolAnd();
 const char* executeTestBoolOr();
 const char* executeTestBoolNot();
 const char* executeTestIfStmt();
+const char* executeTestAssignment();
 
 #endif /* EXECUTETEST_H_ */

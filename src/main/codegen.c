@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "main/bytecode.h"
 #include "main/codegen.h"
@@ -296,6 +297,12 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         ReturnToken* ret = (ReturnToken*) token;
         compileToken(builder, labels, ret->body);
         emitReturn(builder);
+    } else if(token->type == TOKEN_ASSIGNMENT) {
+        AssignmentToken* assign = (AssignmentToken*) token;
+        compileToken(builder, labels, assign->right);
+        emitStore(builder, assign->left->value);
+    } else {
+        printf("warning: unknown token type\n");
     }
 }
 
