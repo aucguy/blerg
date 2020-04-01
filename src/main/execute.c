@@ -313,6 +313,8 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
             if(!thingAsBool(condition)) {
                 currentFrame->def.index = target;
             }
+        } else if(opcode == OP_ABS_JUMP) {
+            currentFrame->def.index = readU32Frame(currentFrame);
         } else {
             //unknown opcode
             *error = 1;

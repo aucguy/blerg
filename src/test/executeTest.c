@@ -450,7 +450,7 @@ const char* executeTestIfStmt() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def if_stmt x y do if x == y then <- 'equal'; else <- 'not_equal'; end end";
+    in.src = "def if_stmt x y do if x == y then a = 'equal'; else b ='not_equal'; end <- a; end";
     in.name = "if_stmt";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);

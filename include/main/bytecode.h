@@ -49,7 +49,7 @@ enum INSTRUCTIONS {
     //args: label (uint32)
     //Pops a value. If the value is falsy, the instruction jumps to the label.
     OP_COND_JUMP_FALSE,
-    //args: label ()
+    //args: label (uint32)
     //The instruction jumps to the label unconditionally.
     OP_ABS_JUMP,
     //This opcode performs no operations, but denotes the beginning of a
