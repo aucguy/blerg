@@ -57,6 +57,7 @@ uint8_t runTests() {
     runTest("executeTestBoolAnd", executeTestBoolAnd(), &status);
     runTest("executeTestBoolOr", executeTestBoolOr(), &status);
     runTest("executeTestBoolNot", executeTestBoolNot(), &status);
+    runTest("executeTestIfStmt", executeTestIfStmt(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

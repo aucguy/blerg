@@ -445,3 +445,22 @@ const char* executeTestBoolNot() {
     return NULL;
 }
 
+const char* executeTestIfStmt() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def if_stmt x y do if x == y then <- 'equal'; else <- 'not_equal'; end end";
+    in.name = "if_stmt";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createIntThing(in.runtime, 1);
+    in.args[1] = createIntThing(in.runtime, 1);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkStr(out.retVal, "equal"), "return value is not 'equal'");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

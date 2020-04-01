@@ -301,6 +301,18 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
                 pushStack(runtime, ret);
                 free(args);
             }
+        } else if(opcode == OP_COND_JUMP_FALSE) {
+            Thing* condition = popStack(runtime);
+            uint32_t target = readU32Frame(currentFrame);
+
+            if(typeOfThing(condition) != THING_TYPE_BOOL) {
+                *error = 1;
+                return NULL;
+            }
+
+            if(!thingAsBool(condition)) {
+                currentFrame->def.index = target;
+            }
         } else {
             //unknown opcode
             *error = 1;

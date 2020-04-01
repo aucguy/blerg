@@ -18,5 +18,6 @@ const char* executeTestStrNotEq();
 const char* executeTestBoolAnd();
 const char* executeTestBoolOr();
 const char* executeTestBoolNot();
+const char* executeTestIfStmt();
 
 #endif /* EXECUTETEST_H_ */
