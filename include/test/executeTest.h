@@ -21,5 +21,6 @@ const char* executeTestBoolNot();
 const char* executeTestIfStmt();
 const char* executeTestAssignment();
 const char* executeTestWhileLoop();
+const char* executeTestNativeFunc();
 
 #endif /* EXECUTETEST_H_ */

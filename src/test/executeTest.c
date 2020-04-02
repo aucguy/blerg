@@ -502,3 +502,40 @@ const char* executeTestWhileLoop() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+Thing* absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_INT) {
+        *error = 1;
+        return NULL;
+    }
+
+    int32_t value = thingAsInt(args[0]);
+    int32_t out;
+    if(value < 0) {
+        out = -value;
+    } else {
+        out = value;
+    }
+    return createIntThing(runtime, out);
+}
+
+const char* executeTestNativeFunc() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def apply f x do print 'hello'; <- f x; end";
+    in.name = "apply";
+    in.arity = 2;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createNativeFuncThing(in.runtime, absFunc);
+    in.args[1] = createIntThing(in.runtime, -4);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkInt(out.retVal, 4), "return value is not 4");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

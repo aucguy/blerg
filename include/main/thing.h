@@ -42,6 +42,7 @@ ThingType* THING_TYPE_BOOL;
 ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
+ThingType* THING_TYPE_NATIVE_FUNC;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -114,5 +115,7 @@ Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope);
 
 Thing* createObjectThingFromMap(Runtime* runtime, Map* map);
+
+Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func);
 
 #endif /* THING_H_ */

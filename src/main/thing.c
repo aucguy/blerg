@@ -45,6 +45,8 @@ Thing* strDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 void destroyStrThing(Thing*);
 Thing* boolDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
 uint32_t getSymbolId(Thing* self);
+Thing* nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
+        uint8_t arity, uint8_t* error);
 
 void destroyObjectThing(Thing* thing);
 
@@ -86,6 +88,11 @@ void initThing() {
         setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
         setCallThingType(THING_TYPE_FUNC, errorCall);
         setDispatchThingType(THING_TYPE_FUNC, errorCall);
+
+        THING_TYPE_NATIVE_FUNC = createThingType();
+        setDestroyThingType(THING_TYPE_NATIVE_FUNC, destroySimpleThing);
+        setCallThingType(THING_TYPE_NATIVE_FUNC, nativeFuncCall);
+        setDispatchThingType(THING_TYPE_NATIVE_FUNC, errorCall);
 
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
@@ -419,4 +426,21 @@ Thing* createFuncThing(Runtime* runtime, uint32_t entry,
     thing->module = module;
     thing->parentScope = parentScope;
     return thing;
+}
+
+typedef struct {
+    ExecFunc func;
+} NativeFuncThing;
+
+Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
+    NativeFuncThing* thing = createThing(runtime, THING_TYPE_NATIVE_FUNC,
+            sizeof(NativeFuncThing));
+    thing->func = func;
+    return thing;
+}
+
+Thing* nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
+        uint8_t arity, uint8_t* error) {
+
+    return ((NativeFuncThing*) self)->func(runtime, self, args, arity, error);
 }
