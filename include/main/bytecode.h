@@ -45,6 +45,7 @@ enum INSTRUCTIONS {
     OP_STORE,
     //args: label (uint32)
     //Pops a value. If the value is truthy, the instruction jumps to the label.
+    //note: this operation is never used
     OP_COND_JUMP_TRUE,
     //args: label (uint32)
     //Pops a value. If the value is falsy, the instruction jumps to the label.

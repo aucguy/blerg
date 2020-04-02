@@ -483,3 +483,22 @@ const char* executeTestAssignment() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeTestWhileLoop() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def fact x do y = 1; while x > 1 do y = y * x; x = x - 1; end <- y; end";
+    in.name = "fact";
+    in.arity = 1;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createIntThing(in.runtime, 4);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkInt(out.retVal, 24), "return value is not 24");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}

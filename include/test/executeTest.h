@@ -20,5 +20,6 @@ const char* executeTestBoolOr();
 const char* executeTestBoolNot();
 const char* executeTestIfStmt();
 const char* executeTestAssignment();
+const char* executeTestWhileLoop();
 
 #endif /* EXECUTETEST_H_ */
