@@ -135,6 +135,9 @@ void deinitThing() {
         free(THING_TYPE_FUNC);
         THING_TYPE_FUNC = NULL;
 
+        free(THING_TYPE_NATIVE_FUNC);
+        THING_TYPE_NATIVE_FUNC = NULL;
+
         SYM_ADD = 0;
         SYM_SUB = 0;
         SYM_MUL = 0;

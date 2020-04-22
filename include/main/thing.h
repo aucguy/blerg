@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 typedef struct Runtime Runtime;
-typedef struct Scope_ Scope;
 typedef void Thing;
 
 /**

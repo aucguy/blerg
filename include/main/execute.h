@@ -26,6 +26,7 @@
 
 typedef void Thing;
 typedef struct Runtime Runtime;
+typedef struct Scope Scope;
 
 /**
  * The runtime object type. This is a singleton that stores information
@@ -46,7 +47,8 @@ struct Runtime {
     List* allocatedThings;
     //list of allocated scopes. They are deleted once the runtime is destroyed.
     List* allocatedScopes;
-    Map* builtins;
+    Map* operators;
+    Scope* builtins;
 };
 
 Runtime* createRuntime();
@@ -86,14 +88,14 @@ Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo,
  * Each stackframe and function needs to "remember" things bound to variables.
  * This is the structure that "remembers" them.
  */
-typedef struct Scope_ {
+struct Scope {
     //the scope that this scope was created in. If a variable is not found
     //locally, it will be looked up in the parent scope. If null, this scope
     //has no parent scope.
-    struct Scope_* parent;
+    struct Scope* parent;
     //Map of const char* to Thing*. Represents variables bound in the current
     //scope.
     Map* locals;
-} Scope;
+};
 
 #endif /* EXECUTE_H_ */

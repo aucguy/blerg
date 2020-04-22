@@ -166,15 +166,19 @@ def test():
         elif os.name == 'posix':
             subprocess.run('build/debug_posix/blerg --test', shell=True)
 
-VALGRIND_CMD = 'valgrind --leak-check=full --show-leak-kinds=all \
-    ./build/debug_posix/blerg --test'
+def valgrind_cmd(program_args):
+    return f'valgrind --leak-check=full --show-leak-kinds=all \
+        ./build/debug_posix/blerg {program_args}'
 
 def valgrind():
     if os.name == 'nt':
         print('cannot run valgrind in a windows environment')
     elif os.name == 'posix':
         if build(True):
-            subprocess.run(VALGRIND_CMD, shell=True)
+            program_args = ' '.join(sys.argv[2:])
+            if program_args == '':
+                program_args = '--test'
+            subprocess.run(valgrind_cmd(program_args), shell=True)
 
 def help():
     print(USAGE)
@@ -191,6 +195,8 @@ def main():
     
     if len(sys.argv) == 1:
         build()
+    elif sys.argv[1] == 'valgrind':
+        valgrind()
     elif len(sys.argv) != 2:
         invalid_args()
     elif sys.argv[1] == 'build':
@@ -201,8 +207,6 @@ def main():
         clean()
     elif sys.argv[1] == 'test':
         test()
-    elif sys.argv[1] == 'valgrind':
-        valgrind()
     elif sys.argv[1] == 'help':
         help()
     else:

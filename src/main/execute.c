@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+#include <stdio.h>
 
 #include "main/bytecode.h"
 #include "main/execute.h"
@@ -87,6 +87,29 @@ StackFrame* createStackFrameNative() {
     return frame;
 }
 
+
+Thing* printFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+    if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_STR) {
+        *error = 1;
+        return NULL;
+    }
+
+    printf("%s\n", thingAsStr(args[0]));
+    return runtime->noneThing;
+}
+
+//TODO accept arbitrary long line lengths and remove excess data
+Thing* inputFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error) {
+
+    char* str = malloc(sizeof(char) * 100);
+    fgets(str, 100, stdin);
+    //remove newline
+    str[strlen(str) - 1] = 0;
+    return createStrThing(runtime, str, 0);
+}
+
 Runtime* createRuntime() {
     Runtime* runtime = malloc(sizeof(Runtime));
     runtime->stackFrame = NULL;
@@ -94,21 +117,29 @@ Runtime* createRuntime() {
     runtime->allocatedThings = NULL;
     runtime->allocatedScopes = NULL;
     runtime->noneThing = createNoneThing(runtime);
-    runtime->builtins = createMap();
 
-    putMapStr(runtime->builtins, "+", createSymbolThing(runtime, SYM_ADD, 2));
-    putMapStr(runtime->builtins, "-", createSymbolThing(runtime, SYM_SUB, 2));
-    putMapStr(runtime->builtins, "*", createSymbolThing(runtime, SYM_MUL, 2));
-    putMapStr(runtime->builtins, "/", createSymbolThing(runtime, SYM_DIV, 2));
-    putMapStr(runtime->builtins, "==", createSymbolThing(runtime, SYM_EQ, 2));
-    putMapStr(runtime->builtins, "!=", createSymbolThing(runtime, SYM_NOT_EQ, 2));
-    putMapStr(runtime->builtins, "<", createSymbolThing(runtime, SYM_LESS_THAN, 2));
-    putMapStr(runtime->builtins, "<=", createSymbolThing(runtime, SYM_LESS_THAN_EQ, 2));
-    putMapStr(runtime->builtins, ">", createSymbolThing(runtime, SYM_GREATER_THAN, 2));
-    putMapStr(runtime->builtins, ">=", createSymbolThing(runtime, SYM_GREATER_THAN_EQ, 2));
-    putMapStr(runtime->builtins, "and", createSymbolThing(runtime, SYM_ADD, 2));
-    putMapStr(runtime->builtins, "or", createSymbolThing(runtime, SYM_OR, 2));
-    putMapStr(runtime->builtins, "not", createSymbolThing(runtime, SYM_NOT, 1));
+    Map* ops = createMap();
+    runtime->operators = ops;
+
+    putMapStr(ops, "+", createSymbolThing(runtime, SYM_ADD, 2));
+    putMapStr(ops, "-", createSymbolThing(runtime, SYM_SUB, 2));
+    putMapStr(ops, "*", createSymbolThing(runtime, SYM_MUL, 2));
+    putMapStr(ops, "/", createSymbolThing(runtime, SYM_DIV, 2));
+    putMapStr(ops, "==", createSymbolThing(runtime, SYM_EQ, 2));
+    putMapStr(ops, "!=", createSymbolThing(runtime, SYM_NOT_EQ, 2));
+    putMapStr(ops, "<", createSymbolThing(runtime, SYM_LESS_THAN, 2));
+    putMapStr(ops, "<=", createSymbolThing(runtime, SYM_LESS_THAN_EQ, 2));
+    putMapStr(ops, ">", createSymbolThing(runtime, SYM_GREATER_THAN, 2));
+    putMapStr(ops, ">=", createSymbolThing(runtime, SYM_GREATER_THAN_EQ, 2));
+    putMapStr(ops, "and", createSymbolThing(runtime, SYM_ADD, 2));
+    putMapStr(ops, "or", createSymbolThing(runtime, SYM_OR, 2));
+    putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
+
+    Scope* builtins = createScope(runtime, NULL);
+    runtime->builtins = builtins;
+
+    setScopeLocal(builtins, "print", createNativeFuncThing(runtime, printFunc));
+    setScopeLocal(builtins, "input", createNativeFuncThing(runtime, inputFunc));
 
     return runtime;
 }
@@ -118,7 +149,7 @@ void destroyRuntime(Runtime* runtime) {
     destroyShallowList(runtime->stack);
     destroyList(runtime->allocatedThings, destroyThing);
     destroyList(runtime->allocatedScopes, destroyScope);
-    destroyMap(runtime->builtins, nothing, nothing);
+    destroyMap(runtime->operators, nothing, nothing);
     free(runtime);
 }
 
@@ -251,7 +282,7 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
             pushStack(runtime, createIntThing(runtime, value));
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstant(currentFrame);
-            Thing* value = getMapStr(runtime->builtins, constant);
+            Thing* value = getMapStr(runtime->operators, constant);
             if(value == NULL) {
                 *error = 1;
                 return NULL;
@@ -331,7 +362,7 @@ Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error) {
     allArgs.entryModule = module;
     allArgs.entryIndex = 0;
     //modules have no global scope.
-    allArgs.bottomScope = createScope(runtime, NULL);
+    allArgs.bottomScope = createScope(runtime, runtime->builtins);
     executeCode(allArgs, error);
     return createObjectThingFromMap(runtime, allArgs.bottomScope->locals);
 }

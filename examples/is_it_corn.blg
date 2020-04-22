@@ -1,0 +1,9 @@
+def main x do
+	print 'is it corn?';
+	in = input x;
+	if in == 'corn' then
+		print 'its corn!';
+	else
+		print 'its not not corn ):';
+	end
+end

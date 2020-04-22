@@ -1,0 +1,3 @@
+def main x do
+	print 'Hello World!';
+end
