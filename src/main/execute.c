@@ -5,6 +5,7 @@
 #include "main/bytecode.h"
 #include "main/execute.h"
 #include "main/thing.h"
+#include "main/lib.h"
 
 Scope* createScope(Runtime* runtime, Scope* parent) {
     Scope* scope = malloc(sizeof(Scope));
@@ -87,29 +88,6 @@ StackFrame* createStackFrameNative() {
     return frame;
 }
 
-
-Thing* printFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
-    if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_STR) {
-        *error = 1;
-        return NULL;
-    }
-
-    printf("%s\n", thingAsStr(args[0]));
-    return runtime->noneThing;
-}
-
-//TODO accept arbitrary long line lengths and remove excess data
-Thing* inputFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
-
-    char* str = malloc(sizeof(char) * 100);
-    fgets(str, 100, stdin);
-    //remove newline
-    str[strlen(str) - 1] = 0;
-    return createStrThing(runtime, str, 0);
-}
-
 Runtime* createRuntime() {
     Runtime* runtime = malloc(sizeof(Runtime));
     runtime->stackFrame = NULL;
@@ -138,8 +116,8 @@ Runtime* createRuntime() {
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
 
-    setScopeLocal(builtins, "print", createNativeFuncThing(runtime, printFunc));
-    setScopeLocal(builtins, "input", createNativeFuncThing(runtime, inputFunc));
+    setScopeLocal(builtins, "print", createNativeFuncThing(runtime, libPrint));
+    setScopeLocal(builtins, "input", createNativeFuncThing(runtime, libInput));
 
     return runtime;
 }

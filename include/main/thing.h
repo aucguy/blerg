@@ -2,8 +2,8 @@
 #define THING_H_
 
 #include <stdint.h>
+#include "main/execute.h"
 
-typedef struct Runtime Runtime;
 typedef void Thing;
 
 /**

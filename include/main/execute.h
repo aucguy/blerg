@@ -25,14 +25,13 @@
  */
 
 typedef void Thing;
-typedef struct Runtime Runtime;
 typedef struct Scope Scope;
 
 /**
  * The runtime object type. This is a singleton that stores information
  * pertaining to the execution and is used in many different operations.
  */
-struct Runtime {
+typedef struct {
     //Stacks are stored as lists. The first item is the top of the stack.
     //List of StackFrames.
     List* stackFrame;
@@ -49,7 +48,7 @@ struct Runtime {
     List* allocatedScopes;
     Map* operators;
     Scope* builtins;
-};
+} Runtime;
 
 Runtime* createRuntime();
 void destroyRuntime(Runtime* runtime);
