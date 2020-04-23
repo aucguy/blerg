@@ -22,5 +22,6 @@ const char* executeTestIfStmt();
 const char* executeTestAssignment();
 const char* executeTestWhileLoop();
 const char* executeTestNativeFunc();
+const char* executeRecFunc();
 
 #endif /* EXECUTETEST_H_ */

@@ -61,6 +61,7 @@ uint8_t runTests() {
     runTest("executeTestAssignment", executeTestAssignment(), &status);
     runTest("executeTestWhileLoop", executeTestWhileLoop(), &status);
     runTest("executeTestNativeFunc", executeTestNativeFunc(), &status);
+    runTest("executeRecFunc", executeRecFunc(), &status);
 
     if(status == 0) {
         printf("all tests succeeded");

@@ -239,12 +239,37 @@ const char* readConstant(StackFrame* frame) {
     return frame->def.module->constants[readU32Frame(frame)];
 }
 
-typedef struct {
-    Runtime* runtime;
-    Module* entryModule;
-    uint32_t entryIndex;
-    Scope* bottomScope;
-} ExecCodeArgs;
+Thing* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo, Thing** args,
+        uint8_t* error) {
+    //currently, native code can only call blerg code
+    if(typeOfThing(func) != THING_TYPE_FUNC) {
+        *error = 1;
+        return NULL;
+    }
+    FuncThing* funcThing = func;
+    uint32_t index = funcThing->entry;
+    if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
+        *error = 1;
+        return NULL;
+    }
+
+    //check that the provided number of arguments equals the function's arity
+    if(funcThing->module->bytecode[index++] != argNo) {
+        *error = 1;
+        return NULL;
+    }
+
+    //assign the arguments provided to the names of the variables in the local
+    //scope.
+    Scope* scope = createScope(runtime, funcThing->parentScope);
+    for(uint32_t i = 0; i < argNo; i++) {
+        const char* constant = readConstantModule(funcThing->module, index);
+        setScopeLocal(scope, constant, args[i]);
+        index += 4;
+    }
+
+    return createStackFrameDef(func->module, index, scope);
+}
 
 /**
  * Executes the given bytecode. Since there are so many arguments, the
@@ -258,13 +283,10 @@ typedef struct {
  * @param error set to a nonzero value upon error
  * @returns the value returned from the invocation / bottom stackframe.
  */
-Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
-    Runtime* runtime = allArgs.runtime;
-
+Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
     uint32_t initStackFrameSize = stackFrameSize(runtime);
 
-    pushStackFrame(runtime, createStackFrameDef(allArgs.entryModule,
-            allArgs.entryIndex, allArgs.bottomScope));
+    pushStackFrame(runtime, frame);
 
     while(stackFrameSize(runtime) > initStackFrameSize) {
         StackFrame* currentFrame = currentStackFrame(runtime);
@@ -312,26 +334,28 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
         } else if(opcode == OP_CALL) {
             //TODO fix conversion
             uint8_t arity = (unsigned int) readU32Frame(currentFrame);
-            Thing* func = peekStackIndex(runtime, arity);
+            FuncThing* func = peekStackIndex(runtime, arity);
+            Thing** args = malloc(arity * sizeof(Thing*));
+            for(uint8_t i = 0; i < arity; i++) {
+                args[arity - i - 1] = popStack(runtime);
+            }
+            popStack(runtime); //pop the function
             if(typeOfThing(func) == THING_TYPE_FUNC) {
-                //calling functioned defined in blerg from blerg code is not
-                //yet supported.
-                *error = 1;
-                return NULL;
-            } else {
-                Thing** args = malloc(arity * sizeof(Thing*));
-                for(uint8_t i = 0; i < arity; i++) {
-                    args[arity - i - 1] = popStack(runtime);
+                pushStackFrame(runtime, createFrameCall(runtime, func, arity, args, error));
+                if(*error) {
+                    free(args);
+                    return NULL;
                 }
-                popStack(runtime); //pop the function
+            } else {
                 ThingHeader* header = customDataToThingHeader(func);
                 Thing* ret = header->type->call(runtime, func, args, arity, error);
                 if(*error == 1) {
+                    free(args);
                     return NULL;
                 }
                 pushStack(runtime, ret);
-                free(args);
             }
+            free(args);
         } else if(opcode == OP_COND_JUMP_FALSE) {
             Thing* condition = popStack(runtime);
             uint32_t target = readU32Frame(currentFrame);
@@ -357,48 +381,18 @@ Thing* executeCode(ExecCodeArgs allArgs, uint8_t* error) {
 }
 
 Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error) {
-    ExecCodeArgs allArgs;
-    allArgs.runtime = runtime;
-    allArgs.entryModule = module;
-    allArgs.entryIndex = 0;
     //modules have no global scope.
-    allArgs.bottomScope = createScope(runtime, runtime->builtins);
-    executeCode(allArgs, error);
-    return createObjectThingFromMap(runtime, allArgs.bottomScope->locals);
+    Scope* scope = createScope(runtime, runtime->builtins);
+    StackFrame* frame = createStackFrameDef(module, 0, scope);
+    executeCode(runtime, frame, error);
+    return createObjectThingFromMap(runtime, scope->locals);
 }
 
 Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args,
         uint8_t* error) {
-    //currently, native code can only call blerg code
-    if(typeOfThing(func) != THING_TYPE_FUNC) {
-        *error = 1;
+    StackFrame* frame = createFrameCall(runtime, func, argNo, args, error);
+    if(*error) {
         return NULL;
     }
-    FuncThing* funcThing = func;
-    uint32_t index = funcThing->entry;
-    if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
-        *error = 1;
-        return NULL;
-    }
-
-    //check that the provided number of arguments equals the function's arity
-    if(funcThing->module->bytecode[index++] != argNo) {
-        *error = 1;
-        return NULL;
-    }
-
-    //assign the arguments provided to the names of the variables in the local
-    //scope.
-    Scope* scope = createScope(runtime, funcThing->parentScope);
-    for(uint32_t i = 0; i < argNo; i++) {
-        const char* constant = readConstantModule(funcThing->module, index);
-        setScopeLocal(scope, constant, args[i]);
-        index += 4;
-    }
-    ExecCodeArgs allArgs;
-    allArgs.runtime = runtime;
-    allArgs.entryModule = funcThing->module;
-    allArgs.entryIndex = index;
-    allArgs.bottomScope = scope;
-    return executeCode(allArgs, error);
+    return executeCode(runtime, frame, error);
 }

@@ -465,3 +465,22 @@ const char* executeTestNativeFunc() {
     cleanupExecFunc(in, out);
     return NULL;
 }
+
+const char* executeRecFunc() {
+    initThing();
+
+    ExecFuncIn in;
+    in.runtime = createRuntime();
+    in.src = "def fact x do if x == 1 then <- 1; else <- x * fact (x - 1); end end";
+    in.name = "fact";
+    in.arity = 1;
+    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args[0] = createIntThing(in.runtime, 5);
+
+    ExecFuncOut out = execFunc(in);
+    assert(out.errorMsg == NULL, out.errorMsg);
+    assert(checkInt(out.retVal, 120), "return value is not 120");
+
+    cleanupExecFunc(in, out);
+    return NULL;
+}
