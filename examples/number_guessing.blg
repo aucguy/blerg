@@ -1,3 +1,21 @@
 def random seed do
+	<- 42;
+end
+
+def main x do
+	secret = random 0;
+	guess = 0 - 1;
 	
+	while guess != secret do
+		print 'guess a number!';
+		guess = toInt (input 0);
+
+		if guess < secret then
+			print 'you guessed too low';
+		elif guess > secret then
+			print 'you guessed too high';
+		end
+	end
+	
+	print ('you got the secret! it was ' + (toStr secret));
 end

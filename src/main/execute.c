@@ -118,6 +118,9 @@ Runtime* createRuntime() {
 
     setScopeLocal(builtins, "print", createNativeFuncThing(runtime, libPrint));
     setScopeLocal(builtins, "input", createNativeFuncThing(runtime, libInput));
+    setScopeLocal(builtins, "assert", createNativeFuncThing(runtime, libAssert));
+    setScopeLocal(builtins, "toStr", createNativeFuncThing(runtime, libToStr));
+    setScopeLocal(builtins, "toInt", createNativeFuncThing(runtime, libToInt));
 
     return runtime;
 }

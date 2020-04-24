@@ -20,7 +20,7 @@ typedef struct {
     Module* module;
 } ExecFuncOut;
 
-const char* readFile(const char* filename);
+char* readFile(const char* filename);
 Module* sourceToModule(const char* src);
 ExecFuncOut execFunc(ExecFuncIn in);
 void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out);

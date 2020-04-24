@@ -11,7 +11,7 @@
 #include "main/top.h"
 
 //from https://stackoverflow.com/questions/14002954/c-programming-how-to-read-the-whole-file-contents-into-a-buffer
-const char* readFile(const char* filename) {
+char* readFile(const char* filename) {
     FILE *f = fopen(filename, "r");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
@@ -80,8 +80,14 @@ ExecFuncOut execFunc(ExecFuncIn in) {
 }
 
 void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out) {
-    destroyRuntime(in.runtime);
-    destroyModule(out.module);
+    if(in.runtime != NULL) {
+        destroyRuntime(in.runtime);
+    }
+
+    if(out.module != NULL) {
+        destroyModule(out.module);
+    }
+
     free(in.args);
     deinitThing();
 }

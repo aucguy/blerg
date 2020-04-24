@@ -12,4 +12,13 @@ Thing* libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 Thing* libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         uint8_t* error);
 
+Thing* libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error);
+
+Thing* libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error);
+
+Thing* libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t* error);
+
 #endif /* LIB_H_ */

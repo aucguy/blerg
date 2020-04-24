@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <dirent.h>
 
+#include "main/top.h"
 #include "test/parseTest.h"
 #include "test/validateTest.h"
 #include "test/transformTest.h"
@@ -62,6 +66,37 @@ uint8_t runTests() {
     runTest("executeTestWhileLoop", executeTestWhileLoop(), &status);
     runTest("executeTestNativeFunc", executeTestNativeFunc(), &status);
     runTest("executeRecFunc", executeRecFunc(), &status);
+
+    struct dirent* file;
+    DIR* dir = opendir("blg_tests");
+    if(dir != NULL) {
+        while((file = readdir(dir)) != NULL) {
+            if(strcmp(file->d_name, "..") != 0 && strcmp(file->d_name, ".") != 0) {
+                size_t len = strlen("blg_tests/") + strlen(file->d_name) + 1;
+                char* filename = malloc(sizeof(char) * len);
+                strcpy(filename, "blg_tests/");
+                strcat(filename, file->d_name);
+                char* src = readFile(filename);
+                free(filename);
+
+                initThing();
+                ExecFuncIn in;
+                in.runtime = createRuntime();
+                in.src = src;
+                in.name = "main";
+                in.arity = 1;
+                in.args = malloc(sizeof(Thing*) * in.arity);
+                in.args[0] = in.runtime->noneThing;
+                ExecFuncOut out = execFunc(in);
+                if(out.errorMsg != NULL) {
+                    printf("error: %s\n", out.errorMsg);
+                }
+                free(src);
+                cleanupExecFunc(in, out);
+            }
+        }
+        closedir(dir);
+    }
 
     if(status == 0) {
         printf("all tests succeeded");

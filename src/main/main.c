@@ -9,23 +9,6 @@
 #include "test/tests.h"
 #endif
 
-/*typedef struct {
-    Runtime* runtime;
-    const char* src;
-    const char* name;
-    Thing** args;
-    uint8_t arity;
-} ExecFuncIn;
-
-typedef struct {
-    Thing* retVal;
-    const char* errorMsg;
-    Module* module;
-} ExecFuncOut;
-
-//in executeTest.c
-ExecFuncOut execFunc(ExecFuncIn in);*/
-
 int main(int argc, const char* args[]) {
 #if INCLUDE_TESTS
     if(argc >= 2 && strcmp(args[1], "--test") == 0) {

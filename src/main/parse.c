@@ -502,7 +502,6 @@ IfToken* parseIfStmt(ParseState* state) {
         advance(state, strlen("else"));
         elseBranch = parseBlock(state, IF_ELSE_ENDS);
     } else if(lookAhead(state, "end")) {
-        advance(state, strlen("end"));
         elseBranch = NULL;
     } else {
         //shouldn't happen
