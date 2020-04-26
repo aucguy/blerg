@@ -40,7 +40,8 @@ const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
     uint8_t error = 0;
-    Module* module = sourceToModule("def main x do <- 1; end");
+    char* errorMsg;
+    Module* module = sourceToModule("def main x do <- 1; end", &errorMsg);
     assert(module != NULL, "error in source code");
 
     Thing* global = executeModule(runtime, module, &error);

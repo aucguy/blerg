@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "main/flags.h"
 #include "main/execute.h"
 #include "main/thing.h"
 
@@ -16,12 +17,14 @@ typedef struct {
 
 typedef struct {
     Thing* retVal;
-    const char* errorMsg;
+    char* errorMsg;
     Module* module;
 } ExecFuncOut;
 
 char* readFile(const char* filename);
-Module* sourceToModule(const char* src);
+
+Module* sourceToModule(const char* src, char** error);
+
 ExecFuncOut execFunc(ExecFuncIn in);
 void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out);
 

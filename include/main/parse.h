@@ -13,6 +13,9 @@
 typedef struct {
     const char* src;
     uint32_t index;
+    const char* error;
+    uint32_t line;
+    uint32_t column;
 } ParseState;
 
 /**
@@ -26,7 +29,7 @@ ParseState* createParseState(const char*);
  * @param src the source code for the given module
  * @return the AST for the source
  */
-BlockToken* parseModule(const char* src);
+BlockToken* parseModule(const char* src, char** error);
 
 #if INCLUDE_TESTS
 

@@ -25,8 +25,8 @@ char* readFile(const char* filename) {
     return string;
 }
 
-Module* sourceToModule(const char* src) {
-    BlockToken* ast = parseModule(src);
+Module* sourceToModule(const char* src, char** error) {
+    BlockToken* ast = parseModule(src, error);
     if(ast == NULL) {
         return NULL;
     }
@@ -47,9 +47,8 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     out.module = NULL;
 
     uint8_t error = 0;
-    out.module = sourceToModule(in.src);
+    out.module = sourceToModule(in.src, &out.errorMsg);
     if(out.module == NULL) {
-        out.errorMsg = "error in source code";
         return out;
     }
 

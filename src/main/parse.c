@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
+#include "main/flags.h"
 #include "main/tokens.h"
 #include "main/parse.h"
 
 //TODO fix memleaks for incorrect syntax
-//TODO add have parseIdentifier check for keywords
 
 BlockToken* parseBlock(ParseState*, const char**);
 
@@ -23,6 +24,9 @@ ParseState* createParseState(const char* src) {
     ParseState* state = (ParseState*) malloc(sizeof(ParseState));
     state->index = 0;
     state->src = src;
+    state->error = NULL;
+    state->line = 1;
+    state->column = 1;
     return state;
 }
 
@@ -38,7 +42,20 @@ char getChar(ParseState* state) {
  * characters.
  */
 void advance(ParseState* state, uint32_t amount) {
-    state->index += amount;
+    for(uint32_t i = 0; i < amount; i++) {
+        char c = getChar(state);
+        //TODO support combinations of '\n' and '\r' denoting a single line break
+        if(c == '\n' || c == '\r') {
+            state->line++;
+            state->column = 1;
+        } else if(c == '\t') {
+            //TODO support variable tab sizes
+            state->column += 4;
+        } else {
+            state->column++;
+        }
+        state->index++;
+    }
 }
 
 /**
@@ -82,6 +99,46 @@ char* sliceStr(const char* str, uint32_t start, uint32_t end) {
     memcpy(extracted, &str[start], len);
     extracted[len] = 0;
     return extracted;
+}
+
+const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
+        "end", "and", "or", "not", "~" };
+
+/**
+ * Returns whether or not the next characters matches the given string. If the
+ * string is "0" then the function returns if the end of the source has been
+ * reached.
+ */
+uint32_t lookAhead(ParseState* state, const char* str) {
+    uint32_t i = 0;
+    if(strcmp(str, "0") == 0) {
+        return getChar(state) == 0;
+    }
+    while(1) {
+        char a = str[i];
+        char b = state->src[state->index + i];
+        if(a == 0) {
+            return 1;
+        }
+        if(b == 0 || a != b) {
+            return 0;
+        }
+        i++;
+    }
+}
+
+/**
+ * Returns whether or not the next characters matches any of the given strings.
+ * If zero is present, the function will return true if the end of the source
+ * has been reached.
+ */
+uint8_t lookAheadMulti(ParseState* state, const char* strs[]) {
+    for(uint8_t i = 0; strcmp(strs[i], "~") != 0; i++) {
+        if(lookAhead(state, strs[i])) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /**
@@ -132,6 +189,8 @@ LiteralToken* parseLiteral(ParseState* state) {
 
     //EOF reached without terminating the string
     if(getChar(state) != '\'') {
+        state->index = start;
+        state->error = "literal not terminated";
         return NULL;
     }
 
@@ -152,6 +211,10 @@ IdentifierToken* parseIdentifier(ParseState* state) {
     uint32_t start = state->index;
     advanceWhile(state, IDENTIFIER_CHARS);
 
+    if(lookAheadMulti(state, KEYWORDS)) {
+        state->error = "expected an identifier, but found a keyword";
+        return NULL;
+    }
     return createIdentifierToken(sliceStr(state->src, start, state->index));
 }
 
@@ -169,6 +232,7 @@ Token* parseFactor(ParseState* state) {
         skipWhitespace(state);
         if(getChar(state) != ')') {
             destroyToken(token);
+            state->error = "expected ')'";
             return NULL;
         }
         advance(state, 1); //skip the )
@@ -196,46 +260,6 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "prefix", "not", "end" },
         { "and", "or", "end" }
 };
-
-const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
-        "end", "and", "or", "not", "~" };
-
-/**
- * Returns whether or not the next characters matches the given string. If the
- * string is "0" then the function returns if the end of the source has been
- * reached.
- */
-uint32_t lookAhead(ParseState* state, const char* str) {
-    uint32_t i = 0;
-    if(strcmp(str, "0") == 0) {
-        return getChar(state) == 0;
-    }
-    while(1) {
-        char a = str[i];
-        char b = state->src[state->index + i];
-        if(a == 0) {
-            return 1;
-        }
-        if(b == 0 || a != b) {
-            return 0;
-        }
-        i++;
-    }
-}
-
-/**
- * Returns whether or not the next characters matches any of the given strings.
- * If zero is present, the function will return true if the end of the source
- * has been reached.
- */
-uint8_t lookAheadMulti(ParseState* state, const char* strs[]) {
-    for(uint8_t i = 0; strcmp(strs[i], "~") != 0; i++) {
-        if(lookAhead(state, strs[i])) {
-            return 1;
-        }
-    }
-    return 0;
-}
 
 uint8_t factorAhead(ParseState* state) {
     char c = getChar(state);
@@ -408,15 +432,24 @@ Token* parseAssignment(ParseState* state) {
         advance(state, 1); //skip the =
         skipWhitespace(state);
         Token* right = parseExpression(state);
-        if(right == NULL || left->type != TOKEN_IDENTIFIER || getChar(state) != ';') {
+        if(right == NULL) {
+            return NULL;
+        } else if(left->type != TOKEN_IDENTIFIER) {
             //TODO fix memleak
             free(left);
+            state->error = "expected identifier";
+            return NULL;
+        } else if(getChar(state) != ';') {
+            //TODO fix memleak
+            free(left);
+            state->error = "expected ';'";
             return NULL;
         }
         advance(state, 1); //skip the ;
         IdentifierToken* identifier = (IdentifierToken*) left;
         return (Token*) createAssignmentToken(identifier, right);
     } else {
+        state->error = "expected ';' or '='";
         destroyToken(left);
         return NULL;
     }
@@ -442,9 +475,12 @@ const char* IF_ELSE_ENDS[] = { "end", "~" };
  */
 List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
     Token* condition = parseExpression(state);
-    if(condition == NULL || !lookAhead(state, "then")) {
+    if(condition == NULL) {
+        return NULL;
+    } else if(!lookAhead(state, "then")) {
         //TODO fix memleak
         *error = 1;
+        state->error = "expected 'then'";
         return NULL;
     }
     advance(state, strlen("then"));
@@ -472,6 +508,7 @@ List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
     } else {
         //TODO fix memleak
         *error = 1; //no terminating keyword
+        state->error = "expected 'else' or 'end'";
         return NULL;
     }
     return consList(head, tail);
@@ -486,6 +523,7 @@ IfToken* parseIfStmt(ParseState* state) {
     skipWhitespace(state);
     //just in case
     if(!lookAhead(state, "if")) {
+        state->error = "expected 'if' (this particular message shouldn't happen)";
         return NULL;
     }
     advance(state, strlen("if"));
@@ -506,11 +544,15 @@ IfToken* parseIfStmt(ParseState* state) {
     } else {
         //shouldn't happen
         //TODO exit and warn on this case
+        //TODO fix memleak
         elseBranch = NULL;
+        state->error = "this shouldn't happen!";
+        return NULL;
     }
     if(!lookAhead(state, "end")) {
         destroyList(branches, destroyIfBranch);
         destroyToken((Token*) elseBranch);
+        state->error = "expected 'end'";
         return NULL;
     }
     advance(state, strlen("end"));
@@ -522,20 +564,27 @@ const char* WHILE_BODY_ENDS[] = { "end", "~" };
 
 WhileToken* parseWhileStmt(ParseState* state) {
     if(!lookAhead(state, "while")) {
+        state->error = "expected 'while'";
         return NULL;
     }
     advance(state, strlen("while"));
 
     Token* conditional = parseExpression(state);
-    if(conditional == NULL || !lookAhead(state, "do")) {
+    if(conditional == NULL) {
+        return NULL;
+    } else if(!lookAhead(state, "do")) {
         //TODO fix memleak
+        state->error = "expected 'do'";
         return NULL;
     }
     advance(state, strlen("do"));
 
     BlockToken* body = parseBlock(state, WHILE_BODY_ENDS);
-    if(body == NULL || !lookAhead(state, "end")) {
+    if(body == NULL) {
+        return NULL;
+    } else if(!lookAhead(state, "end")) {
         //TODO fix memleak
+        state->error = "expected 'end'";
         return NULL;
     }
     advance(state, strlen("end"));
@@ -564,7 +613,9 @@ List* parseArgs(ParseState* state, uint8_t* error) {
     }
     IdentifierToken* head = parseIdentifier(state);
     if(head == NULL) {
+        //this shouldn't happen
         *error = 1;
+        state->error = "expected an identifier (this shouldn't happen)";
         return NULL;
     }
     //parse the rest
@@ -585,6 +636,7 @@ const char* FUNC_ENDS[] = { "end", "~" };
 FuncToken* parseFuncStmt(ParseState* state) {
     //check just in case
     if(!lookAhead(state, "def")) {
+        state->error = "expected 'def' (this shouldn't happen)";
         return NULL;
     }
     advance(state, strlen("def"));
@@ -597,15 +649,20 @@ FuncToken* parseFuncStmt(ParseState* state) {
 
     uint8_t error = 0;
     List* args = parseArgs(state, &error);
-    if(error || !lookAhead(state, "do")) {
-        //TODO fix memleak?
+
+    uint8_t ahead = lookAhead(state, "do");
+    if(error || !ahead) {
+        if(!ahead) {
+            state->error = "expected 'do'";
+        }
         destroyToken((Token*) name);
         return NULL;
     }
-
     advance(state, strlen("do"));
+
     BlockToken* body = parseBlock(state, FUNC_ENDS);
-    if(body == NULL || !lookAhead(state, "end")) {
+    ahead = lookAhead(state, "end");
+    if(body == NULL) {
         //TODO fix memleak?
         destroyToken((Token*) name);
         destroyList(args, destroyTokenVoid);
@@ -617,6 +674,7 @@ FuncToken* parseFuncStmt(ParseState* state) {
 
 ReturnToken* parseReturnStmt(ParseState* state) {
     if(!lookAhead(state, "<-")) {
+        state->error = "expected '<-'";
         return NULL;
     }
     advance(state, strlen("<-"));
@@ -626,6 +684,7 @@ ReturnToken* parseReturnStmt(ParseState* state) {
     }
     skipWhitespace(state);
     if(getChar(state) != ';') {
+        state->error = "expected ';'";
         destroyToken(body);
         return NULL;
     }
@@ -670,12 +729,14 @@ List* parseBlockHelper(ParseState* state, const char* ends[], uint8_t* error) {
     }
     //the EOF was reached before the end of the block, error
     if(getChar(state) == 0) {
+        state->error = "expected ending token";
         *error = 1;
         return NULL;
     }
     //not the end, parse the next statement
     Token* head = parseStatement(state);
     if(head == NULL) {
+        //TODO fix invalid free
         destroyToken(head);
         *error = 1;
         return NULL;
@@ -718,16 +779,31 @@ BlockToken* parseBlock(ParseState* state, const char* ends[]) {
 
 const char* MODULE_ENDS[] = { "0", "~" };
 
-BlockToken* parseModule(const char* src) {
+BlockToken* parseModule(const char* src, char** error) {
     ParseState* state = createParseState(src);
     BlockToken* token = parseBlock(state, MODULE_ENDS);
     uint8_t ended = getChar(state) == 0;
+
+    uint32_t line = state->line;
+    uint32_t column = state->column;
+    const char* errorMsg = state->error;
     free(state);
     if(!ended) {
         if(token != NULL) {
             destroyToken((Token*) token);
+            token = NULL;
         }
-        return NULL;
+        if(errorMsg == NULL) {
+            errorMsg = "unknown characters at end";
+        }
     }
-    return token;
+
+    if(errorMsg != NULL) {
+        //TODO size correctly
+        *error = malloc(sizeof(char) * 100);
+        sprintf(*error, "%s at (%i, %i)", errorMsg, line, column);
+        return NULL;
+    } else {
+        return token;
+    }
 }

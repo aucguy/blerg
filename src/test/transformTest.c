@@ -10,7 +10,8 @@
 #include "test/tests.h"
 
 const char* transformTestControlToJumps() {
-    Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end");
+    char* error = NULL;
+    Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end", &error);
     Token* transformed = (Token*) transformControlToJumps((BlockToken*) parsed);
 
     List* args = consList(createIdentifierToken(newStr("z")), NULL);

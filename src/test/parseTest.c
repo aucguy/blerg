@@ -91,7 +91,8 @@ const char* testParseFail() {
 }
 
 const char* testParseAssignments() {
-    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c;");
+    char* error = NULL;
+    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c;", &error);
 
     AssignmentToken* stmt1 = createAssignmentToken(
             createIdentifierToken(newStr("a")),
@@ -116,13 +117,18 @@ const char* testParseAssignments() {
 }
 
 const char* parseTestBlockWithEndFails() {
-    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c; end");
+    char* error = NULL;
+    BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c; end", &error);
     assert(parsed == NULL, "parse succeeded");
+    if(error != NULL) {
+        free(error);
+    }
     return NULL;
 }
 
 const char* parseTestIfStmt() {
-    BlockToken* parsed = parseModule("if a > b then c = 1; elif d then c = 2; else c = 3; end");
+    char* error = NULL;
+    BlockToken* parsed = parseModule("if a > b then c = 1; elif d then c = 2; else c = 3; end", &error);
 
     IfBranch* branch1 = createIfBranch(
             (Token*) createBinaryOpToken(newStr(">"),
@@ -157,7 +163,8 @@ const char* parseTestIfStmt() {
 }
 
 const char* parseTestWhileStmt() {
-    Token* parsed = (Token*) parseModule("x = 0; while x < 10 do x = x + 1; end");
+    char* error = NULL;
+    Token* parsed = (Token*) parseModule("x = 0; while x < 10 do x = x + 1; end", &error);
 
     Token* stmt1 = (Token*) createAssignmentToken(
             createIdentifierToken(newStr("x")),
@@ -183,7 +190,8 @@ const char* parseTestWhileStmt() {
 }
 
 const char* parseTestFunc() {
-    Token* parsed = (Token*) parseModule("def add a b do <- a + b; end");
+    char* error = NULL;
+    Token* parsed = (Token*) parseModule("def add a b do <- a + b; end", &error);
 
     List* args = consList(createIdentifierToken(newStr("a")),
             consList(createIdentifierToken(newStr("b")), NULL));
@@ -207,12 +215,17 @@ const char* parseTestFunc() {
 }
 
 const char* parseTestFuncWithoutDo() {
-    parseModule("def one <- 1; end");
+    char* error = NULL;
+    parseModule("def one <- 1; end", &error);
+    if(error != NULL) {
+        free(error);
+    }
     return NULL;
 }
 
 const char* parseTestGreaterAndLessThan() {
-    Token* parsed = (Token*) parseModule("def check x do <- 1 <= 2 and 3 >= 4; end");
+    char* error = NULL;
+    Token* parsed = (Token*) parseModule("def check x do <- 1 <= 2 and 3 >= 4; end", &error);
 
     Token* ret = (Token*) createReturnToken(
             (Token*) createBinaryOpToken(newStr("and"),

@@ -117,7 +117,8 @@ uint8_t modulesEqual(Module* a, Module* b) {
 }
 
 const char* codegenTestSimple() {
-    Token* ast = (Token*) parseModule("def main x do <- 1 + 2; end");
+    char* error;
+    Token* ast = (Token*) parseModule("def main x do <- 1 + 2; end", &error);
     Module* parsed = compileModule(ast);
     destroyToken(ast);
 
@@ -156,7 +157,8 @@ const char* codegenTestSimple() {
 }
 
 const char* codegenTestJumps() {
-    BlockToken* ast = parseModule("def factorial n do if n == 0 then <- 0; else <- n * factorial (n - 1); end end");
+    char* error;
+    BlockToken* ast = parseModule("def factorial n do if n == 0 then <- 0; else <- n * factorial (n - 1); end end", &error);
     assert(validateModule(ast), "invalid ast");
     Token* transformed = (Token*) transformModule(ast);
     destroyToken((Token*) ast);
@@ -216,7 +218,8 @@ const char* codegenTestJumps() {
 }
 
 const char* codegenTestLiteralUnaryOp() {
-    BlockToken* ast = parseModule("def main x do <- not 'hello'; end");
+    char* error = NULL;
+    BlockToken* ast = parseModule("def main x do <- not 'hello'; end", &error);
     assert(validateModule(ast), "invalid ast");
     Token* transformed = (Token*) transformModule(ast);
     destroyToken((Token*) ast);
