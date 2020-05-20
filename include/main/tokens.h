@@ -37,11 +37,15 @@ typedef enum {
  * the token must be unique references.
  */
 typedef struct Token_ {
+    //class fields
     TokenType type;
     void (*destroy)(struct Token_*);
     void (*print)(struct Token_*, uint8_t);
     uint8_t (*equals)(struct Token_*, struct Token_*);
     struct Token_* (*copy)(struct Token_*);
+
+    //instance fields
+    SrcLoc location;
 } Token;
 
 typedef struct {
@@ -152,19 +156,19 @@ uint8_t tokensEqual(Token* a, Token* b);
 Token* copyToken(Token*);
 
 #if INCLUDE_TESTS
-IntToken* createIntToken(int32_t);
-LiteralToken* createLiteralToken(const char*);
-IdentifierToken* createIdentifierToken(const char*);
-CallToken* createCallToken(List*);
-BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);
-UnaryOpToken* createUnaryOpToken(const char*, Token*);
-AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);
-BlockToken* createBlockToken(List*);
+IntToken* createIntToken(SrcLoc, int32_t);
+LiteralToken* createLiteralToken(SrcLoc, const char*);
+IdentifierToken* createIdentifierToken(SrcLoc, const char*);
+CallToken* createCallToken(SrcLoc, List*);
+BinaryOpToken* createBinaryOpToken(SrcLoc, const char*, Token*, Token*);
+UnaryOpToken* createUnaryOpToken(SrcLoc, const char*, Token*);
+AssignmentToken* createAssignmentToken(SrcLoc, IdentifierToken*, Token*);
+BlockToken* createBlockToken(SrcLoc, List*);
 IfBranch* createIfBranch(Token*, BlockToken*);
-IfToken* createIfToken(List*, BlockToken*);
-WhileToken* createWhileToken(Token*, BlockToken*);
-FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);
-ReturnToken* createReturnToken(Token* body);
+IfToken* createIfToken(SrcLoc, List*, BlockToken*);
+WhileToken* createWhileToken(SrcLoc, Token*, BlockToken*);
+FuncToken* createFuncToken(SrcLoc, IdentifierToken*, List*, BlockToken*);
+ReturnToken* createReturnToken(SrcLoc, Token* body);
 #endif
 
 LabelToken* createLabelToken(const char*);

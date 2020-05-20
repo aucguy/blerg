@@ -6,6 +6,8 @@
 #include "main/parse.h"
 #include "main/util.h"
 
+#include "test/defaultTokenLoc.h"
+
 void parseCleanup(ParseState* state, Token* token) {
     free(state);
     destroyToken(token);

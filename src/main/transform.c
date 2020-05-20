@@ -173,15 +173,17 @@ FuncToken* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     List* oldArgs = token->args;
     while(oldArgs != NULL) {
         IdentifierToken* oldId = (IdentifierToken*) oldArgs->head;
-        IdentifierToken* newId = createIdentifierToken(newStr(oldId->value));
+        SrcLoc location = oldId->token.location;
+        IdentifierToken* newId = createIdentifierToken(location, newStr(oldId->value));
         newArgs = consList((void*) newId, newArgs);
         oldArgs = oldArgs->tail;
     }
 
-    FuncToken* ret = createFuncToken(
-            createIdentifierToken(newStr(token->name->value)),
+    FuncToken* ret = createFuncToken(token->token.location,
+            createIdentifierToken(token->token.location, newStr(token->name->value)),
             reverseList(newArgs),
-            createBlockToken(toJumpsBlock(token->body, uniqueId)));
+            createBlockToken(token->body->token.location,
+                    toJumpsBlock(token->body, uniqueId)));
 
     destroyShallowList(newArgs);
     return ret;
@@ -248,7 +250,8 @@ List* toJumpsList(List* list, uint8_t* uniqueId) {
  */
 BlockToken* transformControlToJumps(BlockToken* module) {
     uint8_t uniqueId = 0;
-    return createBlockToken(toJumpsBlock(module, &uniqueId));
+    SrcLoc location = module->token.location;
+    return createBlockToken(location, toJumpsBlock(module, &uniqueId));
 }
 
 BlockToken* transformModule(BlockToken* module) {

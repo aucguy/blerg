@@ -25,8 +25,8 @@ ParseState* createParseState(const char* src) {
     state->index = 0;
     state->src = src;
     state->error = NULL;
-    state->line = 1;
-    state->column = 1;
+    state->location.line = 1;
+    state->location.column = 1;
     return state;
 }
 
@@ -46,13 +46,13 @@ void advance(ParseState* state, uint32_t amount) {
         char c = getChar(state);
         //TODO support combinations of '\n' and '\r' denoting a single line break
         if(c == '\n' || c == '\r') {
-            state->line++;
-            state->column = 1;
+            state->location.line++;
+            state->location.column = 1;
         } else if(c == '\t') {
             //TODO support variable tab sizes
-            state->column += 4;
+            state->location.column += 4;
         } else {
-            state->column++;
+            state->location.column++;
         }
         state->index++;
     }
@@ -166,13 +166,14 @@ const char* INT_CHARS = "0123456789";
  */
 IntToken* parseInt(ParseState* state) {
     uint32_t start = state->index;
+    SrcLoc location = state->location;
     advanceWhile(state, INT_CHARS);
 
     char* extracted = sliceStr(state->src, start, state->index);
     int value = atoi(extracted);
     free(extracted);
 
-    return createIntToken(value);
+    return createIntToken(location, value);
 }
 
 /**
@@ -181,6 +182,7 @@ IntToken* parseInt(ParseState* state) {
  * <literal> ::= ' .* '
  */
 LiteralToken* parseLiteral(ParseState* state) {
+    SrcLoc location = state->location;
     advance(state, 1); //skip the '
     uint32_t start = state->index;
     while(getChar(state) != '\'' && getChar(state) != 0) {
@@ -197,7 +199,7 @@ LiteralToken* parseLiteral(ParseState* state) {
     const char* value = sliceStr(state->src, start, state->index);
     advance(state, 1); //skip the '
 
-    return createLiteralToken(value);
+    return createLiteralToken(location, value);
 }
 
 const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
@@ -209,13 +211,15 @@ const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
  */
 IdentifierToken* parseIdentifier(ParseState* state) {
     uint32_t start = state->index;
+    SrcLoc location = state->location;
     advanceWhile(state, IDENTIFIER_CHARS);
 
     if(lookAheadMulti(state, KEYWORDS)) {
         state->error = "expected an identifier, but found a keyword";
         return NULL;
     }
-    return createIdentifierToken(sliceStr(state->src, start, state->index));
+    const char* str = sliceStr(state->src, start, state->index);
+    return createIdentifierToken(location, str);
 }
 
 /**
@@ -270,6 +274,7 @@ uint8_t factorAhead(ParseState* state) {
 
 Token* parseCall(ParseState* state) {
     skipWhitespace(state);
+    SrcLoc location = state->location;
     //the first token may just be by itself or be the function in the call
     Token* first = parseFactor(state);
     if(first == NULL) {
@@ -291,7 +296,7 @@ Token* parseCall(ParseState* state) {
 
     List* reversed = reverseList(children);
     destroyShallowList(children);
-    return (Token*) createCallToken(reversed);
+    return (Token*) createCallToken(location, reversed);
 }
 
 /**
@@ -348,6 +353,7 @@ const char* getOp(ParseState* state, uint8_t level) {
 Token* parseExpressionWithLevel(ParseState* state, uint8_t level);
 
 Token* parseBinaryOp(ParseState* state, uint8_t level) {
+    SrcLoc location = state->location;
     Token* token = parseExpressionWithLevel(state, level - 1);
     if(token == NULL) {
         return NULL;
@@ -364,7 +370,7 @@ Token* parseBinaryOp(ParseState* state, uint8_t level) {
             destroyToken(token);
             return NULL;
         }
-        token = (Token*) createBinaryOpToken(op, token, right);
+        token = (Token*) createBinaryOpToken(location, op, token, right);
         skipWhitespace(state);
     }
 
@@ -385,6 +391,7 @@ Token* parseBinaryOp(ParseState* state, uint8_t level) {
  */
 Token* parsePrefixUnaryOp(ParseState* state, uint8_t level) {
     skipWhitespace(state);
+    SrcLoc location = state->location;
     const char* op = getOp(state, level);
     if(op != NULL) {
         advance(state, strlen(op));
@@ -393,7 +400,7 @@ Token* parsePrefixUnaryOp(ParseState* state, uint8_t level) {
             free((void*) op);
             return NULL;
         }
-        return (Token*) createUnaryOpToken(op, child);
+        return (Token*) createUnaryOpToken(location, op, child);
     } else {
         return parseExpressionWithLevel(state, level - 1);
     }
@@ -420,6 +427,7 @@ Token* parseExpression(ParseState* state) {
  */
 Token* parseAssignment(ParseState* state) {
     skipWhitespace(state);
+    SrcLoc location = state->location;
     Token* left = parseExpression(state);
     if(left == NULL) {
         return NULL;
@@ -447,7 +455,7 @@ Token* parseAssignment(ParseState* state) {
         }
         advance(state, 1); //skip the ;
         IdentifierToken* identifier = (IdentifierToken*) left;
-        return (Token*) createAssignmentToken(identifier, right);
+        return (Token*) createAssignmentToken(location, identifier, right);
     } else {
         state->error = "expected ';' or '='";
         destroyToken(left);
@@ -521,6 +529,7 @@ List* parseIfStmtBranches(ParseState* state, uint8_t* error) {
  */
 IfToken* parseIfStmt(ParseState* state) {
     skipWhitespace(state);
+    SrcLoc location = state->location;
     //just in case
     if(!lookAhead(state, "if")) {
         state->error = "expected 'if' (this particular message shouldn't happen)";
@@ -556,7 +565,7 @@ IfToken* parseIfStmt(ParseState* state) {
         return NULL;
     }
     advance(state, strlen("end"));
-    return createIfToken(branches, elseBranch);
+    return createIfToken(location, branches, elseBranch);
 }
 
 const char* WHILE_COND_ENDS[] = { "do", "~" };
@@ -567,6 +576,8 @@ WhileToken* parseWhileStmt(ParseState* state) {
         state->error = "expected 'while'";
         return NULL;
     }
+
+    SrcLoc location = state->location;
     advance(state, strlen("while"));
 
     Token* conditional = parseExpression(state);
@@ -589,7 +600,7 @@ WhileToken* parseWhileStmt(ParseState* state) {
     }
     advance(state, strlen("end"));
 
-    return createWhileToken(conditional, body);
+    return createWhileToken(location, conditional, body);
 }
 
 /**
@@ -639,6 +650,8 @@ FuncToken* parseFuncStmt(ParseState* state) {
         state->error = "expected 'def' (this shouldn't happen)";
         return NULL;
     }
+
+    SrcLoc location = state->location;
     advance(state, strlen("def"));
 
     skipWhitespace(state);
@@ -669,7 +682,7 @@ FuncToken* parseFuncStmt(ParseState* state) {
         return NULL;
     }
     advance(state, strlen("end"));
-    return createFuncToken(name, args, body);
+    return createFuncToken(location, name, args, body);
 }
 
 ReturnToken* parseReturnStmt(ParseState* state) {
@@ -677,7 +690,10 @@ ReturnToken* parseReturnStmt(ParseState* state) {
         state->error = "expected '<-'";
         return NULL;
     }
+
+    SrcLoc location = state->location;
     advance(state, strlen("<-"));
+
     Token* body = parseExpression(state);
     if(body == NULL) {
         return NULL;
@@ -689,7 +705,7 @@ ReturnToken* parseReturnStmt(ParseState* state) {
         return NULL;
     }
     advance(state, 1);
-    return createReturnToken(body);
+    return createReturnToken(location, body);
 }
 
 Token* parseStatement(ParseState* state) {
@@ -770,11 +786,13 @@ BlockToken* parseBlock(ParseState* state, const char* ends[]) {
     //parseBlockHelper sets this to 1 if there's an error instead of returning
     //NULL
     uint8_t error = 0;
+    skipWhitespace(state);
+    SrcLoc location = state->location;
     List* list = parseBlockHelper(state, ends, &error);
     if(error) {
         return NULL;
     }
-    return createBlockToken(list);
+    return createBlockToken(location, list);
 }
 
 const char* MODULE_ENDS[] = { "0", "~" };
@@ -784,8 +802,7 @@ BlockToken* parseModule(const char* src, char** error) {
     BlockToken* token = parseBlock(state, MODULE_ENDS);
     uint8_t ended = getChar(state) == 0;
 
-    uint32_t line = state->line;
-    uint32_t column = state->column;
+    SrcLoc location = state->location;
     const char* errorMsg = state->error;
     free(state);
     if(!ended) {
@@ -801,7 +818,7 @@ BlockToken* parseModule(const char* src, char** error) {
     if(errorMsg != NULL) {
         //TODO size correctly
         *error = malloc(sizeof(char) * 100);
-        sprintf(*error, "%s at (%i, %i)", errorMsg, line, column);
+        sprintf(*error, "%s at (%i, %i)", errorMsg, location.line, location.column);
         return NULL;
     } else {
         return token;

@@ -7,6 +7,8 @@
 #include "main/util.h"
 #include "main/validate.h"
 
+#include "test/defaultTokenLoc.h"
+
 FuncToken* createSimpleFunc(const char* name, int32_t number) {
     return createFuncToken(createIdentifierToken(newStr(name)), NULL,
             createBlockToken(consList(createIntToken(number), NULL)));

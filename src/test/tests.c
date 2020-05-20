@@ -103,3 +103,5 @@ uint8_t runTests() {
     }
     return status;
 }
+
+SrcLoc nowhere = { 0, 0 };

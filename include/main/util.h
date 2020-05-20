@@ -124,4 +124,9 @@ uint32_t* boxUint32(uint32_t primitive);
  */
 void nothing(void* x);
 
+typedef struct {
+    uint32_t line;
+    uint32_t column;
+} SrcLoc;
+
 #endif /* UTIL_H_ */

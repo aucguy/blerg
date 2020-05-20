@@ -1,0 +1,52 @@
+[1mdiff --git a/include/main/tokens.h b/include/main/tokens.h[m
+[1mindex 6abd050..1b0bc80 100644[m
+[1m--- a/include/main/tokens.h[m
+[1m+++ b/include/main/tokens.h[m
+[36m@@ -37,11 +37,15 @@[m [mtypedef enum {[m
+  * the token must be unique references.[m
+  */[m
+ typedef struct Token_ {[m
+[32m+[m[32m    //class fields[m
+     TokenType type;[m
+     void (*destroy)(struct Token_*);[m
+     void (*print)(struct Token_*, uint8_t);[m
+     uint8_t (*equals)(struct Token_*, struct Token_*);[m
+     struct Token_* (*copy)(struct Token_*);[m
+[32m+[m
+[32m+[m[32m    //instance fields[m
+[32m+[m[32m    SrcLoc location;[m
+ } Token;[m
+ [m
+ typedef struct {[m
+[36m@@ -152,19 +156,19 @@[m [muint8_t tokensEqual(Token* a, Token* b);[m
+ Token* copyToken(Token*);[m
+ [m
+ #if INCLUDE_TESTS[m
+[31m-IntToken* createIntToken(int32_t);[m
+[31m-LiteralToken* createLiteralToken(const char*);[m
+[31m-IdentifierToken* createIdentifierToken(const char*);[m
+[31m-CallToken* createCallToken(List*);[m
+[31m-BinaryOpToken* createBinaryOpToken(const char*, Token*, Token*);[m
+[31m-UnaryOpToken* createUnaryOpToken(const char*, Token*);[m
+[31m-AssignmentToken* createAssignmentToken(IdentifierToken*, Token*);[m
+[31m-BlockToken* createBlockToken(List*);[m
+[32m+[m[32mIntToken* createIntToken(SrcLoc, int32_t);[m
+[32m+[m[32mLiteralToken* createLiteralToken(SrcLoc, const char*);[m
+[32m+[m[32mIdentifierToken* createIdentifierToken(SrcLoc, const char*);[m
+[32m+[m[32mCallToken* createCallToken(SrcLoc, List*);[m
+[32m+[m[32mBinaryOpToken* createBinaryOpToken(SrcLoc, const char*, Token*, Token*);[m
+[32m+[m[32mUnaryOpToken* createUnaryOpToken(SrcLoc, const char*, Token*);[m
+[32m+[m[32mAssignmentToken* createAssignmentToken(SrcLoc, IdentifierToken*, Token*);[m
+[32m+[m[32mBlockToken* createBlockToken(SrcLoc, List*);[m
+ IfBranch* createIfBranch(Token*, BlockToken*);[m
+[31m-IfToken* createIfToken(List*, BlockToken*);[m
+[31m-WhileToken* createWhileToken(Token*, BlockToken*);[m
+[31m-FuncToken* createFuncToken(IdentifierToken*, List*, BlockToken*);[m
+[31m-ReturnToken* createReturnToken(Token* body);[m
+[32m+[m[32mIfToken* createIfToken(SrcLoc, List*, BlockToken*);[m
+[32m+[m[32mWhileToken* createWhileToken(SrcLoc, Token*, BlockToken*);[m
+[32m+[m[32mFuncToken* createFuncToken(SrcLoc, IdentifierToken*, List*, BlockToken*);[m
+[32m+[m[32mReturnToken* createReturnToken(SrcLoc, Token* body);[m
+ #endif[m
+ [m
+ LabelToken* createLabelToken(const char*);[m

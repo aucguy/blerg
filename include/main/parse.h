@@ -14,8 +14,7 @@ typedef struct {
     const char* src;
     uint32_t index;
     const char* error;
-    uint32_t line;
-    uint32_t column;
+    SrcLoc location;
 } ParseState;
 
 /**

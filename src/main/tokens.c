@@ -31,7 +31,8 @@ uint8_t equalsIntToken(Token* self, Token* other) {
 }
 
 Token* copyIntToken(Token* token) {
-    return (Token*) createIntToken(((IntToken*) token)->value);
+    IntToken* intToken = (IntToken*) token;
+    return (Token*) createIntToken(intToken->token.location, intToken->value);
 }
 
 Token INT_TYPE = {
@@ -48,9 +49,10 @@ Token INT_TYPE = {
  * @param value the token's value
  * @return the newly created token
  */
-IntToken* createIntToken(int32_t value) {
+IntToken* createIntToken(SrcLoc loc, int32_t value) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
     token->token = INT_TYPE;
+    token->token.location = loc;
     token->value = value;
     return token;
 }
@@ -69,7 +71,8 @@ uint8_t equalsLiteralToken(Token* self, Token* other) {
 }
 
 Token* copyLiteralToken(Token* token) {
-    return (Token*) createLiteralToken(newStr(((LiteralToken*) token)->value));
+    LiteralToken* literal = (LiteralToken*) token;
+    return (Token*) createLiteralToken(literal->token.location, newStr(literal->value));
 }
 
 Token LITERAL_TYPE = {
@@ -86,9 +89,10 @@ Token LITERAL_TYPE = {
  * @param value a unique reference to the token's value.
  * @return the newly created token
  */
-LiteralToken* createLiteralToken(const char* value) {
+LiteralToken* createLiteralToken(SrcLoc loc, const char* value) {
     LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
     token->token = LITERAL_TYPE;
+    token->token.location = loc;
     token->value = value;
     return token;
 }
@@ -108,7 +112,9 @@ uint8_t equalsIdentifierToken(Token* self, Token* other) {
 }
 
 Token* copyIdentifierToken(Token* token) {
-    return (Token*) createIdentifierToken(newStr(((IdentifierToken*) token)->value));
+    IdentifierToken* identifier = (IdentifierToken*) token;
+    SrcLoc loc = identifier->token.location;
+    return (Token*) createIdentifierToken(loc, newStr(identifier->value));
 }
 
 Token IDENTIFIER_TYPE = {
@@ -125,9 +131,10 @@ Token IDENTIFIER_TYPE = {
  * @param value a unique reference to the token's name.
  * @return the newly created token
  */
-IdentifierToken* createIdentifierToken(const char* value) {
+IdentifierToken* createIdentifierToken(SrcLoc loc, const char* value) {
     IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
     token->token = IDENTIFIER_TYPE;
+    token->token.location = loc;
     token->value = value;
     return token;
 }
@@ -173,8 +180,9 @@ List* copyTokenList(List* old) {
 }
 
 Token* copyCallToken(Token* self) {
-    List* children = copyTokenList(((CallToken*) self)->children);
-    return (Token*) createCallToken(children);
+    CallToken* call = (CallToken*) self;
+    List* children = copyTokenList(call->children);
+    return (Token*) createCallToken(call->token.location, children);
 }
 
 Token CALL_TYPE = {
@@ -185,9 +193,10 @@ Token CALL_TYPE = {
         copyCallToken
 };
 
-CallToken* createCallToken(List* children) {
+CallToken* createCallToken(SrcLoc location, List* children) {
     CallToken* token = (CallToken*) malloc(sizeof(CallToken));
     token->token = CALL_TYPE;
+    token->token.location = location;
     token->children = children;
     return token;
 }
@@ -216,7 +225,7 @@ uint8_t equalsBinaryOpToken(Token* self, Token* other) {
 
 Token* copyBinaryOpToken(Token* self) {
     BinaryOpToken* binOp = (BinaryOpToken*) self;
-    return (Token*) createBinaryOpToken(newStr(binOp->op),
+    return (Token*) createBinaryOpToken(binOp->token.location, newStr(binOp->op),
             copyToken(binOp->left), copyToken(binOp->right));
 }
 
@@ -236,9 +245,11 @@ Token BINARY_OP_TYPE = {
  * @param right a unique reference to the right operand.
  * @return the newly created token
  */
-BinaryOpToken* createBinaryOpToken(const char* op, Token* left, Token* right) {
+BinaryOpToken* createBinaryOpToken(SrcLoc loc, const char* op, Token* left,
+        Token* right) {
     BinaryOpToken* token = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
     token->token = BINARY_OP_TYPE;
+    token->token.location = loc;
     token->op = op;
     token->left = left;
     token->right = right;
@@ -266,7 +277,8 @@ uint8_t equalsUnaryOpToken(Token* self, Token* other) {
 
 Token* copyUnaryOpToken(Token* self) {
     UnaryOpToken* unOp = (UnaryOpToken*) self;
-    return (Token*) createUnaryOpToken(newStr(unOp->op), copyToken(unOp->child));
+    return (Token*) createUnaryOpToken(self->location, newStr(unOp->op),
+            copyToken(unOp->child));
 }
 
 Token UNARY_OP_TYPE = {
@@ -284,9 +296,10 @@ Token UNARY_OP_TYPE = {
  * @param child a unique reference to the token's operand.
  * @return the newly created token
  */
-UnaryOpToken* createUnaryOpToken(const char* op, Token* child) {
+UnaryOpToken* createUnaryOpToken(SrcLoc loc, const char* op, Token* child) {
     UnaryOpToken* token = (UnaryOpToken*) malloc(sizeof(UnaryOpToken));
     token->token = UNARY_OP_TYPE;
+    token->token.location = loc;
     token->op = op;
     token->child = child;
     return token;
@@ -313,7 +326,7 @@ uint8_t equalsAssignmentToken(Token* self, Token* other) {
 
 Token* copyAssignmentToken(Token* self) {
     AssignmentToken* assign = (AssignmentToken*) self;
-    return (Token*) createAssignmentToken(
+    return (Token*) createAssignmentToken(self->location,
             (IdentifierToken*) copyToken((Token*) assign->left),
             copyToken(assign->right));
 }
@@ -332,9 +345,11 @@ Token ASSIGNMENT_TYPE = {
  * @param left a unique reference to the token's lvalue.
  * @param right a unique reference to the token's rvalue.
  */
-AssignmentToken* createAssignmentToken(IdentifierToken* left, Token* right) {
+AssignmentToken* createAssignmentToken(SrcLoc loc, IdentifierToken* left,
+        Token* right) {
     AssignmentToken* token = (AssignmentToken*) malloc(sizeof(AssignmentToken));
     token->token = ASSIGNMENT_TYPE;
+    token->token.location = loc;
     token->left = left;
     token->right = right;
     return token;
@@ -365,9 +380,10 @@ Token BLOCK_TYPE = {
         NULL
 };
 
-BlockToken* createBlockToken(List* children) {
+BlockToken* createBlockToken(SrcLoc location, List* children) {
     BlockToken* token = (BlockToken*) malloc(sizeof(BlockToken));
     token->token = BLOCK_TYPE;
+    token->token.location = location;
     token->children = children;
     return token;
 }
@@ -423,9 +439,10 @@ Token IF_TYPE = {
         NULL
 };
 
-IfToken* createIfToken(List* branches, BlockToken* elseBranch) {
+IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
     IfToken* token = (IfToken*) malloc(sizeof(IfToken));
     token->token = IF_TYPE;
+    token->token.location = loc;
     token->branches = branches;
     token->elseBranch = elseBranch;
     return token;
@@ -466,9 +483,10 @@ Token WHILE_TYPE = {
         NULL
 };
 
-WhileToken* createWhileToken(Token* condition, BlockToken* body) {
+WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
     WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
     token->token = WHILE_TYPE;
+    token->token.location = loc;
     token->condition = condition;
     token->body = body;
     return token;
@@ -509,9 +527,11 @@ Token FUNC_TYPE = {
         NULL
 };
 
-FuncToken* createFuncToken(IdentifierToken* name, List* args, BlockToken* body) {
+FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
+        BlockToken* body) {
     FuncToken* token = (FuncToken*) malloc(sizeof(FuncToken));
     token->token = FUNC_TYPE;
+    token->token.location = loc;
     token->name = name;
     token->args = args;
     token->body = body;
@@ -533,7 +553,7 @@ uint8_t equalsReturnToken(Token* self, Token* other) {
 
 Token* copyReturnToken(Token* self) {
     ReturnToken* token = (ReturnToken*) self;
-    return (Token*) createReturnToken(copyToken(token->body));
+    return (Token*) createReturnToken(self->location, copyToken(token->body));
 }
 
 Token RETURN_TYPE = {
@@ -544,9 +564,10 @@ Token RETURN_TYPE = {
         copyReturnToken
 };
 
-ReturnToken* createReturnToken(Token* body) {
+ReturnToken* createReturnToken(SrcLoc location, Token* body) {
     ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
     token->token = RETURN_TYPE;
+    token->token.location = location;
     token->body = body;
     return token;
 }

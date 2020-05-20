@@ -9,6 +9,8 @@
 #include "test/transformTest.h"
 #include "test/tests.h"
 
+#include "test/defaultTokenLoc.h"
+
 const char* transformTestControlToJumps() {
     char* error = NULL;
     Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end", &error);
