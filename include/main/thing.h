@@ -2,9 +2,9 @@
 #define THING_H_
 
 #include <stdint.h>
-#include "main/execute.h"
 
-typedef void Thing;
+#include "main/execute.h"
+#include "main/runtime.h"
 
 /**
  * Initialize this module. Must be called before any other functions in this
@@ -18,20 +18,6 @@ void initThing();
  * called.
  */
 void deinitThing();
-
-typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
-
-/**
- * Each Thing has a type which describes how it behaves and its custom data
- * format.
- */
-typedef struct {
-    //destroys the thing. Should not destroy any references this thing has to
-    //other things.
-    void (*destroy)(Thing*);
-    ExecFunc call;
-    ExecFunc dispatch;
-} ThingType;
 
 //different builtin types. Initialized in initThing.
 ThingType* THING_TYPE_NONE;
