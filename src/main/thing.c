@@ -29,24 +29,21 @@ void destroySimpleThing(Thing* thing) {
     UNUSED(thing);
 }
 
-Thing* errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity) {
     UNUSED(runtime);
     UNUSED(thing);
     UNUSED(arity);
     UNUSED(args);
-    *error = 1;
-    return NULL;
+    return createRetVal(NULL, 1);
 }
 
-Thing* symbolCall(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
-Thing* intDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
-Thing* strDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+RetVal symbolCall(Runtime*, Thing*, Thing**, uint8_t);
+RetVal intDispatch(Runtime*, Thing*, Thing**, uint8_t);
+RetVal strDispatch(Runtime*, Thing*, Thing**, uint8_t);
 void destroyStrThing(Thing*);
-Thing* boolDispatch(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+RetVal boolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 uint32_t getSymbolId(Thing* self);
-Thing* nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity, uint8_t* error);
+RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyObjectThing(Thing* thing);
 
@@ -217,44 +214,46 @@ Thing* createIntThing(Runtime* runtime, int32_t value) {
     return thing;
 }
 
-Thing* intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
     if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_INT ||
             typeOfThing(args[1]) != THING_TYPE_INT ||
             typeOfThing(self) != THING_TYPE_SYMBOL) {
-        *error = 1;
-        return NULL;
+        return createRetVal(NULL, 1);
     }
 
     int32_t valueA = thingAsInt(args[0]);
     int32_t valueB = thingAsInt(args[1]);
     uint32_t id = getSymbolId(self);
 
+    Thing* thing;
+    uint8_t error = 0;
     if(id == SYM_ADD) {
-        return (Thing*) createIntThing(runtime, valueA + valueB);
+        thing = createIntThing(runtime, valueA + valueB);
     } else if(id == SYM_SUB) {
-        return (Thing*) createIntThing(runtime, valueA - valueB);
+        thing = createIntThing(runtime, valueA - valueB);
     } else if(id == SYM_MUL) {
-        return (Thing*) createIntThing(runtime, valueA * valueB);
+        thing = createIntThing(runtime, valueA * valueB);
     } else if(id == SYM_DIV) {
-        return (Thing*) createIntThing(runtime, valueA / valueB);
+        thing = createIntThing(runtime, valueA / valueB);
     } else if(id == SYM_EQ) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA == valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA == valueB);
     } else if(id == SYM_NOT_EQ) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA != valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA != valueB);
     } else if(id == SYM_LESS_THAN) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA < valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA < valueB);
     } else if(id == SYM_LESS_THAN_EQ) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA <= valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA <= valueB);
     } else if(id == SYM_GREATER_THAN) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA > valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA > valueB);
     } else if(id == SYM_GREATER_THAN_EQ) {
-        return (Thing*) createBoolThing(runtime, (uint8_t) valueA >= valueB);
+        thing = createBoolThing(runtime, (uint8_t) valueA >= valueB);
     } else {
-        *error = 1;
-        return NULL;
+        thing = NULL;
+        error = 1;
     }
+
+    return createRetVal(thing, error);
 }
 
 int32_t thingAsInt(Thing* thing) {
@@ -280,19 +279,20 @@ void destroyStrThing(Thing* self) {
     }
 }
 
-Thing* strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
     if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_STR ||
             typeOfThing(args[1]) != THING_TYPE_STR ||
             typeOfThing(self) != THING_TYPE_SYMBOL) {
-        *error = 1;
-        return NULL;
+        return createRetVal(NULL, 1);
     }
 
     const char* valueA = thingAsStr(args[0]);
     const char* valueB = thingAsStr(args[1]);
     uint32_t id = getSymbolId(self);
+
+    Thing* thing;
+    uint8_t error = 0;
 
     if(id == SYM_ADD) {
         uint32_t len = strlen(valueA) + strlen(valueB);
@@ -300,16 +300,16 @@ Thing* strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         out[0] = 0;
         strcat(out, valueA);
         strcat(out, valueB);
-        return (Thing*) createStrThing(runtime, out, 0);
+        thing = createStrThing(runtime, out, 0);
     } else if(id == SYM_EQ) {
-        return createBoolThing(runtime, strcmp(valueA, valueB) == 0);
+        thing = createBoolThing(runtime, strcmp(valueA, valueB) == 0);
     } else if(id == SYM_NOT_EQ) {
-        return createBoolThing(runtime, strcmp(valueA, valueB) != 0);
+        thing = createBoolThing(runtime, strcmp(valueA, valueB) != 0);
     } else {
-        *error = 1;
-        return NULL;
+        error = 1;
     }
 
+    return createRetVal(thing, error);
 }
 
 const char* thingAsStr(Thing* self) {
@@ -326,41 +326,41 @@ Thing* createBoolThing(Runtime* runtime, uint8_t value) {
     return thing;
 }
 
-Thing* boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        *error = 1;
-        return NULL;
+        return createRetVal(NULL, 1);
     }
 
     uint32_t id = getSymbolId(self);
 
+    Thing* thing;
+    uint8_t error = 0;
+
     if(id == SYM_NOT) {
         if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_BOOL) {
-            *error = 1;
-            return NULL;
+            error = 1;
         } else {
-            return createBoolThing(runtime, !thingAsBool(args[0]));
+            thing = createBoolThing(runtime, !thingAsBool(args[0]));
         }
     } else {
         if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_BOOL ||
                 typeOfThing(args[1]) != THING_TYPE_BOOL) {
-            *error = 1;
-            return NULL;
+            return createRetVal(NULL, 1);
         }
 
         uint8_t valueA = thingAsBool(args[0]);
         uint8_t valueB = thingAsBool(args[1]);
 
         if(id == SYM_ADD) {
-            return createBoolThing(runtime, valueA && valueB);
+            thing = createBoolThing(runtime, valueA && valueB);
         } else if(id == SYM_OR) {
-            return createBoolThing(runtime, valueA || valueB);
+            thing = createBoolThing(runtime, valueA || valueB);
         } else {
-            *error = 1;
-            return NULL;
+            error = 1;
         }
     }
+
+    return createRetVal(thing, error);
 }
 
 uint8_t thingAsBool(Thing* thing) {
@@ -391,13 +391,11 @@ uint32_t getSymbolId(Thing* self) {
 }
 
 //not properly supported yet
-Thing* symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(arity != ((SymbolThing*) self)->arity) {
-        *error = 1;
-        return NULL;
+        return createRetVal(NULL, 1);
     }
-    return typeOfThing(args[0])->dispatch(runtime, self, args, arity, error);
+    return typeOfThing(args[0])->dispatch(runtime, self, args, arity);
 }
 
 /**
@@ -442,8 +440,6 @@ Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
     return thing;
 }
 
-Thing* nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity, uint8_t* error) {
-
-    return ((NativeFuncThing*) self)->func(runtime, self, args, arity, error);
+RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    return ((NativeFuncThing*) self)->func(runtime, self, args, arity);
 }

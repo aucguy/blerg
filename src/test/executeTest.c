@@ -12,43 +12,48 @@
 
 #include "test/tests.h"
 
-uint8_t checkInt(Thing* thing, int32_t num) {
-    if(typeOfThing(thing) != THING_TYPE_INT) {
+uint8_t checkInt(RetVal ret, int32_t num) {
+    if(isRetValError(ret)) {
+        return 0;
+    } else if(typeOfThing(getRetVal(ret)) != THING_TYPE_INT) {
         return 0;
     } else {
-        return thingAsInt(thing) == num;
+        return thingAsInt(getRetVal(ret)) == num;
     }
 }
 
-uint8_t checkStr(Thing* thing, const char* str) {
-    if(typeOfThing(thing) != THING_TYPE_STR) {
+uint8_t checkStr(RetVal ret, const char* str) {
+    if(isRetValError(ret)) {
+        return 0;
+    } else if(typeOfThing(getRetVal(ret)) != THING_TYPE_STR) {
         return 0;
     } else {
-        return strcmp(thingAsStr(thing), str) == 0;
+        return strcmp(thingAsStr(getRetVal(ret)), str) == 0;
     }
 }
 
-uint8_t checkBool(Thing* thing, uint8_t value) {
-    if(typeOfThing(thing) != THING_TYPE_BOOL) {
+uint8_t checkBool(RetVal ret, uint8_t value) {
+    if(isRetValError(ret)) {
+        return 0;
+    } else if(typeOfThing(getRetVal(ret)) != THING_TYPE_BOOL) {
         return 0;
     } else {
-        return thingAsBool(thing) == value;
+        return thingAsBool(getRetVal(ret)) == value;
     }
 }
 
 const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
-    uint8_t error = 0;
     char* errorMsg;
     Module* module = sourceToModule("def main x do <- 1; end", &errorMsg);
     assert(module != NULL, "error in source code");
 
-    Thing* global = executeModule(runtime, module, &error);
-    assert(!error, "error occurred while executing the module");
-    assert(typeOfThing(global) == THING_TYPE_OBJ, "global is not an object");
+    RetVal global = executeModule(runtime, module);
+    assert(!isRetValError(global), "error occurred while executing the module");
+    assert(typeOfThing(getRetVal(global)) == THING_TYPE_OBJ, "global is not an object");
 
-    Thing* mainFunc = getObjectProperty(global, "main");
+    Thing* mainFunc = getObjectProperty(getRetVal(global), "main");
     assert(mainFunc != NULL, "main function not found");
     assert(typeOfThing(mainFunc) == THING_TYPE_FUNC, "main is not a function");
 
@@ -430,11 +435,9 @@ const char* executeTestWhileLoop() {
     return NULL;
 }
 
-Thing* absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error) {
+RetVal absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_INT) {
-        *error = 1;
-        return NULL;
+        return createRetVal(NULL, 1);
     }
 
     int32_t value = thingAsInt(args[0]);
@@ -444,7 +447,7 @@ Thing* absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
     } else {
         out = value;
     }
-    return createIntThing(runtime, out);
+    return createRetVal(createIntThing(runtime, out), 0);
 }
 
 const char* executeTestNativeFunc() {

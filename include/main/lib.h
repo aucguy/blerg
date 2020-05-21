@@ -6,19 +6,14 @@
 #include "main/execute.h"
 #include "main/thing.h"
 
-Thing* libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error);
+RetVal libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
-Thing* libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error);
+RetVal libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
-Thing* libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error);
+RetVal libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
-Thing* libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error);
+RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
-Thing* libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
-        uint8_t* error);
+RetVal libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 #endif /* LIB_H_ */

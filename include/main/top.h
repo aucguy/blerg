@@ -16,7 +16,7 @@ typedef struct {
 } ExecFuncIn;
 
 typedef struct {
-    Thing* retVal;
+    RetVal retVal;
     char* errorMsg;
     Module* module;
 } ExecFuncOut;

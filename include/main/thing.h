@@ -19,7 +19,7 @@ void initThing();
  */
 void deinitThing();
 
-typedef Thing* (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t, uint8_t*);
+typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
 
 /**
  * Each Thing has a type which describes how it behaves and its custom data

@@ -7,6 +7,20 @@
 #include "main/thing.h"
 #include "main/lib.h"
 
+RetVal createRetVal(Thing* value, uint8_t error) {
+    RetVal retVal;
+    retVal.value = value;
+    retVal.error = error;
+    return retVal;
+}
+
+uint8_t isRetValError(RetVal val) {
+    return val.error;
+}
+Thing* getRetVal(RetVal val) {
+    return val.value;
+}
+
 Scope* createScope(Runtime* runtime, Scope* parent) {
     Scope* scope = malloc(sizeof(Scope));
     scope->parent = parent;
@@ -220,8 +234,8 @@ const char* readConstant(StackFrame* frame) {
     return frame->def.module->constants[readU32Frame(frame)];
 }
 
-Thing* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo, Thing** args,
-        uint8_t* error) {
+StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
+        Thing** args, uint8_t* error) {
     //currently, native code can only call blerg code
     if(typeOfThing(func) != THING_TYPE_FUNC) {
         *error = 1;
@@ -264,7 +278,7 @@ Thing* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo, Thing*
  * @param error set to a nonzero value upon error
  * @returns the value returned from the invocation / bottom stackframe.
  */
-Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
+RetVal executeCode(Runtime* runtime, StackFrame* frame) {
     uint32_t initStackFrameSize = stackFrameSize(runtime);
 
     pushStackFrame(runtime, frame);
@@ -274,8 +288,7 @@ Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
         //sanity check, native frames should end before the interpreter loop.
         //if this fails then there is some sort of internal error.
         if(currentFrame->type != STACK_FRAME_DEF) {
-            *error = 1;
-            return NULL;
+            return createRetVal(NULL, 1);
         }
         Module* module = currentFrame->def.module;
         unsigned char opcode = module->bytecode[currentFrame->def.index++];
@@ -287,8 +300,7 @@ Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
             const char* constant = readConstant(currentFrame);
             Thing* value = getMapStr(runtime->operators, constant);
             if(value == NULL) {
-                *error = 1;
-                return NULL;
+                return createRetVal(NULL, 1);
             }
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_LITERAL) {
@@ -322,19 +334,22 @@ Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
             }
             popStack(runtime); //pop the function
             if(typeOfThing(func) == THING_TYPE_FUNC) {
-                pushStackFrame(runtime, createFrameCall(runtime, func, arity, args, error));
-                if(*error) {
+                uint8_t error = 0;
+                StackFrame* frame = createFrameCall(runtime, func, arity, args,
+                        &error);
+                if(error) {
                     free(args);
-                    return NULL;
+                    return createRetVal(NULL, 1);
                 }
+                pushStackFrame(runtime, frame);
             } else {
                 ThingHeader* header = customDataToThingHeader(func);
-                Thing* ret = header->type->call(runtime, func, args, arity, error);
-                if(*error == 1) {
+                RetVal ret = header->type->call(runtime, func, args, arity);
+                if(isRetValError(ret)) {
                     free(args);
-                    return NULL;
+                    return ret;
                 }
-                pushStack(runtime, ret);
+                pushStack(runtime, getRetVal(ret));
             }
             free(args);
         } else if(opcode == OP_COND_JUMP_FALSE) {
@@ -342,8 +357,7 @@ Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
             uint32_t target = readU32Frame(currentFrame);
 
             if(typeOfThing(condition) != THING_TYPE_BOOL) {
-                *error = 1;
-                return NULL;
+                return createRetVal(NULL, 1);
             }
 
             if(!thingAsBool(condition)) {
@@ -353,27 +367,26 @@ Thing* executeCode(Runtime* runtime, StackFrame* frame, uint8_t* error) {
             currentFrame->def.index = readU32Frame(currentFrame);
         } else {
             //unknown opcode
-            *error = 1;
-            return NULL;
+            return createRetVal(NULL, 1);
         }
     }
 
-    return popStack(runtime);
+    return createRetVal(popStack(runtime), 0);
 }
 
-Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error) {
+RetVal executeModule(Runtime* runtime, Module* module) {
     //modules have no global scope.
     Scope* scope = createScope(runtime, runtime->builtins);
     StackFrame* frame = createStackFrameDef(module, 0, scope);
-    executeCode(runtime, frame, error);
-    return createObjectThingFromMap(runtime, scope->locals);
+    executeCode(runtime, frame);
+    return createRetVal(createObjectThingFromMap(runtime, scope->locals), 0);
 }
 
-Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args,
-        uint8_t* error) {
-    StackFrame* frame = createFrameCall(runtime, func, argNo, args, error);
-    if(*error) {
-        return NULL;
+RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {
+    uint8_t error = 0;
+    StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
+    if(error) {
+        return createRetVal(NULL, 1);
     }
-    return executeCode(runtime, frame, error);
+    return executeCode(runtime, frame);
 }

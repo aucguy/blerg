@@ -42,7 +42,7 @@ Module* sourceToModule(const char* src, char** error) {
 
 ExecFuncOut execFunc(ExecFuncIn in) {
     ExecFuncOut out;
-    out.retVal = NULL;
+    out.retVal = createRetVal(NULL, 0);
     out.errorMsg = NULL;
     out.module = NULL;
 
@@ -52,16 +52,16 @@ ExecFuncOut execFunc(ExecFuncIn in) {
         return out;
     }
 
-    Thing* global = executeModule(in.runtime, out.module, &error);
-    if(error != 0) {
+    RetVal global = executeModule(in.runtime, out.module);
+    if(isRetValError(global)) {
         out.errorMsg = "error executing global scope";
         return out;
-    } else if(typeOfThing(global) != THING_TYPE_OBJ) {
+    } else if(typeOfThing(getRetVal(global)) != THING_TYPE_OBJ) {
         out.errorMsg = "global scope is not an object";
         return out;
     }
 
-    Thing* func = getObjectProperty(global, in.name);
+    Thing* func = getObjectProperty(getRetVal(global), in.name);
     if(func == NULL) {
         out.errorMsg = "function not found";
         return out;
@@ -70,7 +70,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
         return out;
     }
 
-    out.retVal = callFunction(in.runtime, func, in.arity, in.args, &error);
+    out.retVal = callFunction(in.runtime, func, in.arity, in.args);
     if(error != 0) {
         out.errorMsg = "error executing function";
         return out;

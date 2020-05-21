@@ -6,6 +6,18 @@
 #include "main/codegen.h"
 #include "main/util.h"
 
+typedef void Thing;
+typedef struct Scope Scope;
+
+typedef struct {
+    Thing* value;
+    uint8_t error;
+} RetVal;
+
+RetVal createRetVal(Thing* value, uint8_t error);
+uint8_t isRetValError(RetVal val);
+Thing* getRetVal(RetVal val);
+
 /**
  * Every 'object' in the language is internally referred to as a 'thing.'
  * So there are IntThing, LiteralThing, FuncThing (results of defs) and
@@ -23,9 +35,6 @@
  * 2) Blerg code cannot call other blerg code. Attempting to call a function
  * that was defined in blerg will result in an error.
  */
-
-typedef void Thing;
-typedef struct Scope Scope;
 
 /**
  * The runtime object type. This is a singleton that stores information
@@ -66,7 +75,7 @@ void destroyRuntime(Runtime* runtime);
  * @param error set to a nonzero value if an error occurs during execution.
  * @return the global scope as an ObjectThing, or NULL upon error.
  */
-Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error);
+RetVal executeModule(Runtime* runtime, Module* module);
 
 /**
  * Calls the given thing with the given arguments. Currently, partial
@@ -80,8 +89,8 @@ Thing* executeModule(Runtime* runtime, Module* module, uint8_t* error);
  * @param error set to a nonzero value if an error occurs during execution
  * @return the thing returned by the function
  */
-Thing* callFunction(Runtime* runtime, Thing* func, uint32_t argNo,
-        Thing** args, uint8_t* error);
+RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo,
+        Thing** args);
 
 /**
  * Each stackframe and function needs to "remember" things bound to variables.
