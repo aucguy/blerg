@@ -596,6 +596,8 @@ Token LABEL_TYPE = {
 LabelToken* createLabelToken(const char* name) {
     LabelToken* token = (LabelToken*) malloc(sizeof(LabelToken));
     token->token = LABEL_TYPE;
+    token->token.location.line = 0;
+    token->token.location.column = 0;
     token->name = name;
     return token;
 }
@@ -624,6 +626,8 @@ Token ABS_JUMP_TYPE = {
 AbsJumpToken* createAbsJumpToken(const char* label) {
     AbsJumpToken* token = (AbsJumpToken*) malloc(sizeof(AbsJumpToken));
     token->token = ABS_JUMP_TYPE;
+    token->token.location.line = 0;
+    token->token.location.column = 0;
     token->label = label;
     return token;
 }
@@ -655,9 +659,11 @@ Token COND_JUMP_TYPE = {
         NULL
 };
 
-CondJumpToken* createCondJumpToken(Token* cond, const char* label, uint8_t when) {
+CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
+        uint8_t when) {
     CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
     token->token = COND_JUMP_TYPE;
+    token->token.location = loc;
     token->condition = cond;
     token->label = label;
     token->when = when;

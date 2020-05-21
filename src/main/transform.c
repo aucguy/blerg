@@ -74,6 +74,7 @@ List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
         //jump to the next branch if the above condition is false
         const char* nextLabel = uniqueName(uniqueId);
         CondJumpToken* condJump = createCondJumpToken(
+                branch->condition->location,
                 copyToken(branch->condition),
                 newStr(nextLabel), 0);
         stmts = consList(condJump, stmts);
@@ -142,6 +143,7 @@ List* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     //jump to the end if the condition is false
     const char* endLabel = uniqueName(uniqueId);
     CondJumpToken* condJump = createCondJumpToken(
+            token->condition->location,
             copyToken(token->condition),
             newStr(endLabel), 0);
     stmts = consList(condJump, stmts);

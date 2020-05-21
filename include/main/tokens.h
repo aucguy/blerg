@@ -173,6 +173,6 @@ ReturnToken* createReturnToken(SrcLoc, Token* body);
 
 LabelToken* createLabelToken(const char*);
 AbsJumpToken* createAbsJumpToken(const char*);
-CondJumpToken* createCondJumpToken(Token*, const char*, uint8_t);
+CondJumpToken* createCondJumpToken(SrcLoc, Token*, const char*, uint8_t);
 
 #endif /* TOKENS_H_ */

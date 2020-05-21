@@ -30,6 +30,9 @@ typedef struct {
     uint32_t bytecodeLength;
     List* bytecode;
 
+    uint32_t srcLocLength;
+    List* srcLoc;
+
     /**
      * Since labels are referenced in instructions before they are defined via
      * emitLabel, the builder needs to remember where labels are
@@ -123,6 +126,8 @@ void emitAbsJump(ModuleBuilder* builder, uint32_t label);
  *      necessary.
  */
 void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args);
+
+void emitSrcLoc(ModuleBuilder* builder, SrcLoc location);
 
 /**
  * Turns a ModuleBuilder into a module suitable for interpreting. This compacts

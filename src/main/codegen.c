@@ -16,6 +16,8 @@ ModuleBuilder* createModuleBuilder() {
     builder->constants = NULL;
     builder->bytecodeLength = 0;
     builder->bytecode = NULL;
+    builder->srcLocLength = 0;
+    builder->srcLoc = NULL;
     builder->nextLabel = 0;
     builder->labelRefs = createMap();
     builder->labelDefs = createMap();
@@ -34,6 +36,10 @@ void destroyModuleBuilder(ModuleBuilder* builder) {
     builder->bytecodeLength = 0;
     destroyList(builder->bytecode, free);
     builder->bytecode = NULL;
+
+    builder->srcLocLength = 0;
+    destroyList(builder->srcLoc, free);
+    builder->srcLoc = NULL;
 
     destroyMap(builder->labelRefs, free, destroyIntList);
     destroyMap(builder->labelDefs, free, free);
@@ -185,6 +191,19 @@ void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args) {
     }
 }
 
+void emitSrcLoc(ModuleBuilder* builder, SrcLoc location) {
+    uint32_t segmentOffset = builder->srcLocLength % SEGMENT_SIZE;
+    //if the current bytecode segment has no space left, create a new one
+    if(segmentOffset == 0) {
+        size_t size = SEGMENT_SIZE * sizeof(BytecodeSrcLoc);
+        builder->srcLoc = consList(malloc(size), builder->srcLoc);
+    }
+    BytecodeSrcLoc* currentSegment = (BytecodeSrcLoc*) builder->srcLoc->head;
+    uint32_t index = builder->bytecodeLength;
+    currentSegment[segmentOffset] = createBytecodeSrcLoc(index, location);
+    builder->srcLocLength++;
+}
+
 /**
  * Takes a list of segments and copies them to a single array. Each segment is
  * assumed to be filled to the capacity of SEGMENT_SIZE, except the first one
@@ -224,6 +243,8 @@ Module* builderToModule(ModuleBuilder* builder) {
             builder->constants, sizeof(char*));
     uint8_t* bytecode = (unsigned char*) compactSegments(
             builder->bytecodeLength, builder->bytecode, sizeof(unsigned char));
+    BytecodeSrcLoc* srcLoc = (BytecodeSrcLoc*) compactSegments(builder->srcLocLength,
+            builder->srcLoc, sizeof(BytecodeSrcLoc));
 
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
@@ -242,6 +263,8 @@ Module* builderToModule(ModuleBuilder* builder) {
     module->constants = (const char**) constants;
     module->bytecodeLength = builder->bytecodeLength;
     module->bytecode = bytecode;
+    module->srcLocLength = builder->srcLocLength;
+    module->srcLoc = srcLoc;
     return module;
 }
 
@@ -256,21 +279,27 @@ Module* builderToModule(ModuleBuilder* builder) {
  */
 void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     if(token->type == TOKEN_INT) {
+        emitSrcLoc(builder, token->location);
         emitPushInt(builder, ((IntToken*) token)->value);
     } else if(token->type == TOKEN_LITERAL) {
+        emitSrcLoc(builder, token->location);
         emitPushLiteral(builder, ((LiteralToken*) token)->value);
     } else if(token->type == TOKEN_IDENTIFIER) {
+        emitSrcLoc(builder, token->location);
         emitLoad(builder, ((IdentifierToken*) token)->value);
     } else if(token->type == TOKEN_LABEL) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((LabelToken*) token)->name);
         emitLabel(builder, *label);
     } else if(token->type == TOKEN_ABS_JUMP) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((AbsJumpToken*) token)->label);
+        emitSrcLoc(builder, token->location);
         emitAbsJump(builder, *label);
     } else if(token->type == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
         compileToken(builder, labels, condJump->condition);
+
         uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
+        emitSrcLoc(builder, token->location);
         emitCondJump(builder, *label, condJump->when);
     } else if(token->type == TOKEN_CALL) {
         CallToken* call = (CallToken*) token;
@@ -281,25 +310,39 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
             children = children->tail;
             count++;
         }
+
+        emitSrcLoc(builder, token->location);
         emitCall(builder, count - 1);
     } else if(token->type == TOKEN_UNARY_OP) {
+        emitSrcLoc(builder, token->location);
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
         emitPushBuiltin(builder, unaryOp->op);
+
         compileToken(builder, labels, unaryOp->child);
+
+        emitSrcLoc(builder, token->location);
         emitCall(builder, 1);
     } else if(token->type == TOKEN_BINARY_OP) {
+        emitSrcLoc(builder, token->location);
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
         emitPushBuiltin(builder, binaryOp->op);
         compileToken(builder, labels, binaryOp->left);
         compileToken(builder, labels, binaryOp->right);
+
+        emitSrcLoc(builder, token->location);
         emitCall(builder, 2);
     } else if(token->type == TOKEN_RETURN) {
         ReturnToken* ret = (ReturnToken*) token;
         compileToken(builder, labels, ret->body);
+
+        emitSrcLoc(builder, token->location);
         emitReturn(builder);
     } else if(token->type == TOKEN_ASSIGNMENT) {
         AssignmentToken* assign = (AssignmentToken*) token;
         compileToken(builder, labels, assign->right);
+
+        //TODO point to the equal sign?
+        emitSrcLoc(builder, token->location);
         emitStore(builder, assign->left->value);
     } else {
         printf("warning: unknown token type\n");
@@ -326,6 +369,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
         arg = arg->tail;
     }
     //indicate the beginning of the function
+    emitSrcLoc(builder, func->token.location);
     emitDefFunc(builder, argNum, (const char**) args);
     free(args);
 
@@ -364,7 +408,11 @@ Module* compileModule(Token* ast) {
             FuncToken* func = (FuncToken*) token;
             uint32_t label = createLabel(builder);
             putMapStr(globalFuncs, newStr(func->name->value), boxUint32(label));
+
+            emitSrcLoc(builder, func->token.location);
             emitCreateFunc(builder, label);
+
+            emitSrcLoc(builder, func->token.location);
             emitStore(builder, func->name->value);
         }
     }
@@ -391,10 +439,16 @@ void destroyModule(Module* module) {
         free((void*) module->constants[i]);
     }
     free((void*) module->constants);
+    module->constants = NULL;
     module->constantsLength = 0;
 
     free((void*) module->bytecode);
+    module->bytecode = NULL;
     module->bytecodeLength = 0;
+
+    free((void*) module->srcLoc);
+    module->srcLoc = NULL;
+    module->srcLocLength = 0;
 
     free(module);
 }

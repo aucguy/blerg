@@ -40,7 +40,7 @@ const char* getConstant(Module* module, uint32_t arg) {
 void printIndexArgOp(const char* opName, Module* module, uint32_t* index) {
     uint32_t arg = readUInt(module, index);
     const char* constant = getConstant(module, arg);
-    printf("%s %i (%s)\n", opName, arg, constant);
+    printf("%s %i (%s)", opName, arg, constant);
 }
 
 void printModule(Module* module) {
@@ -50,34 +50,46 @@ void printModule(Module* module) {
     }
 
     printf("bytecode:\n");
+    printf("\ti\tl\tc\n");
     uint32_t i = 0;
     while(i < module->bytecodeLength) {
-        printf("\t %i: \t", i);
+        uint32_t srcIndex = 0;
+        while(srcIndex < module->srcLocLength && module->srcLoc[srcIndex].index != i) {
+            srcIndex++;
+        }
+        SrcLoc location;
+        if(srcIndex == module->srcLocLength) {
+            location.line = 0;
+            location.column = 0;
+        } else {
+            location = module->srcLoc[srcIndex].location;
+        }
+        printf("\t%i\t%i\t%i:\t", i, location.line, location.column);
         unsigned char opcode = module->bytecode[i++];
         if(opcode == OP_PUSH_INT) {
-            printf("PUSH_INT %i\n", readInt(module, &i));
+            printf("PUSH_INT %i", readInt(module, &i));
         } else if(opcode == OP_PUSH_BUILTIN) {
             printIndexArgOp("PUSH_BUILTIN", module, &i);
         } else if(opcode == OP_PUSH_LITERAL) {
             printIndexArgOp("PUSH_LITERAL", module, &i);
         } else if(opcode == OP_PUSH_NONE) {
-            printf("PUSH_NONE\n");
+            printf("PUSH_NONE");
         } else if(opcode == OP_CALL) {
-            printf("CALL %i\n", readUInt(module, &i));
+            printf("CALL %i", readUInt(module, &i));
         } else if(opcode == OP_RETURN) {
-            printf("RETURN\n");
+            printf("RETURN");
         } else if(opcode == OP_CREATE_FUNC) {
-            printf("CREATE_FUNC %i\n", readInt(module, &i));
+            printf("CREATE_FUNC %i", readInt(module, &i));
         } else if(opcode == OP_LOAD) {
             printIndexArgOp("LOAD", module, &i);
         } else if(opcode == OP_STORE) {
             printIndexArgOp("STORE", module, &i);
         } else if(opcode == OP_COND_JUMP_TRUE) {
-            printf("OP_COND_JUMP_TRUE %i\n", readInt(module, &i));
+            printf("OP_COND_JUMP_TRUE %i", readInt(module, &i));
         } else if(opcode == OP_COND_JUMP_FALSE) {
-            printf("OP_COND_JUMP_FALSE %i\n", readInt(module, &i));
+            printf("OP_COND_JUMP_FALSE %i", readInt(module, &i));
         } else if(opcode == OP_ABS_JUMP) {
-            printf("OP_ABS_JUMP %i\n", readInt(module, &i));
+            printf("OP_ABS_JUMP %i", readInt(module, &i));
         } else if(opcode == OP_DEF_FUNC) {
             uint8_t argNum = module->bytecode[i++];
             printf("DEF_FUNC %i: ", argNum);
@@ -86,10 +98,10 @@ void printModule(Module* module) {
                 const char* str = getConstant(module, arg);
                 printf("%i (%s), ", arg, str);
             }
-            printf("\n");
         } else {
             printf("!CORRUPT_BYTECODE!\n");
         }
+        printf("\n");
     }
 }
 

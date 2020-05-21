@@ -9,3 +9,4 @@
 #define createWhileToken(x, y) createWhileToken(nowhere, x, y)
 #define createFuncToken(x, y, z) createFuncToken(nowhere, x, y, z)
 #define createReturnToken(x) createReturnToken(nowhere, x)
+#define createCondJumpToken(x, y, z) createCondJumpToken(nowhere, x, y, z)

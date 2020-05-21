@@ -2,6 +2,7 @@
 #define BYTECODE_H_
 
 #include <stdint.h>
+#include "main/util.h"
 
 enum INSTRUCTIONS {
     //args: value (uint32)
@@ -71,6 +72,13 @@ enum INSTRUCTIONS {
     OP_DEF_FUNC
 };
 
+typedef struct {
+    uint32_t index;
+    SrcLoc location;
+} BytecodeSrcLoc;
+
+BytecodeSrcLoc createBytecodeSrcLoc(uint32_t index, SrcLoc location);
+
 /**
  * The compiled contents of a module. This contains none of the values
  * generated at runtime.
@@ -83,6 +91,9 @@ typedef struct {
     //the bytecode, bytecodeLength is the length of bytecode
     uint32_t bytecodeLength;
     const unsigned char* bytecode;
+
+    uint32_t srcLocLength;
+    const BytecodeSrcLoc* srcLoc;
 } Module;
 
 #endif /* BYTECODE_H_ */

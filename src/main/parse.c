@@ -353,13 +353,13 @@ const char* getOp(ParseState* state, uint8_t level) {
 Token* parseExpressionWithLevel(ParseState* state, uint8_t level);
 
 Token* parseBinaryOp(ParseState* state, uint8_t level) {
-    SrcLoc location = state->location;
     Token* token = parseExpressionWithLevel(state, level - 1);
     if(token == NULL) {
         return NULL;
     }
 
     skipWhitespace(state);
+    SrcLoc location = state->location;
 
     const char* op;
     while((op = getOp(state, level)) != NULL) {
