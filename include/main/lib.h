@@ -16,4 +16,6 @@ RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 RetVal libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
 #endif /* LIB_H_ */

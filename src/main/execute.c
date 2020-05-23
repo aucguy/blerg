@@ -88,6 +88,7 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "assert", createNativeFuncThing(runtime, libAssert));
     setScopeLocal(builtins, "toStr", createNativeFuncThing(runtime, libToStr));
     setScopeLocal(builtins, "toInt", createNativeFuncThing(runtime, libToInt));
+    setScopeLocal(builtins, "trycatch", createNativeFuncThing(runtime, libTryCatch));
 
     return runtime;
 }
@@ -118,6 +119,12 @@ void popStackFrame(Runtime* runtime) {
 
 uint32_t stackFrameSize(Runtime* runtime) {
     return lengthList(runtime->stackFrame);
+}
+
+void unwindStackFrame(Runtime* runtime, uint32_t initStackFrameSize) {
+    while(stackFrameSize(runtime) > initStackFrameSize) {
+        popStackFrame(runtime);
+    }
 }
 
 void pushStack(Runtime* runtime, Thing* thing) {
@@ -222,6 +229,8 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         //sanity check, native frames should end before the interpreter loop.
         //if this fails then there is some sort of internal error.
         if(currentFrame->type != STACK_FRAME_DEF) {
+            //unwindStackFrame is not called here since the stack is messed up
+            //anyway
             const char* msg = "internal error: native frame not ended before def frame";
             return throwMsg(runtime, newStr(msg));
         }
@@ -241,6 +250,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             index += 4;
             Thing* value = getMapStr(runtime->operators, constant);
             if(value == NULL) {
+                unwindStackFrame(runtime, initStackFrameSize);
                 const char* format = "internal error: builtin '%s' not found";
                 return throwMsg(runtime, formatStr(format, constant));
             }
@@ -287,6 +297,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 StackFrame* frame = createFrameCall(runtime, func, arity, args,
                         &error);
                 if(error) {
+                    unwindStackFrame(runtime, initStackFrameSize);
                     free(args);
                     //TODO make this error message better
                     const char* msg = "error creating stack frame for"
@@ -301,6 +312,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 popStackFrame(runtime);
 
                 if(isRetValError(ret)) {
+                    unwindStackFrame(runtime, initStackFrameSize);
                     free(args);
                     return ret;
                 }
@@ -313,6 +325,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             index += 4;
 
             if(typeOfThing(condition) != THING_TYPE_BOOL) {
+                unwindStackFrame(runtime, initStackFrameSize);
                 //TODO report what type was found
                 const char* msg =" boolean needed for branches, but a boolean"
                         "was not found";
@@ -325,6 +338,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         } else if(opcode == OP_ABS_JUMP) {
             index = readU32Module(module, index);
         } else {
+            unwindStackFrame(runtime, initStackFrameSize);
             return throwMsg(runtime, "internal error: unknown bytecode");
         }
 

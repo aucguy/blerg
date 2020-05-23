@@ -1,0 +1,11 @@
+def main x do
+    assert ((trycatch blockA blockB) == 'hello');
+end
+
+def blockA x do
+    assert false;
+end
+
+def blockB error do
+    <- 'hello';
+end
