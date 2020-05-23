@@ -565,8 +565,9 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
     UNUSED(runtime);
 
     ErrorThing* error = (ErrorThing*) self;
-    List* parts = consList((char*) formatStr("\terror: %s", error->msg), NULL);
-    size_t length = strlen(error->msg) + 2;
+    const char* footer = formatStr("\terror: %s", error->msg);
+    List* parts = consList((char*) footer, NULL);
+    size_t length = strlen(footer) + 2;
     List* list = error->stackFrame;
 
     while(list != NULL) {

@@ -81,6 +81,8 @@ Runtime* createRuntime() {
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
 
+    setScopeLocal(builtins, "false", createBoolThing(runtime, 0));
+    setScopeLocal(builtins, "true", createBoolThing(runtime, 1));
     setScopeLocal(builtins, "print", createNativeFuncThing(runtime, libPrint));
     setScopeLocal(builtins, "input", createNativeFuncThing(runtime, libInput));
     setScopeLocal(builtins, "assert", createNativeFuncThing(runtime, libAssert));
