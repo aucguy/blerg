@@ -12,6 +12,8 @@
 
 #include "test/tests.h"
 
+#define UNUSED(x) (void)(x)
+
 uint8_t checkInt(RetVal ret, int32_t num) {
     if(isRetValError(ret)) {
         return 0;
@@ -436,6 +438,8 @@ const char* executeTestWhileLoop() {
 }
 
 RetVal absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 1) {
         const char* msg = formatStr("expected 1 argument but found %i", arity);
         return throwMsg(runtime, msg);

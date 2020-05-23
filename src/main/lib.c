@@ -6,7 +6,11 @@
 #include "main/thing.h"
 #include "main/execute.h"
 
+#define UNUSED(x) (void)(x)
+
 RetVal libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 1) {
         const char* format = "expected 1 argument but got %i";
         return throwMsg(runtime, formatStr(format , arity));
@@ -22,6 +26,10 @@ RetVal libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
 //TODO accept arbitrary long line lengths and remove excess data
 RetVal libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    UNUSED(args);
+    UNUSED(arity);
+
     char* str = malloc(sizeof(char) * 100);
     fgets(str, 100, stdin);
     //remove newline
@@ -30,6 +38,9 @@ RetVal libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    UNUSED(arity);
+
     if(arity != 1) {
         return throwMsg(runtime, formatStr("expected 1 argument but got %i", arity));
     }
@@ -47,6 +58,8 @@ RetVal libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 1) {
         return throwMsg(runtime, formatStr("expected 1 argument but got %i", arity));
     }
@@ -63,6 +76,8 @@ RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 1) {
         return throwMsg(runtime, formatStr("expected 1 argument but got %i", arity));
     }

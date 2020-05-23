@@ -46,7 +46,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     out.errorMsg = NULL;
     out.module = NULL;
 
-    out.module = sourceToModule(in.src, &out.errorMsg);
+    out.module = sourceToModule(in.src, (char**) &out.errorMsg);
     if(out.module == NULL) {
         return out;
     }
@@ -87,6 +87,6 @@ void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out) {
     }
 
     free(in.args);
-    free(out.errorMsg);
+    free((char*) out.errorMsg);
     deinitThing();
 }

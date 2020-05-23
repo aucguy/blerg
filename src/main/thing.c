@@ -535,7 +535,7 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
 
             StackFrameDef* frameDef = &stackFrame->def;
 
-            for(int i = 0; i < frameDef->module->srcLocLength; i++) {
+            for(uint32_t i = 0; i < frameDef->module->srcLocLength; i++) {
                 if(frameDef->index == frameDef->module->srcLoc[i].index) {
                     errorFrame->location = frameDef->module->srcLoc[i].location;
                     break;
@@ -562,8 +562,10 @@ void destroyErrorThing(Thing* thing) {
 }
 
 const char* errorStackTrace(Runtime* runtime, Thing* self) {
+    UNUSED(runtime);
+
     ErrorThing* error = (ErrorThing*) self;
-    List* parts = consList(formatStr("\terror: %s", error->msg), NULL);
+    List* parts = consList((char*) formatStr("\terror: %s", error->msg), NULL);
     size_t length = strlen(error->msg) + 2;
     List* list = error->stackFrame;
 

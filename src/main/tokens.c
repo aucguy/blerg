@@ -7,6 +7,7 @@
 #include "main/util.h"
 
 #define UNUSED(x) (void)(x)
+#define tokenInstanceFields {0, 0}
 
 uint8_t tokensEqualVoid(void* a, void* b);
 uint8_t branchesEqual(void* a, void* b);
@@ -40,7 +41,8 @@ Token INT_TYPE = {
         destroyIntToken,
         printIntToken,
         equalsIntToken,
-        copyIntToken
+        copyIntToken,
+        tokenInstanceFields
 };
 
 /**
@@ -80,7 +82,8 @@ Token LITERAL_TYPE = {
         destroyLiteralToken,
         printLiteralToken,
         equalsLiteralToken,
-        copyLiteralToken
+        copyLiteralToken,
+        tokenInstanceFields
 };
 
 /**
@@ -122,7 +125,8 @@ Token IDENTIFIER_TYPE = {
         destroyIdentifierToken,
         printIdentifierToken,
         equalsIdentifierToken,
-        copyIdentifierToken
+        copyIdentifierToken,
+        tokenInstanceFields
 };
 
 /**
@@ -190,7 +194,8 @@ Token CALL_TYPE = {
         destroyCallToken,
         printCallToken,
         equalsCallToken,
-        copyCallToken
+        copyCallToken,
+        tokenInstanceFields
 };
 
 CallToken* createCallToken(SrcLoc location, List* children) {
@@ -234,7 +239,8 @@ Token BINARY_OP_TYPE = {
         destroyBinaryOpToken,
         printBinaryOpToken,
         equalsBinaryOpToken,
-        copyBinaryOpToken
+        copyBinaryOpToken,
+        tokenInstanceFields
 };
 
 /**
@@ -286,7 +292,8 @@ Token UNARY_OP_TYPE = {
         destroyUnaryOpToken,
         printUnaryOpToken,
         equalsUnaryOpToken,
-        copyUnaryOpToken
+        copyUnaryOpToken,
+        tokenInstanceFields
 };
 
 /**
@@ -336,7 +343,8 @@ Token ASSIGNMENT_TYPE = {
         destroyAssignmentToken,
         printAssignmentToken,
         equalsAssignmentToken,
-        copyAssignmentToken
+        copyAssignmentToken,
+        tokenInstanceFields
 };
 
 /**
@@ -377,7 +385,8 @@ Token BLOCK_TYPE = {
         destroyBlockToken,
         printBlockToken,
         equalsBlockToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 BlockToken* createBlockToken(SrcLoc location, List* children) {
@@ -436,7 +445,8 @@ Token IF_TYPE = {
         destroyIfToken,
         printIfToken,
         equalsIfToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
@@ -480,7 +490,8 @@ Token WHILE_TYPE = {
         destroyWhileToken,
         printWhileToken,
         equalsWhileToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
@@ -524,7 +535,8 @@ Token FUNC_TYPE = {
         destroyFuncToken,
         printFuncToken,
         equalsFuncToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
@@ -561,7 +573,8 @@ Token RETURN_TYPE = {
         destroyReturnToken,
         printReturnToken,
         equalsReturnToken,
-        copyReturnToken
+        copyReturnToken,
+        tokenInstanceFields
 };
 
 ReturnToken* createReturnToken(SrcLoc location, Token* body) {
@@ -590,7 +603,8 @@ Token LABEL_TYPE = {
         destroyLabelToken,
         printLabelToken,
         equalsLabelToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 LabelToken* createLabelToken(const char* name) {
@@ -620,7 +634,8 @@ Token ABS_JUMP_TYPE = {
         destroyAbsJumpToken,
         printAbsJumpToken,
         equalsAbsJumpToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 AbsJumpToken* createAbsJumpToken(const char* label) {
@@ -656,7 +671,8 @@ Token COND_JUMP_TYPE = {
         destroyCondJumpToken,
         printCondJumpToken,
         equalsCondJumpToken,
-        NULL
+        NULL,
+        tokenInstanceFields
 };
 
 CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
