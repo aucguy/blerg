@@ -480,7 +480,7 @@ const char* executeTestNativeFunc() {
     return NULL;
 }
 
-const char* executeRecFunc() {
+const char* executeTestRecFunc() {
     initThing();
 
     ExecFuncIn in;

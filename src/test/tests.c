@@ -65,7 +65,7 @@ uint8_t runTests() {
     runTest("executeTestAssignment", executeTestAssignment(), &status);
     runTest("executeTestWhileLoop", executeTestWhileLoop(), &status);
     runTest("executeTestNativeFunc", executeTestNativeFunc(), &status);
-    runTest("executeRecFunc", executeRecFunc(), &status);
+    runTest("executeTestRecFunc", executeTestRecFunc(), &status);
 
     struct dirent* file;
     DIR* dir = opendir("blg_tests");
