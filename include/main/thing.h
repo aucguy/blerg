@@ -107,4 +107,6 @@ Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func);
 Thing* createErrorThing(Runtime* runtime, const char* msg);
 const char* errorStackTrace(Runtime* runtime, Thing* self);
 
+RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...);
+
 #endif /* THING_H_ */

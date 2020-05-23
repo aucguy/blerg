@@ -440,14 +440,9 @@ const char* executeTestWhileLoop() {
 RetVal absFunc(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
-    if(arity != 1) {
-        const char* msg = formatStr("expected 1 argument but found %i", arity);
-        return throwMsg(runtime, msg);
-    }
-
-    if(typeOfThing(args[0]) != THING_TYPE_INT) {
-        //TODO report the actual type
-        return throwMsg(runtime, formatStr("expected an int for argument 1"));
+    RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_INT);
+    if(isRetValError(retVal)) {
+        return retVal;
     }
 
     int32_t value = thingAsInt(args[0]);

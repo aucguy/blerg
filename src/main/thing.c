@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "main/execute.h"
 #include "main/thing.h"
@@ -226,23 +227,10 @@ Thing* createIntThing(Runtime* runtime, int32_t value) {
 
 RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
-    if(arity != 2) {
-        const char* msg = formatStr("expected 2 arguments but got %i", arity);
-        return throwMsg(runtime, msg);
-    }
 
-    if(typeOfThing(args[0]) != THING_TYPE_INT) {
-        //TODO report the type
-        return throwMsg(runtime, newStr("expected argument 1 to be an int"));
-    }
-
-    if(typeOfThing(args[1]) != THING_TYPE_INT) {
-        //TODO report the type
-        return throwMsg(runtime, "expected argument 2 to be an int");
-    }
-
-    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return throwMsg(runtime, "internal error: self should be a symbol");
+    RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_INT, THING_TYPE_INT);
+    if(isRetValError(retVal)) {
+        return retVal;
     }
 
     int32_t valueA = thingAsInt(args[0]);
@@ -310,19 +298,9 @@ void destroyStrThing(Thing* self) {
 RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
-    if(arity != 2) {
-        const char* msg = formatStr("expected 2 arguments but got %i", arity);
-        return throwMsg(runtime, msg);
-    }
-
-    if(typeOfThing(args[0]) != THING_TYPE_STR) {
-        //TODO report the type
-        return throwMsg(runtime, newStr("expected argument 1 to be a string"));
-    }
-
-    if(typeOfThing(args[1]) != THING_TYPE_STR) {
-        //TODO report the type
-        return throwMsg(runtime, newStr("expected argument 2 to be a string"));
+    RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_STR, THING_TYPE_STR);
+    if(isRetValError(retVal)) {
+        return retVal;
     }
 
     const char* valueA = thingAsStr(args[0]);
@@ -380,25 +358,16 @@ RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) 
     const char* error = NULL;
 
     if(id == SYM_NOT) {
-        if(arity != 1) {
-            error = formatStr("expected 1 argument but got %i", arity);
-        } else if(typeOfThing(args[0]) != THING_TYPE_BOOL) {
-            error = newStr("expected argument 1 to be a bool");
-        } else {
-            thing = createBoolThing(runtime, !thingAsBool(args[0]));
+        RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_BOOL);
+        if(isRetValError(retVal)) {
+            return retVal;
         }
+
+        thing = createBoolThing(runtime, !thingAsBool(args[0]));
     } else {
-        if(arity != 2) {
-            const char* msg = formatStr("expected 2 arguments but got %i", arity);
-            return throwMsg(runtime, msg);
-        }
-
-        if(typeOfThing(args[0]) != THING_TYPE_BOOL) {
-            return throwMsg(runtime, formatStr("expected argument 1 to b a bool"));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_BOOL) {
-            return throwMsg(runtime, formatStr("expected argument 2 to b a bool"));
+        RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_BOOL, THING_TYPE_BOOL);
+        if(isRetValError(retVal)) {
+            return retVal;
         }
 
         uint8_t valueA = thingAsBool(args[0]);
@@ -603,5 +572,31 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
 
     destroyList(partsOriginal, free);
     return joined;
+}
+
+RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...) {
+    /*if(typeOfThing(self) != THING_TYPE_SYMBOL) {
+        return throwMsg(runtime, "internal error: self should be a symbol");
+    }*/
+
+    if(arity != expectedArity) {
+        const char* msg = formatStr("expected %i arguments but got %i", expectedArity, arity);
+        return throwMsg(runtime, msg);
+    }
+
+    va_list types;
+    va_start(types, expectedArity);
+
+
+    for(uint8_t i = 0; i < arity; i++) {
+        if(typeOfThing(args[i]) != va_arg(types, ThingType*)) {
+            va_end(types);
+            return throwMsg(runtime, formatStr("wrong type for argument %i", i + 1));
+        }
+    }
+
+    va_end(types);
+
+    return createRetVal(NULL, 0);
 }
 
