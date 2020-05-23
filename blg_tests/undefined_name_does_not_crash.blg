@@ -1,0 +1,11 @@
+def main x do
+    trycatch bad_block good_block;
+end
+
+def bad_block x do
+    <- someUndefinedName someArg;
+end
+
+def good_block error do
+    assert true;
+end

@@ -24,7 +24,7 @@ Thing* getScopeValue(Scope* scope, const char* name) {
     Thing* value = getMapStr(scope->locals, name);
     if(value != NULL) {
         return value;
-    } else if(scope->locals != NULL) {
+    } else if(scope->parent != NULL) {
         return getScopeValue(scope->parent, name);
     } else {
         return NULL;
@@ -250,9 +250,10 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             index += 4;
             Thing* value = getMapStr(runtime->operators, constant);
             if(value == NULL) {
-                unwindStackFrame(runtime, initStackFrameSize);
                 const char* format = "internal error: builtin '%s' not found";
-                return throwMsg(runtime, formatStr(format, constant));
+                RetVal error = throwMsg(runtime, formatStr(format, constant));
+                unwindStackFrame(runtime, initStackFrameSize);
+                return error;
             }
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_LITERAL) {
@@ -276,7 +277,14 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         } else if(opcode == OP_LOAD) {
             const char* constant = readConstantModule(module, index);
             index += 4;
-            pushStack(runtime, getScopeValue(currentFrame->def.scope, constant));
+            Thing* value = getScopeValue(currentFrame->def.scope, constant);
+            if(value == NULL) {
+                const char* msg = formatStr("'%s' is undefined", constant);
+                RetVal error = throwMsg(runtime, msg);
+                unwindStackFrame(runtime, initStackFrameSize);
+                return error;
+            }
+            pushStack(runtime, value);
         } else if(opcode == OP_STORE) {
             const char* constant = readConstantModule(module, index);
             index += 4;
@@ -297,12 +305,13 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 StackFrame* frame = createFrameCall(runtime, func, arity, args,
                         &error);
                 if(error) {
-                    unwindStackFrame(runtime, initStackFrameSize);
                     free(args);
                     //TODO make this error message better
                     const char* msg = "error creating stack frame for"
                             "function call";
-                    return throwMsg(runtime, newStr(msg));
+                    RetVal error = throwMsg(runtime, newStr(msg));
+                    unwindStackFrame(runtime, initStackFrameSize);
+                    return error;
                 }
                 pushStackFrame(runtime, frame);
             } else {
@@ -325,11 +334,12 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             index += 4;
 
             if(typeOfThing(condition) != THING_TYPE_BOOL) {
-                unwindStackFrame(runtime, initStackFrameSize);
                 //TODO report what type was found
                 const char* msg =" boolean needed for branches, but a boolean"
                         "was not found";
-                return throwMsg(runtime, newStr(msg));
+                RetVal error = throwMsg(runtime, newStr(msg));
+                unwindStackFrame(runtime, initStackFrameSize);
+                return error;
             }
 
             if(!thingAsBool(condition)) {
@@ -338,8 +348,9 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         } else if(opcode == OP_ABS_JUMP) {
             index = readU32Module(module, index);
         } else {
+            RetVal error = throwMsg(runtime, "internal error: unknown bytecode");
             unwindStackFrame(runtime, initStackFrameSize);
-            return throwMsg(runtime, "internal error: unknown bytecode");
+            return error;
         }
 
         if(storeIndex) {
