@@ -184,6 +184,38 @@ IntToken* parseInt(ParseState* state) {
     return createIntToken(location, value);
 }
 
+FloatToken* parseFloat(ParseState* state) {
+    uint32_t start = state->index;
+    SrcLoc location = state->location;
+
+    if(getChar(state) == '-' || getChar(state) == '+') {
+        advance(state, 1);
+    }
+
+    advanceWhile(state, INT_CHARS);
+
+    if(getChar(state) == '.') {
+        advance(state, 1);
+        advanceWhile(state, INT_CHARS);
+    }
+
+    if(getChar(state) == 'e' || getChar(state) == 'E') {
+        advance(state, 1);
+
+        if(getChar(state) == '+' || getChar(state) == '-') {
+            advance(state, 1);
+        }
+
+        advanceWhile(state, INT_CHARS);
+    }
+
+    char* extracted = sliceStr(state->src, start, state->index);
+    float value = strtof(extracted, NULL);
+    free(extracted);
+
+    return createFloatToken(location, value);
+}
+
 /**
  * Parses a literal.
  *

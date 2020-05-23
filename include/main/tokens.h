@@ -12,6 +12,7 @@
  */
 typedef enum {
     TOKEN_INT,
+    TOKEN_FLOAT,
     TOKEN_LITERAL,
     TOKEN_IDENTIFIER,
     TOKEN_CALL,
@@ -52,6 +53,11 @@ typedef struct {
     Token token;
     int32_t value;
 } IntToken;
+
+typedef struct {
+    Token token;
+    float value;
+} FloatToken;
 
 typedef struct {
     Token token;
@@ -157,6 +163,7 @@ Token* copyToken(Token*);
 
 #if INCLUDE_TESTS
 IntToken* createIntToken(SrcLoc, int32_t);
+FloatToken* createFloatToken(SrcLoc, float);
 LiteralToken* createLiteralToken(SrcLoc, const char*);
 IdentifierToken* createIdentifierToken(SrcLoc, const char*);
 CallToken* createCallToken(SrcLoc, List*);

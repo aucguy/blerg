@@ -250,3 +250,16 @@ const char* parseTestGreaterAndLessThan() {
     destroyToken(expected);
     return NULL;
 }
+
+const char* parseTestFloat() {
+    ParseState* state = createParseState("-3.14e5");
+    Token* parsed = (Token*) parseFloat(state);
+    Token* expected = (Token*) createFloatToken(-3.14e5);
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    free(parsed);
+    free(expected);
+    free(state);
+    return NULL;
+}

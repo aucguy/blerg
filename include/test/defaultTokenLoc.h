@@ -1,4 +1,5 @@
 #define createIntToken(x) createIntToken(nowhere, x)
+#define createFloatToken(x) createFloatToken(nowhere, x)
 #define createIdentifierToken(x) createIdentifierToken(nowhere, x)
 #define createCallToken(x) createCallToken(nowhere, x)
 #define createBinaryOpToken(op, left, right) createBinaryOpToken(nowhere, op, left, right)

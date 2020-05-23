@@ -59,6 +59,41 @@ IntToken* createIntToken(SrcLoc loc, int32_t value) {
     return token;
 }
 
+void printFloatToken(Token* self, uint8_t indent) {
+    UNUSED(indent);
+    printf("float: %f\n", ((FloatToken*) self)->value);
+}
+
+uint8_t equalsFloatToken(Token* self, Token* other) {
+    return ((FloatToken*) self)->value == ((FloatToken*) other)->value;
+}
+
+Token* copyFloatToken(Token* self) {
+    FloatToken* num = (FloatToken*) self;
+    return (Token*) createFloatToken(self->location, num->value);
+}
+
+void destroyFloatToken(Token* self) {
+    UNUSED(self);
+}
+
+Token FLOAT_TYPE = {
+        TOKEN_FLOAT,
+        destroyFloatToken,
+        printFloatToken,
+        equalsFloatToken,
+        copyFloatToken,
+        tokenInstanceFields
+};
+
+FloatToken* createFloatToken(SrcLoc location, float value) {
+    FloatToken* token = (FloatToken*) malloc(sizeof(FloatToken));
+    token->token = FLOAT_TYPE;
+    token->token.location = location;
+    token->value = value;
+    return token;
+}
+
 void destroyLiteralToken(Token* self) {
     free((void*) ((LiteralToken*) self)->value);
 }
