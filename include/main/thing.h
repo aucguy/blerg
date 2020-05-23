@@ -28,6 +28,7 @@ ThingType* THING_TYPE_SYMBOL;
 ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
 ThingType* THING_TYPE_NATIVE_FUNC;
+ThingType* THING_TYPE_ERROR;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -102,5 +103,8 @@ Thing* createFuncThing(Runtime* runtime, uint32_t entry,
 Thing* createObjectThingFromMap(Runtime* runtime, Map* map);
 
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func);
+
+Thing* createErrorThing(Runtime* runtime, const char* msg);
+const char* errorStackTrace(Runtime* runtime, Thing* self);
 
 #endif /* THING_H_ */

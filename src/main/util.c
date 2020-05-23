@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <math.h>
 
 #include "main/util.h"
 
@@ -10,6 +13,48 @@ char* newStr(const char* src) {
     memcpy(dst, src, len);
     dst[len - 1] = 0;
     return dst;
+}
+
+const char* formatStr(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    size_t length = 1;
+
+    for(uint32_t i = 0; format[i] != 0; i++) {
+        char c = format[i];
+
+        if(c == '%') {
+            i++;
+            c = format[i];
+            if(c == 's') {
+                length += strlen(va_arg(args, char*));
+            } else if(c == 'i') {
+                int val = va_arg(args, int);
+                if(val == 0) {
+                    length += 1;
+                } else {
+                    length += ceil(log10(val));
+                }
+            } else {
+                length++;
+            }
+        } else if(c == '\\') {
+            i++;
+            length++;
+        } else {
+            length++;
+        }
+    }
+
+    va_end(args);
+
+    char* str = malloc(sizeof(char) * length);
+    va_start(args, format);
+    vsprintf(str, format, args);
+    va_end(args);
+
+    return str;
 }
 
 List* consList(void* head, List* tail) {

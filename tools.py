@@ -35,7 +35,7 @@ def compile_cmd(src, obj, debugging=False):
         %(debug_flag(debugging), src, obj)
 
 def link_cmd(executable, objs, debugging=False):
-    return 'gcc %s -o %s %s' %(debug_flag(debugging), executable, ' '.join(objs))
+    return 'gcc %s -o %s %s -lm' %(debug_flag(debugging), executable, ' '.join(objs))
 
 def get_files(dir):
     """

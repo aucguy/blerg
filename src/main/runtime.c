@@ -13,3 +13,7 @@ uint8_t isRetValError(RetVal val) {
 Thing* getRetVal(RetVal val) {
     return val.value;
 }
+
+RetVal throwMsg(Runtime* runtime, const char* msg) {
+    return createRetVal(createErrorThing(runtime, msg), 1);
+}

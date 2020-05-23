@@ -2,6 +2,7 @@
 #define RUNTIME_H_
 
 #include "main/util.h"
+#include "main/bytecode.h"
 
 typedef void Thing;
 
@@ -66,5 +67,43 @@ typedef struct {
     ExecFunc call;
     ExecFunc dispatch;
 } ThingType;
+
+RetVal throwMsg(Runtime* runtime, const char* msg);
+Thing* createErrorThing(Runtime* runtime, const char* msg);
+
+typedef struct {
+    //the module that is currently executing.
+    Module* module;
+    //the current bytecode index
+    uint32_t index;
+    //the current scope
+    Scope* scope;
+} StackFrameDef;
+
+typedef struct {
+    char dummy;
+} StackFrameNative;
+
+typedef enum {
+    STACK_FRAME_DEF,
+    STACK_FRAME_NATIVE
+} STACK_FRAME_TYPE;
+
+/**
+ * Holds one item of the call stack. This keeps track of the current execution
+ * state for a given invocation. Multiple of these can exist as functions call
+ * other functions.
+ *
+ * There are two different types of stack frames; one for blerg code and one
+ * for native code. The blerg code type keeps track of the execution state,
+ * while the native code type simply denotes that native code is being executed.
+ */
+typedef struct {
+    STACK_FRAME_TYPE type;
+    union {
+        StackFrameDef def;
+        StackFrameNative native;
+    };
+} StackFrame;
 
 #endif /* RUNTIME_H_ */

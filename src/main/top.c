@@ -46,7 +46,6 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     out.errorMsg = NULL;
     out.module = NULL;
 
-    uint8_t error = 0;
     out.module = sourceToModule(in.src, &out.errorMsg);
     if(out.module == NULL) {
         return out;
@@ -54,25 +53,25 @@ ExecFuncOut execFunc(ExecFuncIn in) {
 
     RetVal global = executeModule(in.runtime, out.module);
     if(isRetValError(global)) {
-        out.errorMsg = "error executing global scope";
+        out.errorMsg = errorStackTrace(in.runtime, getRetVal(global));
         return out;
     } else if(typeOfThing(getRetVal(global)) != THING_TYPE_OBJ) {
-        out.errorMsg = "global scope is not an object";
+        out.errorMsg = newStr("global scope is not an object");
         return out;
     }
 
     Thing* func = getObjectProperty(getRetVal(global), in.name);
     if(func == NULL) {
-        out.errorMsg = "function not found";
+        out.errorMsg = newStr("function not found");
         return out;
     } else if(typeOfThing(func) != THING_TYPE_FUNC) {
-        out.errorMsg = "function is not a function";
+        out.errorMsg = newStr("function is not a function");
         return out;
     }
 
     out.retVal = callFunction(in.runtime, func, in.arity, in.args);
-    if(error != 0) {
-        out.errorMsg = "error executing function";
+    if(isRetValError(out.retVal)) {
+        out.errorMsg = errorStackTrace(in.runtime, getRetVal(out.retVal));
         return out;
     }
     return out;
@@ -88,5 +87,6 @@ void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out) {
     }
 
     free(in.args);
+    free(out.errorMsg);
     deinitThing();
 }

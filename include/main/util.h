@@ -8,6 +8,8 @@
  */
 char* newStr(const char* src);
 
+const char* formatStr(const char* format, ...);
+
 /**
  * A forward linked list
  */

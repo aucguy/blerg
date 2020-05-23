@@ -77,7 +77,6 @@ uint8_t runTests() {
                 strcpy(filename, "blg_tests/");
                 strcat(filename, file->d_name);
                 char* src = readFile(filename);
-                free(filename);
 
                 initThing();
                 ExecFuncIn in;
@@ -89,8 +88,10 @@ uint8_t runTests() {
                 in.args[0] = in.runtime->noneThing;
                 ExecFuncOut out = execFunc(in);
                 if(out.errorMsg != NULL) {
-                    printf("error: %s\n", out.errorMsg);
+                    status = 1;
+                    printf("error in %s:\n%s\n", filename, out.errorMsg);
                 }
+                free(filename);
                 free(src);
                 cleanupExecFunc(in, out);
             }
@@ -99,7 +100,7 @@ uint8_t runTests() {
     }
 
     if(status == 0) {
-        printf("all tests succeeded");
+        printf("all tests succeeded\n");
     }
     return status;
 }

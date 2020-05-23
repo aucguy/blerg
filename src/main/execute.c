@@ -35,41 +35,6 @@ void setScopeLocal(Scope* scope, const char* name, Thing* value) {
     putMapStr(scope->locals, name, value);
 }
 
-typedef struct {
-    //the module that is currently executing.
-    Module* module;
-    //the current bytecode index
-    uint32_t index;
-    //the current scope
-    Scope* scope;
-} StackFrameDef;
-
-typedef struct {
-    char dummy;
-} StackFrameNative;
-
-typedef enum {
-    STACK_FRAME_DEF,
-    STACK_FRAME_NATIVE
-} STACK_FRAME_TYPE;
-
-/**
- * Holds one item of the call stack. This keeps track of the current execution
- * state for a given invocation. Multiple of these can exist as functions call
- * other functions.
- *
- * There are two different types of stack frames; one for blerg code and one
- * for native code. The blerg code type keeps track of the execution state,
- * while the native code type simply denotes that native code is being executed.
- */
-typedef struct {
-    STACK_FRAME_TYPE type;
-    union {
-        StackFrameDef def;
-        StackFrameNative native;
-    };
-} StackFrame;
-
 /**
  * Creates a StackFrame for the invocation of the function.
  */
@@ -174,16 +139,13 @@ Thing* peekStackIndex(Runtime* runtime, uint32_t index) {
 }
 
 /**
- * Reads an int operand from the bytecode. Advances the index past the operand.
+ * Reads an unsigned int operand at the given index in the given module.
  */
-int32_t readI32Frame(StackFrame* frame) {
-    const uint8_t* bytecode = frame->def.module->bytecode;
-    uint32_t index = frame->def.index;
-    int32_t arg = bytecode[index] << 24;
-    arg |= bytecode[index + 1] << 16;
-    arg |= bytecode[index + 2] << 8;
-    arg |= bytecode[index + 3];
-    frame->def.index += 4;
+int32_t readI32Module(Module* module, uint32_t index) {
+    int32_t arg = module->bytecode[index] << 24;
+    arg |= module->bytecode[index + 1] << 16;
+    arg |= module->bytecode[index + 2] << 8;
+    arg |= module->bytecode[index + 3];
     return arg;
 }
 
@@ -200,24 +162,6 @@ uint32_t readU32Module(Module* module, uint32_t index) {
 
 const char* readConstantModule(Module* module, uint32_t index) {
     return module->constants[readU32Module(module, index)];
-}
-
-/**
- * Reads an unsigned int operand from the bytecode. Advances the index past the
- * operand.
- */
-uint32_t readU32Frame(StackFrame* frame) {
-    uint32_t arg = readU32Module(frame->def.module, frame->def.index);
-    frame->def.index += 4;
-    return arg;
-}
-
-/**
- * Reads a constant operand (really just an index to the pool). Advances the
- * index past the operand.
- */
-const char* readConstant(StackFrame* frame) {
-    return frame->def.module->constants[readU32Frame(frame)];
 }
 
 StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
@@ -265,32 +209,44 @@ StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
  * @returns the value returned from the invocation / bottom stackframe.
  */
 RetVal executeCode(Runtime* runtime, StackFrame* frame) {
+    //TODO have index increments in the readXModule functions
     uint32_t initStackFrameSize = stackFrameSize(runtime);
 
     pushStackFrame(runtime, frame);
 
     while(stackFrameSize(runtime) > initStackFrameSize) {
         StackFrame* currentFrame = currentStackFrame(runtime);
+
         //sanity check, native frames should end before the interpreter loop.
         //if this fails then there is some sort of internal error.
         if(currentFrame->type != STACK_FRAME_DEF) {
-            return createRetVal(NULL, 1);
+            const char* msg = "internal error: native frame not ended before def frame";
+            return throwMsg(runtime, newStr(msg));
         }
+
         Module* module = currentFrame->def.module;
-        unsigned char opcode = module->bytecode[currentFrame->def.index++];
+        uint32_t index = currentFrame->def.index;
+        unsigned char opcode = module->bytecode[index];
+        index++;
+        uint8_t storeIndex = 1;
 
         if(opcode == OP_PUSH_INT) {
-            int32_t value = readI32Frame(currentFrame);
+            int32_t value = readI32Module(module, index);
+            index += 4;
             pushStack(runtime, createIntThing(runtime, value));
         } else if(opcode == OP_PUSH_BUILTIN) {
-            const char* constant = readConstant(currentFrame);
+            const char* constant = readConstantModule(module, index);
+            index += 4;
             Thing* value = getMapStr(runtime->operators, constant);
             if(value == NULL) {
-                return createRetVal(NULL, 1);
+                const char* format = "internal error: builtin '%s' not found";
+                return throwMsg(runtime, formatStr(format, constant));
             }
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_LITERAL) {
-            Thing* value = createStrThing(runtime, readConstant(currentFrame), 1);
+            const char* constant = readConstantModule(module, index);
+            index += 4;
+            Thing* value = createStrThing(runtime, constant, 1);
             pushStack(runtime, value);
         } else if(opcode == OP_PUSH_NONE) {
             pushStack(runtime, runtime->noneThing);
@@ -298,21 +254,26 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             Thing* retVal = popStack(runtime);
             popStackFrame(runtime);
             pushStack(runtime, retVal);
+            storeIndex = 0;
         } else if(opcode == OP_CREATE_FUNC) {
-            uint32_t entry = readU32Frame(currentFrame);
+            uint32_t entry = readU32Module(module, index);
+            index += 4;
             Scope* scope = currentFrame->def.scope;
             Thing* toPush = createFuncThing(runtime, entry, module, scope);
             pushStack(runtime, toPush);
         } else if(opcode == OP_LOAD) {
-            const char* constant = readConstant(currentFrame);
+            const char* constant = readConstantModule(module, index);
+            index += 4;
             pushStack(runtime, getScopeValue(currentFrame->def.scope, constant));
         } else if(opcode == OP_STORE) {
-            const char* constant = readConstant(currentFrame);
+            const char* constant = readConstantModule(module, index);
+            index += 4;
             Thing* value = popStack(runtime);
             putMapStr(currentFrame->def.scope->locals, constant, value);
         } else if(opcode == OP_CALL) {
             //TODO fix conversion
-            uint8_t arity = (unsigned int) readU32Frame(currentFrame);
+            uint8_t arity = (unsigned int) readU32Module(module, index);
+            index += 4;
             FuncThing* func = peekStackIndex(runtime, arity);
             Thing** args = malloc(arity * sizeof(Thing*));
             for(uint8_t i = 0; i < arity; i++) {
@@ -325,12 +286,18 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                         &error);
                 if(error) {
                     free(args);
-                    return createRetVal(NULL, 1);
+                    //TODO make this error message better
+                    const char* msg = "error creating stack frame for"
+                            "function call";
+                    return throwMsg(runtime, newStr(msg));
                 }
                 pushStackFrame(runtime, frame);
             } else {
                 ThingHeader* header = customDataToThingHeader(func);
+                pushStackFrame(runtime, createStackFrameNative());
                 RetVal ret = header->type->call(runtime, func, args, arity);
+                popStackFrame(runtime);
+
                 if(isRetValError(ret)) {
                     free(args);
                     return ret;
@@ -340,20 +307,27 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             free(args);
         } else if(opcode == OP_COND_JUMP_FALSE) {
             Thing* condition = popStack(runtime);
-            uint32_t target = readU32Frame(currentFrame);
+            uint32_t target = readU32Module(module, index);
+            index += 4;
 
             if(typeOfThing(condition) != THING_TYPE_BOOL) {
-                return createRetVal(NULL, 1);
+                //TODO report what type was found
+                const char* msg =" boolean needed for branches, but a boolean"
+                        "was not found";
+                return throwMsg(runtime, newStr(msg));
             }
 
             if(!thingAsBool(condition)) {
-                currentFrame->def.index = target;
+                index = target;
             }
         } else if(opcode == OP_ABS_JUMP) {
-            currentFrame->def.index = readU32Frame(currentFrame);
+            index = readU32Module(module, index);
         } else {
-            //unknown opcode
-            return createRetVal(NULL, 1);
+            return throwMsg(runtime, "internal error: unknown bytecode");
+        }
+
+        if(storeIndex) {
+            currentFrame->def.index = index;
         }
     }
 
@@ -372,7 +346,7 @@ RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args)
     uint8_t error = 0;
     StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
     if(error) {
-        return createRetVal(NULL, 1);
+        return throwMsg(runtime, "error creating function stack frame");
     }
     return executeCode(runtime, frame);
 }

@@ -34,7 +34,8 @@ RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity) {
     UNUSED(thing);
     UNUSED(arity);
     UNUSED(args);
-    return createRetVal(NULL, 1);
+    //TODO report the object type
+    return throwMsg(runtime, "cannot call this type");
 }
 
 RetVal symbolCall(Runtime*, Thing*, Thing**, uint8_t);
@@ -46,6 +47,7 @@ uint32_t getSymbolId(Thing* self);
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyObjectThing(Thing* thing);
+void destroyErrorThing(Thing* thing);
 
 static uint8_t initialized = 0;
 
@@ -91,6 +93,11 @@ void initThing() {
         setCallThingType(THING_TYPE_NATIVE_FUNC, nativeFuncCall);
         setDispatchThingType(THING_TYPE_NATIVE_FUNC, errorCall);
 
+        THING_TYPE_ERROR = createThingType();
+        setDestroyThingType(THING_TYPE_ERROR, destroyErrorThing);
+        setCallThingType(THING_TYPE_ERROR, errorCall);
+        setDispatchThingType(THING_TYPE_ERROR, errorCall);
+
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -134,6 +141,9 @@ void deinitThing() {
 
         free(THING_TYPE_NATIVE_FUNC);
         THING_TYPE_NATIVE_FUNC = NULL;
+
+        free(THING_TYPE_ERROR);
+        THING_TYPE_ERROR = NULL;
 
         SYM_ADD = 0;
         SYM_SUB = 0;
@@ -216,18 +226,32 @@ Thing* createIntThing(Runtime* runtime, int32_t value) {
 
 RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
-    if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_INT ||
-            typeOfThing(args[1]) != THING_TYPE_INT ||
-            typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return createRetVal(NULL, 1);
+    if(arity != 2) {
+        const char* msg = formatStr("expected 2 arguments but got %i", arity);
+        return throwMsg(runtime, msg);
+    }
+
+    if(typeOfThing(args[0]) != THING_TYPE_INT) {
+        //TODO report the type
+        return throwMsg(runtime, newStr("expected argument 1 to be an int"));
+    }
+
+    if(typeOfThing(args[1]) != THING_TYPE_INT) {
+        //TODO report the type
+        return throwMsg(runtime, "expected argument 2 to be an int");
+    }
+
+    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
+        return throwMsg(runtime, "internal error: self should be a symbol");
     }
 
     int32_t valueA = thingAsInt(args[0]);
     int32_t valueB = thingAsInt(args[1]);
     uint32_t id = getSymbolId(self);
 
-    Thing* thing;
-    uint8_t error = 0;
+    Thing* thing = NULL;
+    const char* error = NULL;
+
     if(id == SYM_ADD) {
         thing = createIntThing(runtime, valueA + valueB);
     } else if(id == SYM_SUB) {
@@ -237,23 +261,27 @@ RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     } else if(id == SYM_DIV) {
         thing = createIntThing(runtime, valueA / valueB);
     } else if(id == SYM_EQ) {
-        thing = createBoolThing(runtime, (uint8_t) valueA == valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
     } else if(id == SYM_NOT_EQ) {
-        thing = createBoolThing(runtime, (uint8_t) valueA != valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
     } else if(id == SYM_LESS_THAN) {
-        thing = createBoolThing(runtime, (uint8_t) valueA < valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
     } else if(id == SYM_LESS_THAN_EQ) {
-        thing = createBoolThing(runtime, (uint8_t) valueA <= valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
     } else if(id == SYM_GREATER_THAN) {
-        thing = createBoolThing(runtime, (uint8_t) valueA > valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
     } else if(id == SYM_GREATER_THAN_EQ) {
-        thing = createBoolThing(runtime, (uint8_t) valueA >= valueB);
+        thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
     } else {
-        thing = NULL;
-        error = 1;
+        //TODO report the symbol
+        error = "bools do not respond to that symbol";
     }
 
-    return createRetVal(thing, error);
+    if(error != NULL) {
+        return throwMsg(runtime, error);
+    } else {
+        return createRetVal(thing, 0);
+    }
 }
 
 int32_t thingAsInt(Thing* thing) {
@@ -281,10 +309,20 @@ void destroyStrThing(Thing* self) {
 
 RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
-    if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_STR ||
-            typeOfThing(args[1]) != THING_TYPE_STR ||
-            typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return createRetVal(NULL, 1);
+
+    if(arity != 2) {
+        const char* msg = formatStr("expected 2 arguments but got %i", arity);
+        return throwMsg(runtime, msg);
+    }
+
+    if(typeOfThing(args[0]) != THING_TYPE_STR) {
+        //TODO report the type
+        return throwMsg(runtime, newStr("expected argument 1 to be a string"));
+    }
+
+    if(typeOfThing(args[1]) != THING_TYPE_STR) {
+        //TODO report the type
+        return throwMsg(runtime, newStr("expected argument 2 to be a string"));
     }
 
     const char* valueA = thingAsStr(args[0]);
@@ -292,7 +330,7 @@ RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     uint32_t id = getSymbolId(self);
 
     Thing* thing;
-    uint8_t error = 0;
+    const char* error = 0;
 
     if(id == SYM_ADD) {
         uint32_t len = strlen(valueA) + strlen(valueB);
@@ -306,10 +344,15 @@ RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     } else if(id == SYM_NOT_EQ) {
         thing = createBoolThing(runtime, strcmp(valueA, valueB) != 0);
     } else {
-        error = 1;
+        //TODO report the symbol
+        error = "strs do not respond to that symbol";
     }
 
-    return createRetVal(thing, error);
+    if(error != NULL) {
+        return throwMsg(runtime, error);
+    } else {
+        return createRetVal(thing, 0);
+    }
 }
 
 const char* thingAsStr(Thing* self) {
@@ -328,24 +371,34 @@ Thing* createBoolThing(Runtime* runtime, uint8_t value) {
 
 RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return createRetVal(NULL, 1);
+        return throwMsg(runtime, "internal error: self should be a symbol");
     }
 
     uint32_t id = getSymbolId(self);
 
     Thing* thing;
-    uint8_t error = 0;
+    const char* error = NULL;
 
     if(id == SYM_NOT) {
-        if(arity != 1 || typeOfThing(args[0]) != THING_TYPE_BOOL) {
-            error = 1;
+        if(arity != 1) {
+            error = formatStr("expected 1 argument but got %i", arity);
+        } else if(typeOfThing(args[0]) != THING_TYPE_BOOL) {
+            error = newStr("expected argument 1 to be a bool");
         } else {
             thing = createBoolThing(runtime, !thingAsBool(args[0]));
         }
     } else {
-        if(arity != 2 || typeOfThing(args[0]) != THING_TYPE_BOOL ||
-                typeOfThing(args[1]) != THING_TYPE_BOOL) {
-            return createRetVal(NULL, 1);
+        if(arity != 2) {
+            const char* msg = formatStr("expected 2 arguments but got %i", arity);
+            return throwMsg(runtime, msg);
+        }
+
+        if(typeOfThing(args[0]) != THING_TYPE_BOOL) {
+            return throwMsg(runtime, formatStr("expected argument 1 to b a bool"));
+        }
+
+        if(typeOfThing(args[1]) != THING_TYPE_BOOL) {
+            return throwMsg(runtime, formatStr("expected argument 2 to b a bool"));
         }
 
         uint8_t valueA = thingAsBool(args[0]);
@@ -356,11 +409,16 @@ RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) 
         } else if(id == SYM_OR) {
             thing = createBoolThing(runtime, valueA || valueB);
         } else {
-            error = 1;
+            //TODO report the symbol
+            error = newStr("bools do not respond to that symbol");
         }
     }
 
-    return createRetVal(thing, error);
+    if(error != NULL) {
+        return throwMsg(runtime, error);
+    } else {
+        return createRetVal(thing, 0);
+    }
 }
 
 uint8_t thingAsBool(Thing* thing) {
@@ -392,8 +450,10 @@ uint32_t getSymbolId(Thing* self) {
 
 //not properly supported yet
 RetVal symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    if(arity != ((SymbolThing*) self)->arity) {
-        return createRetVal(NULL, 1);
+    uint8_t expected = ((SymbolThing*) self)->arity;
+    if(arity != expected) {
+        const char* format = "expected %i arguments, but got %i";
+        return throwMsg(runtime, formatStr(format, expected, arity));
     }
     return typeOfThing(args[0])->dispatch(runtime, self, args, arity);
 }
@@ -443,3 +503,102 @@ Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ((NativeFuncThing*) self)->func(runtime, self, args, arity);
 }
+
+typedef struct {
+    //TODO add file path
+    uint8_t native;
+    SrcLoc location;
+} ErrorFrame;
+
+typedef struct {
+    const char* msg;
+    List* stackFrame;
+} ErrorThing;
+
+Thing* createErrorThing(Runtime* runtime, const char* msg) {
+    ErrorThing* self = createThing(runtime, THING_TYPE_ERROR, sizeof(ErrorThing));
+    self->msg = msg;
+    self->stackFrame = NULL;
+
+    List* list = reverseList(runtime->stackFrame);
+    List* listOriginal = list;
+
+    while(list != NULL) {
+        StackFrame* stackFrame = list->head;
+        ErrorFrame* errorFrame = malloc(sizeof(ErrorFrame));
+
+        errorFrame->location.line = 0;
+        errorFrame->location.column = 0;
+
+        if(stackFrame->type == STACK_FRAME_DEF) {
+            errorFrame->native = 0;
+
+            StackFrameDef* frameDef = &stackFrame->def;
+
+            for(int i = 0; i < frameDef->module->srcLocLength; i++) {
+                if(frameDef->index == frameDef->module->srcLoc[i].index) {
+                    errorFrame->location = frameDef->module->srcLoc[i].location;
+                    break;
+                }
+            }
+        } else {
+            errorFrame->native = 1;
+        }
+
+        self->stackFrame = consList(errorFrame, self->stackFrame);
+
+        list = list->tail;
+    }
+
+    destroyList(listOriginal, nothing);
+
+    return self;
+}
+
+void destroyErrorThing(Thing* thing) {
+    ErrorThing* self = (ErrorThing*) thing;
+    free((char*) self->msg);
+    destroyList(self->stackFrame, free);
+}
+
+const char* errorStackTrace(Runtime* runtime, Thing* self) {
+    ErrorThing* error = (ErrorThing*) self;
+    List* parts = consList(formatStr("\terror: %s", error->msg), NULL);
+    size_t length = strlen(error->msg) + 2;
+    List* list = error->stackFrame;
+
+    while(list != NULL) {
+        ErrorFrame* frame = list->head;
+
+        char* line;
+        if(frame->native) {
+            line = newStr("[native code]");
+        } else {
+            line = (char*) formatStr("at %i, %i",
+                frame->location.line, frame->location.column);
+        }
+        length += strlen(line) + 2;
+        parts = consList(line, parts);
+        list = list->tail;
+    }
+
+    const char* header = "Traceback:";
+    parts  = consList(newStr(header), parts);
+    length += strlen(header) + 2;
+
+    char* joined = malloc(length + 1);
+    joined[0] = 0;
+    List* partsOriginal = parts;
+
+    while(parts != NULL) {
+        strcat(joined, "\t");
+        strcat(joined, parts->head);
+        strcat(joined, "\n");
+        parts = parts->tail;
+    }
+    joined[length] = 0;
+
+    destroyList(partsOriginal, free);
+    return joined;
+}
+

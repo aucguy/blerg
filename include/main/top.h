@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "main/flags.h"
+#include "main/runtime.h"
 #include "main/execute.h"
 #include "main/thing.h"
 
