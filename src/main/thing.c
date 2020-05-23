@@ -574,13 +574,13 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
     return joined;
 }
 
-RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...) {
-    /*if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return throwMsg(runtime, "internal error: self should be a symbol");
-    }*/
+RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t expectedArity, ...) {
+    UNUSED(self);
 
     if(arity != expectedArity) {
-        const char* msg = formatStr("expected %i arguments but got %i", expectedArity, arity);
+        const char* msg = formatStr("expected %i arguments but got %i",
+                expectedArity, arity);
         return throwMsg(runtime, msg);
     }
 

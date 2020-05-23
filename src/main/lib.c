@@ -75,6 +75,8 @@ RetVal libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 2) {
         return throwMsg(runtime, formatStr("expected 2 arguments but got %i"));
     }
@@ -88,10 +90,13 @@ RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     RetVal result = callFunction(runtime, block1, 1, passedArgs);
 
     if(!isRetValError(result)) {
+        free(passedArgs);
         return result;
     }
 
     passedArgs[0] = getRetVal(result);
-    return callFunction(runtime, block2, 1, passedArgs);
+    result = callFunction(runtime, block2, 1, passedArgs);
+    free(passedArgs);
+    return result;
 }
 
