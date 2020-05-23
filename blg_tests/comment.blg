@@ -1,0 +1,3 @@
+def main x do
+    assert true; #this is a comment
+end

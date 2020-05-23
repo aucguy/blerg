@@ -82,6 +82,14 @@ const char* WHITESPACE_CHARS = " \t\n\r";
  */
 void skipWhitespace(ParseState* state) {
     advanceWhile(state, WHITESPACE_CHARS);
+
+    while(getChar(state) == '#') {
+        while(getChar(state) != '\n' && getChar(state) != '\r') {
+            advance(state, 1);
+        }
+
+        advanceWhile(state, WHITESPACE_CHARS);
+    }
 }
 
 /**
