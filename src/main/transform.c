@@ -208,6 +208,7 @@ List* toJumpsList(List* list, uint8_t* uniqueId) {
 
         switch(token->type) {
         case TOKEN_INT:
+        case TOKEN_FLOAT:
         case TOKEN_LITERAL:
         case TOKEN_IDENTIFIER:
         case TOKEN_CALL:

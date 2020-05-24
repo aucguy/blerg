@@ -22,6 +22,7 @@ void deinitThing();
 //different builtin types. Initialized in initThing.
 ThingType* THING_TYPE_NONE;
 ThingType* THING_TYPE_INT;
+ThingType* THING_TYPE_FLOAT;
 ThingType* THING_TYPE_STR;
 ThingType* THING_TYPE_BOOL;
 ThingType* THING_TYPE_SYMBOL;
@@ -43,6 +44,7 @@ ThingHeader* customDataToThingHeader(Thing* thing);
 void destroyThing(Thing* thing);
 
 Thing* createIntThing(Runtime* runtime, int32_t value);
+Thing* createFloatThing(Runtime* runtime, float value);
 
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal);
 

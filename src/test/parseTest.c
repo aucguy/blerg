@@ -15,7 +15,7 @@ void parseCleanup(ParseState* state, Token* token) {
 
 const char* testParseInt() {
     ParseState* state = createParseState("1234");
-    IntToken* token = parseInt(state);
+    IntToken* token = (IntToken*) parseIntOrFloat(state);
 
     assert(token->token.type == TOKEN_INT, "token type is not int");
     assert(token->value == 1234, "token value is not 1234");
@@ -253,7 +253,7 @@ const char* parseTestGreaterAndLessThan() {
 
 const char* parseTestFloat() {
     ParseState* state = createParseState("-3.14e5");
-    Token* parsed = (Token*) parseFloat(state);
+    Token* parsed = (Token*) parseIntOrFloat(state);
     Token* expected = (Token*) createFloatToken(-3.14e5);
 
     assert(tokensEqual(parsed, expected), "incorrect parse");

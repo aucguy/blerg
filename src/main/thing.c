@@ -41,6 +41,7 @@ RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity) {
 
 RetVal symbolCall(Runtime*, Thing*, Thing**, uint8_t);
 RetVal intDispatch(Runtime*, Thing*, Thing**, uint8_t);
+RetVal floatDispatch(Runtime*, Thing*, Thing**, uint8_t);
 RetVal strDispatch(Runtime*, Thing*, Thing**, uint8_t);
 void destroyStrThing(Thing*);
 RetVal boolDispatch(Runtime*, Thing*, Thing**, uint8_t);
@@ -68,6 +69,11 @@ void initThing() {
         setDestroyThingType(THING_TYPE_INT, destroySimpleThing);
         setCallThingType(THING_TYPE_INT, errorCall);
         setDispatchThingType(THING_TYPE_INT, intDispatch);
+
+        THING_TYPE_FLOAT = createThingType();
+        setDestroyThingType(THING_TYPE_FLOAT, destroySimpleThing);
+        setCallThingType(THING_TYPE_FLOAT, errorCall);
+        setDispatchThingType(THING_TYPE_FLOAT, floatDispatch);
 
         THING_TYPE_STR = createThingType();
         setDestroyThingType(THING_TYPE_STR, destroyStrThing);
@@ -124,6 +130,9 @@ void deinitThing() {
 
         free(THING_TYPE_INT);
         THING_TYPE_INT = NULL;
+
+        free(THING_TYPE_FLOAT);
+        THING_TYPE_FLOAT = NULL;
 
         free(THING_TYPE_STR);
         THING_TYPE_STR = NULL;
@@ -262,7 +271,7 @@ RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
     } else {
         //TODO report the symbol
-        error = "bools do not respond to that symbol";
+        error = "ints do not respond to that symbol";
     }
 
     if(error != NULL) {
@@ -274,6 +283,63 @@ RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
 int32_t thingAsInt(Thing* thing) {
     return ((IntThing*) thing)->value;
+}
+
+typedef struct {
+    float value;
+} FloatThing;
+
+Thing* createFloatThing(Runtime* runtime, float value) {
+    FloatThing* thing = createThing(runtime, THING_TYPE_FLOAT, sizeof(FloatThing));
+    thing->value = value;
+    return thing;
+}
+
+RetVal floatDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
+    RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_FLOAT, THING_TYPE_FLOAT);
+    if(isRetValError(retVal)) {
+        return retVal;
+    }
+
+    float valueA = thingAsInt(args[0]);
+    float valueB = thingAsInt(args[1]);
+    uint32_t id = getSymbolId(self);
+
+    Thing* thing = NULL;
+    const char* error = NULL;
+
+    if(id == SYM_ADD) {
+        thing = createFloatThing(runtime, valueA + valueB);
+    } else if(id == SYM_SUB) {
+        thing = createFloatThing(runtime, valueA - valueB);
+    } else if(id == SYM_MUL) {
+        thing = createFloatThing(runtime, valueA * valueB);
+    } else if(id == SYM_DIV) {
+        thing = createFloatThing(runtime, valueA / valueB);
+    } else if(id == SYM_EQ) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
+    } else if(id == SYM_NOT_EQ) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
+    } else if(id == SYM_LESS_THAN) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
+    } else if(id == SYM_LESS_THAN_EQ) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
+    } else if(id == SYM_GREATER_THAN) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
+    } else if(id == SYM_GREATER_THAN_EQ) {
+        thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
+    } else {
+        //TODO report the symbol
+        error = "floats do not respond to that symbol";
+    }
+
+    if(error != NULL) {
+        return throwMsg(runtime, error);
+    } else {
+        return createRetVal(thing, 0);
+    }
 }
 
 typedef struct {

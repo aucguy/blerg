@@ -77,6 +77,7 @@ uint32_t createLabel(ModuleBuilder* builder);
  */
 void emitLabel(ModuleBuilder* builder, uint32_t label);
 void emitPushInt(ModuleBuilder* builder, int32_t num);
+void emitPushFloat(ModuleBuilder* builder, float num);
 
 /**
  * TODO fix documentation

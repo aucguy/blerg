@@ -9,6 +9,7 @@ enum INSTRUCTIONS {
     //stack: -> uin32
     //reads an integer from the bytecode and pushes its value onto the stack
     OP_PUSH_INT,
+    OP_PUSH_FLOAT,
     //args: index (uint32)
     //stack: -> symbol
     //reads an integer from the bytecode, looks it up in the constant table,

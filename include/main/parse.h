@@ -32,8 +32,7 @@ BlockToken* parseModule(const char* src, char** error);
 
 #if INCLUDE_TESTS
 
-IntToken* parseInt(ParseState*);
-FloatToken* parseFloat(ParseState*);
+Token* parseIntOrFloat(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
 Token* parseTerm(ParseState*);

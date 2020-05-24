@@ -72,6 +72,13 @@ void emitUInt(ModuleBuilder* builder, uint32_t num) {
     emitByte(builder, num & 0x000000FF);
 }
 
+//TODO don't assume floats use IEEE-754
+void emitFloat(ModuleBuilder* builder, float num) {
+    //bitwise cast float to uint32_t
+    uint32_t casted = *((uint32_t*) &num);
+    emitUInt(builder, casted);
+}
+
 /**
  * Returns the index of the given string in the constant table. If the string
  * is not in the constant table, it is added to it. Note that the function does
@@ -129,6 +136,11 @@ void emitLabel(ModuleBuilder* builder, uint32_t label) {
 void emitPushInt(ModuleBuilder* builder, int32_t num) {
     emitByte(builder, OP_PUSH_INT);
     emitInt(builder, num);
+}
+
+void emitPushFloat(ModuleBuilder* builder, float num) {
+    emitByte(builder, OP_PUSH_FLOAT);
+    emitFloat(builder, num);
 }
 
 void emitPushBuiltin(ModuleBuilder* builder, const char* name) {
@@ -281,6 +293,9 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     if(token->type == TOKEN_INT) {
         emitSrcLoc(builder, token->location);
         emitPushInt(builder, ((IntToken*) token)->value);
+    } else if(token->type == TOKEN_FLOAT) {
+        emitSrcLoc(builder, token->location);
+        emitPushFloat(builder, ((FloatToken*) token)->value);
     } else if(token->type == TOKEN_LITERAL) {
         emitSrcLoc(builder, token->location);
         emitPushLiteral(builder, ((LiteralToken*) token)->value);

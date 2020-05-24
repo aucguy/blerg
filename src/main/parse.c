@@ -167,26 +167,10 @@ uint8_t lookAheadMulti(ParseState* state, const char* strs[]) {
 
 const char* INT_CHARS = "0123456789";
 
-/**
- * Parses an integer.
- *
- * <integer> ::= [0-9]+
- */
-IntToken* parseInt(ParseState* state) {
+Token* parseIntOrFloat(ParseState* state) {
     uint32_t start = state->index;
     SrcLoc location = state->location;
-    advanceWhile(state, INT_CHARS);
-
-    char* extracted = sliceStr(state->src, start, state->index);
-    int value = atoi(extracted);
-    free(extracted);
-
-    return createIntToken(location, value);
-}
-
-FloatToken* parseFloat(ParseState* state) {
-    uint32_t start = state->index;
-    SrcLoc location = state->location;
+    uint8_t isFloat = 0;
 
     if(getChar(state) == '-' || getChar(state) == '+') {
         advance(state, 1);
@@ -195,11 +179,13 @@ FloatToken* parseFloat(ParseState* state) {
     advanceWhile(state, INT_CHARS);
 
     if(getChar(state) == '.') {
+        isFloat = 1;
         advance(state, 1);
         advanceWhile(state, INT_CHARS);
     }
 
     if(getChar(state) == 'e' || getChar(state) == 'E') {
+        isFloat = 1;
         advance(state, 1);
 
         if(getChar(state) == '+' || getChar(state) == '-') {
@@ -210,10 +196,16 @@ FloatToken* parseFloat(ParseState* state) {
     }
 
     char* extracted = sliceStr(state->src, start, state->index);
-    float value = strtof(extracted, NULL);
+    Token* token;
+    if(isFloat) {
+        float value = strtof(extracted, NULL);
+        token = (Token*) createFloatToken(location, value);
+    } else {
+        int value = atoi(extracted);
+        token = (Token*) createIntToken(location, value);
+    }
     free(extracted);
-
-    return createFloatToken(location, value);
+    return token;
 }
 
 /**
@@ -281,8 +273,8 @@ Token* parseFactor(ParseState* state) {
         }
         advance(state, 1); //skip the )
         return token;
-    } else if(containsChar(INT_CHARS, c) != 0) {
-        return (Token*) parseInt(state);
+    } else if(containsChar(INT_CHARS, c) != 0 || containsChar("+-", c) != 0) {
+        return (Token*) parseIntOrFloat(state);
     } else if(containsChar(IDENTIFIER_CHARS, c) != 0) {
         return (Token*) parseIdentifier(state);
     } else if(c == '\'') {

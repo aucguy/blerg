@@ -169,6 +169,12 @@ uint32_t readU32Module(Module* module, uint32_t index) {
     return arg;
 }
 
+float readFloatModule(Module* module, uint32_t index) {
+    //bitwise cast uint32_t to float
+    uint32_t arg = readU32Module(module, index);
+    return *((float*) &arg);
+}
+
 const char* readConstantModule(Module* module, uint32_t index) {
     return module->constants[readU32Module(module, index)];
 }
@@ -245,6 +251,10 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             int32_t value = readI32Module(module, index);
             index += 4;
             pushStack(runtime, createIntThing(runtime, value));
+        } else if(opcode == OP_PUSH_FLOAT) {
+            float value = readFloatModule(module, index);
+            index += 4;
+            pushStack(runtime, createFloatThing(runtime, value));
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstantModule(module, index);
             index += 4;
