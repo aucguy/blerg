@@ -35,6 +35,7 @@ uint8_t runTests() {
     runTest("parseTestFuncWithoutDo", parseTestFuncWithoutDo(), &status);
     runTest("parseTestGreaterAndLessThan", parseTestGreaterAndLessThan(), &status);
     runTest("parseTestFloat", parseTestFloat(), &status);
+    runTest("parseTestTuple", parseTestTuple(), &status);
 
     runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
     runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);

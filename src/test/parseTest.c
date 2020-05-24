@@ -258,8 +258,25 @@ const char* parseTestFloat() {
 
     assert(tokensEqual(parsed, expected), "incorrect parse");
 
-    free(parsed);
-    free(expected);
+    destroyToken(parsed);
+    destroyToken(expected);
+    free(state);
+    return NULL;
+}
+
+const char* parseTestTuple() {
+    ParseState* state = createParseState("(1, 2, 3)");
+    Token* parsed = parseFactor(state);
+
+    List* elements = consList(createIntToken(3), NULL);
+    elements = consList(createIntToken(2), elements);
+    elements = consList(createIntToken(1), elements);
+    Token* expected = (Token*) createTupleToken(elements);
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    destroyToken(parsed);
+    destroyToken(expected);
     free(state);
     return NULL;
 }

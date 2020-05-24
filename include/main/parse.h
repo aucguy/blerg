@@ -35,7 +35,7 @@ BlockToken* parseModule(const char* src, char** error);
 Token* parseIntOrFloat(ParseState*);
 LiteralToken* parseLiteral(ParseState*);
 IdentifierToken* parseIdentifier(ParseState*);
-Token* parseTerm(ParseState*);
+Token* parseFactor(ParseState*);
 Token* parseExpression(ParseState*);
 
 #endif

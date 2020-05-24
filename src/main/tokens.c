@@ -18,6 +18,15 @@ void printIndent(uint8_t indent) {
     }
 }
 
+List* copyTokenList(List* old) {
+    if(old == NULL) {
+        return NULL;
+    } else {
+        return consList(copyToken(old->head), copyTokenList(old->tail));
+    }
+}
+
+
 void destroyIntToken(Token* self) {
     UNUSED(self);
 }
@@ -178,6 +187,54 @@ IdentifierToken* createIdentifierToken(SrcLoc loc, const char* value) {
     return token;
 }
 
+void destroyTupleToken(Token* self) {
+    TupleToken* tuple = (TupleToken*) self;
+    destroyList(tuple->elements, destroyTokenVoid);
+}
+
+void printTupleToken(Token* self, uint8_t indent) {
+    printf("tuple:\n");
+    List* elements = ((TupleToken*) self)->elements;
+    uint8_t i = 0;
+
+    while(elements != NULL) {
+        printIndent(indent + 1);
+        printf("%i: ", i);
+        printTokenWithIndent(elements->head, indent + 1);
+        elements = elements->tail;
+        i++;
+    }
+}
+
+uint8_t equalsTupleToken(Token* self, Token* other) {
+    TupleToken* tuple1 = (TupleToken*) self;
+    TupleToken* tuple2 = (TupleToken*) other;
+    return allList2(tuple1->elements, tuple2->elements, tokensEqualVoid);
+}
+
+Token* copyTupleToken(Token* self) {
+    TupleToken* tuple = (TupleToken*) self;
+    List* copied = copyTokenList(tuple->elements);
+    return (Token*) createTupleToken(tuple->token.location, copied);
+}
+
+Token TUPLE_TYPE = {
+        TOKEN_TUPLE,
+        destroyTupleToken,
+        printTupleToken,
+        equalsTupleToken,
+        copyTupleToken,
+        tokenInstanceFields
+};
+
+TupleToken* createTupleToken(SrcLoc location, List* elements) {
+    TupleToken* tuple = (TupleToken*) malloc(sizeof(TupleToken));
+    tuple->token = TUPLE_TYPE;
+    tuple->token.location = location;
+    tuple->elements = elements;
+    return tuple;
+}
+
 void destroyCallToken(Token* self) {
     List* children = ((CallToken*) self)->children;
     while(children != NULL) {
@@ -208,14 +265,6 @@ uint8_t equalsCallToken(Token* self, Token* other) {
     }
 
     return childrenA == NULL && childrenB == NULL;
-}
-
-List* copyTokenList(List* old) {
-    if(old == NULL) {
-        return NULL;
-    } else {
-        return consList(copyToken(old->head), copyTokenList(old->tail));
-    }
 }
 
 Token* copyCallToken(Token* self) {

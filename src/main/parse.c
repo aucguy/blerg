@@ -254,25 +254,80 @@ IdentifierToken* parseIdentifier(ParseState* state) {
     return createIdentifierToken(location, str);
 }
 
+List* parseTupleHelper(ParseState* state, uint8_t* error) {
+    skipWhitespace(state);
+    Token* head = parseExpression(state);
+
+    if(head == NULL) {
+        *error = 1;
+        return NULL;
+    }
+
+    skipWhitespace(state);
+    if(getChar(state) == ')') {
+        advance(state, 1);
+        return consList(head, NULL);
+    } else if(getChar(state) == ',') {
+        advance(state, 1);
+        skipWhitespace(state);
+
+        if(getChar(state) == ')') {
+            return consList(head, NULL);
+        } else {
+            List* tail = parseTupleHelper(state, error);
+            if(*error) {
+                destroyToken(head);
+                return NULL;
+            }
+            return consList(head, tail);
+        }
+    } else {
+        destroyToken(head);
+        *error = 1;
+        state->error = "expected ')' or ','";
+        return NULL;
+    }
+}
+
+Token* parseTuple(ParseState* state, SrcLoc location, Token* first) {
+    uint8_t error = 0;
+    List* elements = parseTupleHelper(state, &error);
+
+    if(error) {
+        destroyToken(first);
+        return NULL;
+    }
+
+    return (Token*) createTupleToken(location, consList(first, elements));
+}
+
 /**
  * Parses a factor.
  *
- * <factor> ::= <integer> | <literal> | <identifier> | ( <expression> )
+ * <factor> ::= <integer> | <literal> | <identifier> | ( <expression> ) | <tuple>
  */
 Token* parseFactor(ParseState* state) {
     skipWhitespace(state);
+    SrcLoc location = state->location;
     char c = getChar(state);
     if(c == '(') {
         advance(state, 1); //skip the (
         Token* token = parseExpression(state);
         skipWhitespace(state);
-        if(getChar(state) != ')') {
+
+        if(getChar(state) == ')') {
+            //it's just a parenthese grouping
+            advance(state, 1); //skip the )
+            return token;
+        } else if(getChar(state) == ',') {
+            //it's a tuple
+            advance(state, 1);
+            return (Token*) parseTuple(state, location, token);
+        } else {
             destroyToken(token);
-            state->error = "expected ')'";
+            state->error = "expectd ')' or ','";
             return NULL;
         }
-        advance(state, 1); //skip the )
-        return token;
     } else if(containsChar(INT_CHARS, c) != 0 || containsChar("+-", c) != 0) {
         return (Token*) parseIntOrFloat(state);
     } else if(containsChar(IDENTIFIER_CHARS, c) != 0) {
