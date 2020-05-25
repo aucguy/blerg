@@ -31,6 +31,7 @@ ThingType* THING_TYPE_FUNC;
 ThingType* THING_TYPE_NATIVE_FUNC;
 ThingType* THING_TYPE_ERROR;
 ThingType* THING_TYPE_TUPLE;
+ThingType* THING_TYPE_LIST;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -111,6 +112,13 @@ Thing* createErrorThing(Runtime* runtime, const char* msg);
 const char* errorStackTrace(Runtime* runtime, Thing* self);
 
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements);
+
+typedef struct {
+    Thing* head;
+    Thing* tail;
+} ListThing;
+
+Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
 
 RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...);
 

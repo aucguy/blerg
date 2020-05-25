@@ -1,0 +1,5 @@
+def main x do
+	list = 1 : (2 : none);
+	assert ((head list) == 1);
+	assert ((head (tail list)) == 2);
+end

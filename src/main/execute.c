@@ -78,10 +78,12 @@ Runtime* createRuntime() {
     putMapStr(ops, "or", createSymbolThing(runtime, SYM_OR, 2));
     putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
     putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
+    putMapStr(ops, ":", createNativeFuncThing(runtime, libCons));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
 
+    setScopeLocal(builtins, "none", runtime->noneThing);
     setScopeLocal(builtins, "false", createBoolThing(runtime, 0));
     setScopeLocal(builtins, "true", createBoolThing(runtime, 1));
     setScopeLocal(builtins, "print", createNativeFuncThing(runtime, libPrint));
@@ -90,6 +92,8 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "toStr", createNativeFuncThing(runtime, libToStr));
     setScopeLocal(builtins, "toInt", createNativeFuncThing(runtime, libToInt));
     setScopeLocal(builtins, "trycatch", createNativeFuncThing(runtime, libTryCatch));
+    setScopeLocal(builtins, "head", createNativeFuncThing(runtime, libHead));
+    setScopeLocal(builtins, "tail", createNativeFuncThing(runtime, libTail));
 
     return runtime;
 }

@@ -111,3 +111,36 @@ RetVal libTuple(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     return createRetVal(createTupleThing(runtime, arity, copy), 0);
 }
+
+RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(arity != 2) {
+        return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+    }
+
+    ThingType* type = typeOfThing(args[1]);
+
+    if(type != THING_TYPE_NONE && type != THING_TYPE_LIST) {
+        const char* msg = formatStr("expected argument 2 to be none or a list");
+        return throwMsg(runtime, msg);
+    }
+
+    return createRetVal(createListThing(runtime, args[0], args[1]), 0);
+}
+
+RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    return createRetVal(((ListThing*) args[0])->head, 0);
+}
+
+RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    return createRetVal(((ListThing*) args[0])->tail, 0);
+}

@@ -20,4 +20,11 @@ RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 RetVal libTuple(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
+RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
+RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
+
 #endif /* LIB_H_ */

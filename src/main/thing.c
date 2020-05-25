@@ -48,6 +48,7 @@ RetVal boolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 uint32_t getSymbolId(Thing* self);
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+//RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyObjectThing(Thing* thing);
 void destroyErrorThing(Thing* thing);
@@ -112,6 +113,11 @@ void initThing() {
         setCallThingType(THING_TYPE_TUPLE, errorCall);
         setDispatchThingType(THING_TYPE_TUPLE, tupleDispatch);
 
+        THING_TYPE_LIST = createThingType();
+        setDestroyThingType(THING_TYPE_LIST, destroySimpleThing);
+        setCallThingType(THING_TYPE_LIST, errorCall);
+        setDispatchThingType(THING_TYPE_LIST, errorCall);
+
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -164,6 +170,9 @@ void deinitThing() {
 
         free(THING_TYPE_TUPLE);
         THING_TYPE_TUPLE = NULL;
+
+        free(THING_TYPE_LIST);
+        THING_TYPE_LIST = NULL;
 
         SYM_ADD = 0;
         SYM_SUB = 0;
@@ -744,3 +753,101 @@ RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 void destroyTupleThing(Thing* thing) {
     free(((TupleThing*) thing)->elements);
 }
+
+Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
+    ListThing* list = createThing(runtime, THING_TYPE_LIST, sizeof(ListThing));
+    list->head = head;
+    list->tail = tail;
+    return list;
+}
+
+/*RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
+        throwMsg(runtime, newStr("internal error: self is not a symbol"));
+    }
+
+    uint8_t id = getSymbolId(self);
+
+    if(id != SYM_EQ && id != SYM_NOT_EQ) {
+        throwMsg(runtime, newStr("lists only respond to == and !="));
+    }
+
+    if(arity != 2) {
+        throwMsg(runtime, formatStr("expected 2 arguments but got %i", arity));
+    }
+
+    ThingType* type1 = typeOfThing(args[0]);
+    if(type1 != THING_TYPE_LIST && type1 != THING_TYPE_NONE) {
+        //TODO report the actual type
+        throwMsg(runtime, newStr("expected argument 1 to be none or a list"));
+    }
+
+    ThingType* type2 = typeOfThing(args[1]);
+    if(type2 != THING_TYPE_LIST && type2 != THING_TYPE_NONE) {
+        //TODO report the actual type
+        throwMsg(runtime, newStr("expected arguments 1 to be none or a list"));
+    }
+
+    if(type1 != type2) {
+        return createRetVal(createBoolThing(runtime, 0), 0);
+    } else if(type1 == THING_TYPE_NONE) {
+        return createRetVal(createBoolThing(runtime, 1), 0);
+    } else {
+        const char* opName;
+        uint8_t all;
+        if(id == SYM_EQ) {
+            opName = "==";
+            all = 1;
+        } else {
+            opName = "!=";
+            all = 0;
+        }
+
+        Thing* operator = getMapStr(runtime->operators, opName);
+
+        ListThing* list1 = (ListThing*) args[0];
+        ListThing* list2 = (ListThing*) args[1];
+
+        Thing** passed = malloc(sizeof(Thing*) * 2);
+        passed[0] = list1->head;
+        passed[1] = list2->head;
+
+        RetVal ret = callFunction(runtime, operator, 2, passed);
+        if(isRetValError(ret)) {
+            free(passed);
+            return ret;
+        }
+
+        Thing* value = getRetVal(ret);
+
+        if(typeOfThing(value) != THING_TYPE_BOOL) {
+            free(passed);
+            //TODO report which symbol
+            throwMsg(runtime, newStr("symbol did not return a bool"));
+        }
+
+        if(thingAsBool(value) != all) {
+            free(passed);
+            return createRetVal(createBoolThing(runtime, 0), 0);
+        }
+
+        passed[0] = list1->tail;
+        passed[1] = list2->tail;
+
+        ret = callFunction(runtime, operator, 2, passed);
+        if(isRetValError(ret)) {
+            free(passed);
+            return ret;
+        }
+
+        value = getRetVal(ret);
+        if(typeOfThing(value) != THING_TYPE_BOOL) {
+            free(passed);
+            //TODO report which symbol
+            throwMsg(runtime, newStr("symbol did not return a bool"));
+        }
+
+        free(passed);
+        return createRetVal(createBoolThing(runtime, thingAsBool(value) == all), 0);
+    }
+}*/
