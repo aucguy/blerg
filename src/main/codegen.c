@@ -316,6 +316,22 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
         emitSrcLoc(builder, token->location);
         emitCondJump(builder, *label, condJump->when);
+    } else if(token->type == TOKEN_TUPLE) {
+        emitSrcLoc(builder, token->location);
+        emitPushBuiltin(builder, "tuple");
+
+        TupleToken* tuple = (TupleToken*) token;
+        List* elements = tuple->elements;
+        uint8_t count = 0;
+
+        while(elements != NULL) {
+            compileToken(builder, labels, elements->head);
+            elements = elements->tail;
+            count++;
+        }
+
+        emitSrcLoc(builder, token->location);
+        emitCall(builder, count);
     } else if(token->type == TOKEN_CALL) {
         CallToken* call = (CallToken*) token;
         List* children = call->children;

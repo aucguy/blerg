@@ -77,6 +77,7 @@ Runtime* createRuntime() {
     putMapStr(ops, "and", createSymbolThing(runtime, SYM_ADD, 2));
     putMapStr(ops, "or", createSymbolThing(runtime, SYM_OR, 2));
     putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
+    putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -380,10 +381,17 @@ RetVal executeModule(Runtime* runtime, Module* module) {
 }
 
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {
-    uint8_t error = 0;
-    StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
-    if(error) {
-        return throwMsg(runtime, "error creating function stack frame");
+    if(typeOfThing(func) == THING_TYPE_FUNC) {
+        uint8_t error = 0;
+        StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
+        if(error) {
+            return throwMsg(runtime, "error creating function stack frame");
+        }
+        return executeCode(runtime, frame);
+    } else {
+        pushStackFrame(runtime, createStackFrameNative());
+        RetVal ret = typeOfThing(func)->call(runtime, func, args, argNo);
+        popStackFrame(runtime);
+        return ret;
     }
-    return executeCode(runtime, frame);
 }

@@ -100,3 +100,14 @@ RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return result;
 }
 
+RetVal libTuple(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    //a copy must be made since args is freed after the function
+    Thing** copy = malloc(sizeof(Thing*) * arity);
+
+    for(uint8_t i = 0 ; i < arity; i++) {
+        copy[i] = args[i];
+    }
+
+    return createRetVal(createTupleThing(runtime, arity, copy), 0);
+}

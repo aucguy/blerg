@@ -47,9 +47,11 @@ void destroyStrThing(Thing*);
 RetVal boolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 uint32_t getSymbolId(Thing* self);
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyObjectThing(Thing* thing);
 void destroyErrorThing(Thing* thing);
+void destroyTupleThing(Thing* thing);
 
 static uint8_t initialized = 0;
 
@@ -105,6 +107,11 @@ void initThing() {
         setCallThingType(THING_TYPE_ERROR, errorCall);
         setDispatchThingType(THING_TYPE_ERROR, errorCall);
 
+        THING_TYPE_TUPLE = createThingType();
+        setDestroyThingType(THING_TYPE_TUPLE, destroyTupleThing);
+        setCallThingType(THING_TYPE_TUPLE, errorCall);
+        setDispatchThingType(THING_TYPE_TUPLE, tupleDispatch);
+
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -154,6 +161,9 @@ void deinitThing() {
 
         free(THING_TYPE_ERROR);
         THING_TYPE_ERROR = NULL;
+
+        free(THING_TYPE_TUPLE);
+        THING_TYPE_TUPLE = NULL;
 
         SYM_ADD = 0;
         SYM_SUB = 0;
@@ -666,3 +676,71 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
     return createRetVal(NULL, 0);
 }
 
+typedef struct {
+    uint8_t size;
+    Thing** elements;
+} TupleThing;
+
+Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
+    TupleThing* self = createThing(runtime, THING_TYPE_TUPLE, sizeof(TupleThing));
+    self->size = size;
+    self->elements = elements;
+    return self;
+}
+
+RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_TUPLE,
+            THING_TYPE_TUPLE);
+
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    if(getSymbolId(self) == SYM_EQ || getSymbolId(self) == SYM_NOT_EQ) {
+        uint8_t all = getSymbolId(self) == SYM_EQ;
+
+        TupleThing* valueA = (TupleThing*) args[0];
+        TupleThing* valueB = (TupleThing*) args[1];
+
+        if(valueA->size != valueB->size) {
+            return createRetVal(createBoolThing(runtime, 0), 0);
+        }
+
+        Thing* eqSym = getMapStr(runtime->operators, "==");
+
+        Thing** elems = malloc(sizeof(Thing*) * 2);
+
+        for(uint8_t i = 0; i < valueA->size; i++) {
+            elems[0] = valueA->elements[i];
+            elems[1] = valueB->elements[i];
+
+            ret = callFunction(runtime, eqSym, 2, elems);
+            if(isRetValError(ret)) {
+                free(elems);
+                return ret;
+            }
+
+            Thing* value = getRetVal(ret);
+
+            if(typeOfThing(value) != THING_TYPE_BOOL) {
+                free(elems);
+                const char* msg = newStr("internal error: == did not return a bool");
+                return throwMsg(runtime, msg);
+            }
+
+            if(thingAsBool(value) != all) {
+                free(elems);
+                return ret;
+            }
+        }
+
+        free(elems);
+        return createRetVal(createBoolThing(runtime, all), 0);
+    } else {
+        return throwMsg(runtime, newStr("tuples do not respond to that symbol"));
+    }
+}
+
+void destroyTupleThing(Thing* thing) {
+    free(((TupleThing*) thing)->elements);
+}

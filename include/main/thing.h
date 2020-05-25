@@ -30,6 +30,7 @@ ThingType* THING_TYPE_OBJ;
 ThingType* THING_TYPE_FUNC;
 ThingType* THING_TYPE_NATIVE_FUNC;
 ThingType* THING_TYPE_ERROR;
+ThingType* THING_TYPE_TUPLE;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -108,6 +109,8 @@ Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func);
 
 Thing* createErrorThing(Runtime* runtime, const char* msg);
 const char* errorStackTrace(Runtime* runtime, Thing* self);
+
+Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements);
 
 RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...);
 
