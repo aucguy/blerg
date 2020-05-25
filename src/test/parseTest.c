@@ -280,3 +280,19 @@ const char* parseTestTuple() {
     free(state);
     return NULL;
 }
+
+const char* parseTestCons() {
+    ParseState* state = createParseState("1 : 2");
+    Token* parsed = parseExpression(state);
+
+    Token* expected = (Token*) createBinaryOpToken(newStr(":"),
+            (Token*) createIntToken(1),
+            (Token*) createIntToken(2));
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    destroyToken(parsed);
+    destroyToken(expected);
+    free(state);
+    return NULL;
+}

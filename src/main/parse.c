@@ -340,7 +340,7 @@ Token* parseFactor(ParseState* state) {
 }
 
 //'end' is not an operator; it signifies that the end of the array of operators
-#define OP_LEVELS 5
+#define OP_LEVELS 6
 #define OP_AMOUNT 8
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         { "*", "/", "end" },
@@ -349,7 +349,8 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         //the 'prefix' isn't an operator; it signifies that this level contains
         //prefix unary operators.
         { "prefix", "not", "end" },
-        { "and", "or", "end" }
+        { "and", "or", "end" },
+        { ":", "end" }
 };
 
 uint8_t factorAhead(ParseState* state) {
