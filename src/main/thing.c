@@ -8,6 +8,9 @@
 
 #define UNUSED(x) (void)(x)
 
+//TODO check if symbol is supported for a dispatch before typechecking
+//for better error messages
+
 ThingType* createThingType() {
     ThingType* type = malloc(sizeof(ThingType));
     type->destroy = NULL;
@@ -131,6 +134,7 @@ void initThing() {
         SYM_ADD = newSymbolId();
         SYM_OR = newSymbolId();
         SYM_NOT = newSymbolId();
+        SYM_GET = newSymbolId();
 
         initialized = 1;
     }
@@ -186,6 +190,7 @@ void deinitThing() {
         SYM_ADD = 0;
         SYM_OR = 0;
         SYM_NOT = 0;
+        SYM_GET = 0;
 
         initialized = 0;
     }
@@ -432,6 +437,7 @@ Thing* createBoolThing(Runtime* runtime, uint8_t value) {
     return thing;
 }
 
+//TODO make bools respond to == and !=
 RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(typeOfThing(self) != THING_TYPE_SYMBOL) {
         return throwMsg(runtime, "internal error: self should be a symbol");
@@ -458,6 +464,7 @@ RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) 
         uint8_t valueA = thingAsBool(args[0]);
         uint8_t valueB = thingAsBool(args[1]);
 
+        //TODO make this SYM_AND
         if(id == SYM_ADD) {
             thing = createBoolThing(runtime, valueA && valueB);
         } else if(id == SYM_OR) {
@@ -698,14 +705,16 @@ Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
 }
 
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_TUPLE,
-            THING_TYPE_TUPLE);
+    //TODO check self is really a symbol first
+    uint32_t id = getSymbolId(self);
 
-    if(isRetValError(ret)) {
-        return ret;
-    }
+    if(id == SYM_EQ || id == SYM_NOT_EQ) {
+        RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_TUPLE,
+                THING_TYPE_TUPLE);
 
-    if(getSymbolId(self) == SYM_EQ || getSymbolId(self) == SYM_NOT_EQ) {
+        if(isRetValError(ret)) {
+            return ret;
+        }
         uint8_t all = getSymbolId(self) == SYM_EQ;
 
         TupleThing* valueA = (TupleThing*) args[0];
@@ -745,6 +754,24 @@ RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 
         free(elems);
         return createRetVal(createBoolThing(runtime, all), 0);
+    } else if(id == SYM_GET) {
+        RetVal ret = typeCheck(runtime, self, args, arity, 2,
+                THING_TYPE_TUPLE, THING_TYPE_INT);
+
+        if(isRetValError(ret)) {
+            return ret;
+        }
+
+        TupleThing* tuple = (TupleThing*) args[0];
+        int32_t index = thingAsInt(args[1]);
+
+        if(index >= tuple->size) {
+            const char* format = "tuple access out of bounds: "
+                    "accessed at %i but the size is %i";
+            return throwMsg(runtime, formatStr(format, index, tuple->size));
+        }
+
+        return createRetVal(tuple->elements[index], 0);
     } else {
         return throwMsg(runtime, newStr("tuples do not respond to that symbol"));
     }

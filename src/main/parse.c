@@ -254,6 +254,8 @@ IdentifierToken* parseIdentifier(ParseState* state) {
     return createIdentifierToken(location, str);
 }
 
+//TODO support tuples with a ',' at the end
+//this should work but there's a bug
 List* parseTupleHelper(ParseState* state, uint8_t* error) {
     skipWhitespace(state);
     Token* head = parseExpression(state);

@@ -94,6 +94,7 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "trycatch", createNativeFuncThing(runtime, libTryCatch));
     setScopeLocal(builtins, "head", createNativeFuncThing(runtime, libHead));
     setScopeLocal(builtins, "tail", createNativeFuncThing(runtime, libTail));
+    setScopeLocal(builtins, "get", createSymbolThing(runtime, SYM_GET, 2));
 
     return runtime;
 }
