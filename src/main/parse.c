@@ -350,7 +350,7 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         //prefix unary operators.
         { "prefix", "not", "end" },
         { "and", "or", "end" },
-        { ":", "end" }
+        { "right-to-left", ":", "end" }
 };
 
 uint8_t factorAhead(ParseState* state) {
@@ -401,6 +401,11 @@ const char* getOp(ParseState* state, uint8_t level) {
         if(strcmp(checking, "prefix") == 0) {
             continue;
         }
+
+        if(strcmp(checking, "right-to-left") == 0) {
+            continue;
+        }
+
         if(lookAhead(state, checking)) {
             return newStr(checking);
         }
@@ -465,6 +470,29 @@ Token* parseBinaryOp(ParseState* state, uint8_t level) {
     return token;
 }
 
+Token* parseBinaryOpRightToLeft(ParseState* state, uint8_t level) {
+    Token* left = parseExpressionWithLevel(state, level - 1);
+    if(left == NULL) {
+        return NULL;
+    }
+
+    skipWhitespace(state);
+    SrcLoc location = state->location;
+
+    const char* op = getOp(state, level);
+    if(op != NULL) {
+        advance(state, strlen(op));
+        Token* right = parseExpressionWithLevel(state, level);
+        if(right == NULL) {
+            destroyToken(left);
+            free((void*) op);
+            return NULL;
+        }
+        return (Token*) createBinaryOpToken(location, op, left, right);
+    } else {
+        return left;
+    }
+}
 
 /**
  * The official definition for unary ops is
@@ -499,6 +527,8 @@ Token* parseExpressionWithLevel(ParseState* state, uint8_t level) {
         return parseCall(state);
     } else if(strcmp("prefix", OP_DATA[level - 1][0]) == 0){
         return parsePrefixUnaryOp(state, level);
+    } else if(strcmp("right-to-left", OP_DATA[level - 1][0]) == 0) {
+        return parseBinaryOpRightToLeft(state, level);
     } else {
         return parseBinaryOp(state, level);
     }
