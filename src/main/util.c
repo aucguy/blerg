@@ -86,6 +86,14 @@ uint8_t allList(List* list, uint8_t(*predicate)(void*)) {
     return 1;
 }
 
+List* mapList(List* list, void*(*func)(void*)) {
+    if(list == NULL) {
+        return NULL;
+    } else {
+        return consList(func(list->head), mapList(list->tail, func));
+    }
+}
+
 void destroyList(List* list, void(*func)(void*)) {
     if(list == NULL) {
         return;

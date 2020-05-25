@@ -16,6 +16,7 @@ typedef enum {
     TOKEN_LITERAL,
     TOKEN_IDENTIFIER,
     TOKEN_TUPLE,
+    TOKEN_LIST,
     TOKEN_CALL,
     TOKEN_BINARY_OP,
     TOKEN_UNARY_OP,
@@ -25,7 +26,6 @@ typedef enum {
     TOKEN_WHILE,
     TOKEN_FUNC,
     TOKEN_RETURN,
-
     //are not generated via parsing, but are created during transformation
     //passes
     TOKEN_LABEL,
@@ -74,6 +74,11 @@ typedef struct {
     Token token;
     List* elements;
 } TupleToken;
+
+typedef struct {
+    Token token;
+    List* elements;
+} ListToken;
 
 typedef struct {
     Token token;
@@ -173,6 +178,7 @@ FloatToken* createFloatToken(SrcLoc, float);
 LiteralToken* createLiteralToken(SrcLoc, const char*);
 IdentifierToken* createIdentifierToken(SrcLoc, const char*);
 TupleToken* createTupleToken(SrcLoc, List*);
+ListToken* createListToken(SrcLoc, List*);
 CallToken* createCallToken(SrcLoc, List*);
 BinaryOpToken* createBinaryOpToken(SrcLoc, const char*, Token*, Token*);
 UnaryOpToken* createUnaryOpToken(SrcLoc, const char*, Token*);

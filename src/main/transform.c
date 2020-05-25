@@ -212,6 +212,8 @@ List* toJumpsList(List* list, uint8_t* uniqueId) {
         case TOKEN_LITERAL:
         case TOKEN_IDENTIFIER:
         case TOKEN_TUPLE:
+        case TOKEN_LIST:
+            //this case shouldn't happen, but its here for future-proofing
         case TOKEN_CALL:
         case TOKEN_BINARY_OP:
         case TOKEN_UNARY_OP:
@@ -258,6 +260,147 @@ BlockToken* transformControlToJumps(BlockToken* module) {
     return createBlockToken(location, toJumpsBlock(module, &uniqueId));
 }
 
-BlockToken* transformModule(BlockToken* module) {
-    return transformControlToJumps(module);
+Token* transformListToCons(Token* token);
+
+void* transformListToConsVoid(void* token) {
+    return transformListToCons(token);
+}
+
+Token* listToConsCall(Token* token) {
+    CallToken* call = (CallToken*) token;
+    List* transformed = mapList(call->children, transformListToConsVoid);
+    return (Token*) createCallToken(token->location, transformed);
+}
+
+Token* listToConsBinaryOp(Token* token) {
+    BinaryOpToken* binaryOp = (BinaryOpToken*) token;
+    const char* op = newStr(binaryOp->op);
+    Token* left = transformListToCons(binaryOp->left);
+    Token* right = transformListToCons(binaryOp->right);
+    return (Token*) createBinaryOpToken(token->location, op, left, right);
+}
+
+Token* listToConsUnaryOp(Token* token) {
+    UnaryOpToken* unaryOp = (UnaryOpToken*) token;
+    const char* op = newStr(unaryOp->op);
+    Token* child = transformListToCons(unaryOp->child);
+    return (Token*) createUnaryOpToken(token->location, op, child);
+}
+
+Token* listToConsAssignment(Token* token) {
+    AssignmentToken* assignment = (AssignmentToken*) token;
+    IdentifierToken* left = (IdentifierToken*)
+            transformListToCons((Token*) assignment->left);
+    Token* right = transformListToCons(assignment->right);
+    return (Token*) createAssignmentToken(token->location, left, right);
+}
+
+Token* listToConsBlock(Token* token) {
+    BlockToken* call = (BlockToken*) token;
+    List* transformed = mapList(call->children, transformListToConsVoid);
+    return (Token*) createBlockToken(token->location, transformed);
+}
+
+IfBranch* listToConsBranch(IfBranch* branch) {
+    Token* condition = transformListToCons(branch->condition);
+    BlockToken* block = (BlockToken*) listToConsBlock((Token*) branch->block);
+    return createIfBranch(condition, block);
+}
+
+void* listToConsBranchVoid(void* branch) {
+    return listToConsBranch(branch);
+}
+
+Token* listToConsIf(Token* token) {
+    IfToken* ifToken = (IfToken*) token;
+    List* branches = mapList(ifToken->branches, listToConsBranchVoid);
+    BlockToken* elseBranch = (BlockToken*)
+            listToConsBlock((Token*) ifToken->elseBranch);
+    return (Token*) createIfToken(token->location, branches, elseBranch);
+}
+
+Token* listToConsWhile(Token* token) {
+    WhileToken* whileToken = (WhileToken*) token;
+    Token* condition = transformListToCons(whileToken->condition);
+    BlockToken* body = (BlockToken*)
+            transformListToCons((Token*) whileToken->body);
+    return (Token*) createWhileToken(token->location, condition, body);
+}
+
+Token* listToConsFunc(Token* token) {
+    FuncToken* func = (FuncToken*) token;
+    IdentifierToken* name = (IdentifierToken*) copyToken((Token*) func->name);
+    List* args = mapList(func->args, transformListToConsVoid);
+    BlockToken* body = (BlockToken*) listToConsBlock((Token*) func->body);
+    return (Token*) createFuncToken(token->location, name, args, body);
+}
+
+Token* listToConsReturn(Token* token) {
+    ReturnToken* returnToken = (ReturnToken*) token;
+    Token* body = transformListToCons(returnToken->body);
+    return (Token*) createReturnToken(token->location, body);
+}
+
+Token* listToConsListHelper(List* elements) {
+    if(elements == NULL) {
+        //TODO create a token that always resolves to none, instead of refering
+        //to the global scope
+        SrcLoc location;
+        location.line = 0;
+        location.column = 0;
+        return (Token*) createIdentifierToken(location, newStr("none"));
+    } else {
+        const char* op = newStr(":");
+        Token* left = transformListToCons(elements->head);
+        Token* right = listToConsListHelper(elements->tail);
+        return (Token*) createBinaryOpToken(left->location, op, left, right);
+    }
+}
+
+Token* listToConsList(Token* token) {
+    ListToken* list = (ListToken*) token;
+    return listToConsListHelper(list->elements);
+}
+
+Token* transformListToCons(Token* token) {
+    switch(token->type) {
+    case TOKEN_INT:
+    case TOKEN_FLOAT:
+    case TOKEN_LITERAL:
+    case TOKEN_IDENTIFIER:
+    case TOKEN_TUPLE:
+    case TOKEN_LABEL:
+    case TOKEN_ABS_JUMP:
+    case TOKEN_COND_JUMP:
+        return copyToken(token);
+        break;
+    case TOKEN_CALL:
+        return listToConsCall(token);
+    case TOKEN_BINARY_OP:
+        return listToConsBinaryOp(token);
+    case TOKEN_UNARY_OP:
+        return listToConsUnaryOp(token);
+    case TOKEN_ASSIGNMENT:
+        return listToConsAssignment(token);
+    case TOKEN_BLOCK:
+        return listToConsBlock(token);
+    case TOKEN_IF:
+        return listToConsIf(token);
+    case TOKEN_WHILE:
+        return listToConsWhile(token);
+    case TOKEN_FUNC:
+        return listToConsFunc(token);
+    case TOKEN_RETURN:
+        return listToConsReturn(token);
+    case TOKEN_LIST:
+        return listToConsList(token);
+    }
+    return NULL;
+}
+
+BlockToken* transformModule(BlockToken* module1) {
+    BlockToken* module2 = (BlockToken*) transformListToCons((Token*) module1);
+    BlockToken* module3 = transformControlToJumps(module2);
+    destroyToken((Token*) module2);
+    return module3;
 }

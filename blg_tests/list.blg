@@ -1,5 +1,11 @@
 def main x do
+	#cons operations
 	list = 1 : 2 : none;
 	assert ((head list) == 1);
 	assert ((head (tail list)) == 2);
+	
+	#syntactic sugar
+	list = [3, 4];
+	assert ((head list) == 3);
+	assert ((head (tail list)) == 4);
 end

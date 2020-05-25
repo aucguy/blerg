@@ -42,6 +42,8 @@ uint8_t allList2(List* listA, List* listB, uint8_t(*predicate)(void*, void*));
  */
 uint8_t allList(List* list, uint8_t(*predicate)(void*));
 
+List* mapList(List* list, void*(*func)(void*));
+
 /**
  * Frees the list. The 'func' argument is called for each element.
  */

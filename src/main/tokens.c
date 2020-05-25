@@ -235,6 +235,55 @@ TupleToken* createTupleToken(SrcLoc location, List* elements) {
     return tuple;
 }
 
+void destroyListToken(Token* self) {
+    ListToken* list = (ListToken*) self;
+    destroyList(list->elements, destroyTokenVoid);
+}
+
+void printListToken(Token* self, uint8_t indent) {
+    printf("list:\n");
+    List* elements = ((ListToken*) self)->elements;
+    uint8_t i = 0;
+
+    while(elements != NULL) {
+        //TODO remove this line to fix formating
+        printIndent(indent + 1);
+        printf("%i: ", i);
+        printTokenWithIndent(elements->head, indent + 1);
+        elements = elements->tail;
+        i++;
+    }
+}
+
+uint8_t equalsListToken(Token* self, Token* other) {
+    ListToken* list1 = (ListToken*) self;
+    ListToken* list2 = (ListToken*) other;
+    return allList2(list1->elements, list2->elements, tokensEqualVoid);
+}
+
+Token* copyListToken(Token* self) {
+    TupleToken* list = (TupleToken*) self;
+    List* copied = copyTokenList(list->elements);
+    return (Token*) createTupleToken(list->token.location, copied);
+}
+
+Token LIST_TYPE = {
+        TOKEN_LIST,
+        destroyListToken,
+        printListToken,
+        equalsListToken,
+        copyListToken,
+        tokenInstanceFields
+};
+
+ListToken* createListToken(SrcLoc location, List* elements) {
+    ListToken* list = (ListToken*) malloc(sizeof(ListToken));
+    list->token = LIST_TYPE;
+    list->token.location = location;
+    list->elements = elements;
+    return list;
+}
+
 void destroyCallToken(Token* self) {
     List* children = ((CallToken*) self)->children;
     while(children != NULL) {

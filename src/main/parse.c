@@ -303,10 +303,56 @@ Token* parseTuple(ParseState* state, SrcLoc location, Token* first) {
     return (Token*) createTupleToken(location, consList(first, elements));
 }
 
+List* parseListHelper(ParseState* state, uint8_t* error) {
+    skipWhitespace(state);
+    Token* head = parseExpression(state);
+    if(head == NULL) {
+        *error = 1;
+        return NULL;
+    }
+
+    skipWhitespace(state);
+    List* tail;
+    if(getChar(state) == ',') {
+        advance(state, 1);
+        tail = parseListHelper(state, error);
+        if(*error) {
+            return NULL;
+        }
+    } else if(getChar(state) == ']') {
+        advance(state, 1);
+        tail = NULL;
+    } else {
+        *error = 1;
+        state->error = "expected ',' or ']'";
+        return NULL;
+    }
+    return consList(head, tail);
+}
+
+Token* parseList(ParseState* state) {
+    SrcLoc location = state->location;
+    skipWhitespace(state);
+    if(getChar(state) != '[') {
+        state->error = "expected '['";
+        return NULL;
+    }
+
+    advance(state, 1); //skip the '[';
+
+    uint8_t error = 0;
+    List* elements = parseListHelper(state, &error);
+    if(error) {
+        return NULL;
+    }
+
+    return (Token*) createListToken(location, elements);
+}
+
 /**
  * Parses a factor.
  *
- * <factor> ::= <integer> | <literal> | <identifier> | ( <expression> ) | <tuple>
+ * <factor> ::= <integer> | <literal> | <identifier> | ( <expression> ) | <tuple> | <list>
  */
 Token* parseFactor(ParseState* state) {
     skipWhitespace(state);
@@ -318,7 +364,7 @@ Token* parseFactor(ParseState* state) {
         skipWhitespace(state);
 
         if(getChar(state) == ')') {
-            //it's just a parenthese grouping
+            //it's just a parentheses grouping
             advance(state, 1); //skip the )
             return token;
         } else if(getChar(state) == ',') {
@@ -336,6 +382,8 @@ Token* parseFactor(ParseState* state) {
         return (Token*) parseIdentifier(state);
     } else if(c == '\'') {
         return (Token*) parseLiteral(state);
+    } else if(c == '[') {
+        return parseList(state);
     } else {
         return NULL; //error on unknown
     }
