@@ -350,7 +350,7 @@ Token* listToConsListHelper(List* elements) {
         location.column = 0;
         return (Token*) createIdentifierToken(location, newStr("none"));
     } else {
-        const char* op = newStr(":");
+        const char* op = newStr("::");
         Token* left = transformListToCons(elements->head);
         Token* right = listToConsListHelper(elements->tail);
         return (Token*) createBinaryOpToken(left->location, op, left, right);

@@ -113,6 +113,7 @@ RetVal libTuple(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
     if(arity != 2) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }

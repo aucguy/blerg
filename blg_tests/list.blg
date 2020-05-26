@@ -1,6 +1,6 @@
 def main x do
 	#cons operations
-	list = 1 : 2 : none;
+	list = 1 :: 2 :: none;
 	assert ((head list) == 1);
 	assert ((head (tail list)) == 2);
 	

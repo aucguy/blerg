@@ -17,6 +17,7 @@ typedef enum {
     TOKEN_IDENTIFIER,
     TOKEN_TUPLE,
     TOKEN_LIST,
+    TOKEN_OBJECT,
     TOKEN_CALL,
     TOKEN_BINARY_OP,
     TOKEN_UNARY_OP,
@@ -79,6 +80,16 @@ typedef struct {
     Token token;
     List* elements;
 } ListToken;
+
+typedef struct {
+    Token* key;
+    Token* value;
+} ObjectPair;
+
+typedef struct {
+    Token token;
+    List* elements;
+} ObjectToken;
 
 typedef struct {
     Token token;
@@ -179,6 +190,8 @@ LiteralToken* createLiteralToken(SrcLoc, const char*);
 IdentifierToken* createIdentifierToken(SrcLoc, const char*);
 TupleToken* createTupleToken(SrcLoc, List*);
 ListToken* createListToken(SrcLoc, List*);
+ObjectPair* createObjectPair(Token*, Token*);
+ObjectToken* createObjectToken(SrcLoc, List*);
 CallToken* createCallToken(SrcLoc, List*);
 BinaryOpToken* createBinaryOpToken(SrcLoc, const char*, Token*, Token*);
 UnaryOpToken* createUnaryOpToken(SrcLoc, const char*, Token*);

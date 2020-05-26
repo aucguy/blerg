@@ -282,12 +282,42 @@ const char* parseTestTuple() {
 }
 
 const char* parseTestCons() {
-    ParseState* state = createParseState("1 : 2");
+    ParseState* state = createParseState("1 :: 2");
     Token* parsed = parseExpression(state);
 
-    Token* expected = (Token*) createBinaryOpToken(newStr(":"),
+    Token* expected = (Token*) createBinaryOpToken(newStr("::"),
             (Token*) createIntToken(1),
             (Token*) createIntToken(2));
+
+    assert(tokensEqual(parsed, expected), "incorrect parse");
+
+    destroyToken(parsed);
+    destroyToken(expected);
+    free(state);
+    return NULL;
+}
+
+const char* parseTestObject() {
+    //this code would fail in execution, but is syntactically valid
+    ParseState* state = createParseState("{ property: 'value', 1 + 2: 3 * 4 }");
+    Token* parsed = parseFactor(state);
+
+    Token* key = (Token*) createIdentifierToken(newStr("property"));
+    Token* value = (Token*) createLiteralToken(newStr("value"));
+    ObjectPair* pair1 = createObjectPair(key, value);
+
+    key = (Token*) createBinaryOpToken(newStr("+"),
+            (Token*) createIntToken(1),
+            (Token*) createIntToken(2));
+
+    value = (Token*) createBinaryOpToken(newStr("*"),
+            (Token*) createIntToken(3),
+            (Token*) createIntToken(4));
+
+    ObjectPair* pair2 = createObjectPair(key, value);
+
+    Token* expected = (Token*) createObjectToken(
+            consList(pair1, consList(pair2, NULL)));
 
     assert(tokensEqual(parsed, expected), "incorrect parse");
 

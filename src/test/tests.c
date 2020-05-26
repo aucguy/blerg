@@ -37,6 +37,7 @@ uint8_t runTests() {
     runTest("parseTestFloat", parseTestFloat(), &status);
     runTest("parseTestTuple", parseTestTuple(), &status);
     runTest("parseTestCons", parseTestCons(), &status);
+    runTest("parseTestObject", parseTestObject(), &status);
 
     runTest("validateTestOnlyFuncsToplevel", validateTestOnlyFuncsToplevel(), &status);
     runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);

@@ -349,6 +349,70 @@ Token* parseList(ParseState* state) {
     return (Token*) createListToken(location, elements);
 }
 
+List* parseObjectHelper(ParseState* state, uint8_t* error) {
+    skipWhitespace(state);
+    Token* key = parseExpression(state);
+    if(key == NULL) {
+        *error = 1;
+        return NULL;
+    }
+
+    skipWhitespace(state);
+    if(getChar(state) != ':') {
+        state->error = "expected ':'";
+        *error = 1;
+        free(key);
+        return NULL;
+    }
+    advance(state, 1); //skip the ':'
+
+    Token* value = parseExpression(state);
+
+    if(value == NULL) {
+        *error = 1;
+        free(key);
+        return NULL;
+    }
+
+    List* tail;
+    skipWhitespace(state);
+    if(getChar(state) == ',') {
+        advance(state, 1);
+        tail = parseObjectHelper(state, error);
+        if(*error) {
+            return NULL;
+        }
+    } else if(getChar(state) == '}') {
+        advance(state, 1);
+        tail = NULL;
+    } else {
+        state->error = "expected ',' or '}'";
+        *error = 1;
+        return NULL;
+    }
+    ObjectPair* head = createObjectPair(key, value);
+    return consList(head, tail);
+}
+
+Token* parseObject(ParseState* state) {
+    SrcLoc location = state->location;
+    skipWhitespace(state);
+    if(getChar(state) != '{') {
+        state->error = "expected '{'";
+        return NULL;
+    }
+
+    advance(state, 1); //skip the '{'
+
+    uint8_t error = 0;
+    List* elements = parseObjectHelper(state, &error);
+    if(error) {
+        return NULL;
+    }
+
+    return (Token*) createObjectToken(location, elements);
+}
+
 /**
  * Parses a factor.
  *
@@ -384,6 +448,8 @@ Token* parseFactor(ParseState* state) {
         return (Token*) parseLiteral(state);
     } else if(c == '[') {
         return parseList(state);
+    } else if(c == '{') {
+        return parseObject(state);
     } else {
         return NULL; //error on unknown
     }
@@ -400,7 +466,7 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
         //prefix unary operators.
         { "prefix", "not", "end" },
         { "and", "or", "end" },
-        { "right-to-left", ":", "end" }
+        { "right-to-left", "::", "end" }
 };
 
 uint8_t factorAhead(ParseState* state) {

@@ -18,5 +18,6 @@ const char* parseTestGreaterAndLessThan();
 const char* parseTestFloat();
 const char* parseTestTuple();
 const char* parseTestCons();
+const char* parseTestObject();
 
 #endif /* PARSETEST_H_ */

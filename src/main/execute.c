@@ -78,7 +78,7 @@ Runtime* createRuntime() {
     putMapStr(ops, "or", createSymbolThing(runtime, SYM_OR, 2));
     putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
     putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
-    putMapStr(ops, ":", createNativeFuncThing(runtime, libCons));
+    putMapStr(ops, "::", createNativeFuncThing(runtime, libCons));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
