@@ -18,11 +18,13 @@ void printIndent(uint8_t indent) {
     }
 }
 
-List* copyTokenList(List* old) {
+List* copyTokenList(List* old, CopyVisitor visitor, void* data) {
     if(old == NULL) {
         return NULL;
     } else {
-        return consList(copyToken(old->head), copyTokenList(old->tail));
+        Token* head = visitor(old->head, data);
+        List* tail = copyTokenList(old->tail, visitor, data);
+        return consList(head, tail);
     }
 }
 
@@ -40,7 +42,9 @@ uint8_t equalsIntToken(Token* self, Token* other) {
     return ((IntToken*) self)->value == ((IntToken*) other)->value;
 }
 
-Token* copyIntToken(Token* token) {
+Token* copyIntToken(Token* token, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
     IntToken* intToken = (IntToken*) token;
     return (Token*) createIntToken(intToken->token.location, intToken->value);
 }
@@ -77,7 +81,9 @@ uint8_t equalsFloatToken(Token* self, Token* other) {
     return ((FloatToken*) self)->value == ((FloatToken*) other)->value;
 }
 
-Token* copyFloatToken(Token* self) {
+Token* copyFloatToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
     FloatToken* num = (FloatToken*) self;
     return (Token*) createFloatToken(self->location, num->value);
 }
@@ -116,9 +122,12 @@ uint8_t equalsLiteralToken(Token* self, Token* other) {
     return strcmp(((LiteralToken*) self)->value, ((LiteralToken*) other)->value) == 0;
 }
 
-Token* copyLiteralToken(Token* token) {
+Token* copyLiteralToken(Token* token, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
     LiteralToken* literal = (LiteralToken*) token;
-    return (Token*) createLiteralToken(literal->token.location, newStr(literal->value));
+    const char* copied = newStr(literal->value);
+    return (Token*) createLiteralToken(literal->token.location, copied);
 }
 
 Token LITERAL_TYPE = {
@@ -158,7 +167,9 @@ uint8_t equalsIdentifierToken(Token* self, Token* other) {
             ((IdentifierToken*) other)->value) == 0;
 }
 
-Token* copyIdentifierToken(Token* token) {
+Token* copyIdentifierToken(Token* token, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
     IdentifierToken* identifier = (IdentifierToken*) token;
     SrcLoc loc = identifier->token.location;
     return (Token*) createIdentifierToken(loc, newStr(identifier->value));
@@ -212,9 +223,9 @@ uint8_t equalsTupleToken(Token* self, Token* other) {
     return allList2(tuple1->elements, tuple2->elements, tokensEqualVoid);
 }
 
-Token* copyTupleToken(Token* self) {
+Token* copyTupleToken(Token* self, CopyVisitor visitor, void* data) {
     TupleToken* tuple = (TupleToken*) self;
-    List* copied = copyTokenList(tuple->elements);
+    List* copied = copyTokenList(tuple->elements, visitor, data);
     return (Token*) createTupleToken(tuple->token.location, copied);
 }
 
@@ -261,9 +272,9 @@ uint8_t equalsListToken(Token* self, Token* other) {
     return allList2(list1->elements, list2->elements, tokensEqualVoid);
 }
 
-Token* copyListToken(Token* self) {
+Token* copyListToken(Token* self, CopyVisitor visitor, void* data) {
     TupleToken* list = (TupleToken*) self;
-    List* copied = copyTokenList(list->elements);
+    List* copied = copyTokenList(list->elements, visitor, data);
     return (Token*) createTupleToken(list->token.location, copied);
 }
 
@@ -351,22 +362,22 @@ uint8_t equalsObjectToken(Token* self, Token* other) {
     return elements1 == NULL && elements2 == NULL;
 }
 
-List* copyObjectPairs(List* list) {
+List* copyObjectPairs(List* list, CopyVisitor visitor, void* data) {
     if(list == NULL) {
         return NULL;
     } else {
         ObjectPair* pair = (ObjectPair*) list->head;
-        Token* key = copyToken(pair->key);
-        Token* value = copyToken(pair->value);
+        Token* key = visitor(pair->key, data);
+        Token* value = visitor(pair->value, data);
         ObjectPair* head = createObjectPair(key, value);
-        List* tail = copyObjectPairs(list->tail);
+        List* tail = copyObjectPairs(list->tail, visitor, data);
         return consList(head, tail);
     }
 }
 
-Token* copyObjectToken(Token* self) {
+Token* copyObjectToken(Token* self, CopyVisitor visitor, void* data) {
     ObjectToken* object = (ObjectToken*) self;
-    List* copied = copyObjectPairs(object->elements);
+    List* copied = copyObjectPairs(object->elements, visitor, data);
     return (Token*) createObjectToken(self->location, copied);
 }
 
@@ -419,9 +430,9 @@ uint8_t equalsCallToken(Token* self, Token* other) {
     return childrenA == NULL && childrenB == NULL;
 }
 
-Token* copyCallToken(Token* self) {
+Token* copyCallToken(Token* self, CopyVisitor visitor, void* data) {
     CallToken* call = (CallToken*) self;
-    List* children = copyTokenList(call->children);
+    List* children = copyTokenList(call->children, visitor, data);
     return (Token*) createCallToken(call->token.location, children);
 }
 
@@ -464,10 +475,12 @@ uint8_t equalsBinaryOpToken(Token* self, Token* other) {
             tokensEqual(selfBinOp->right, otherBinOp->right);
 }
 
-Token* copyBinaryOpToken(Token* self) {
+Token* copyBinaryOpToken(Token* self, CopyVisitor visitor, void* data) {
     BinaryOpToken* binOp = (BinaryOpToken*) self;
-    return (Token*) createBinaryOpToken(binOp->token.location, newStr(binOp->op),
-            copyToken(binOp->left), copyToken(binOp->right));
+    const char* op = newStr(binOp->op);
+    Token* left = visitor(binOp->left, data);
+    Token* right = visitor(binOp->right, data);
+    return (Token*) createBinaryOpToken(binOp->token.location, op, left, right);
 }
 
 Token BINARY_OP_TYPE = {
@@ -517,10 +530,10 @@ uint8_t equalsUnaryOpToken(Token* self, Token* other) {
             tokensEqual(selfUnOp->child, otherUnOp->child);
 }
 
-Token* copyUnaryOpToken(Token* self) {
+Token* copyUnaryOpToken(Token* self, CopyVisitor visitor, void* data) {
     UnaryOpToken* unOp = (UnaryOpToken*) self;
     return (Token*) createUnaryOpToken(self->location, newStr(unOp->op),
-            copyToken(unOp->child));
+            visitor(unOp->child, data));
 }
 
 Token UNARY_OP_TYPE = {
@@ -567,11 +580,12 @@ uint8_t equalsAssignmentToken(Token* self, Token* other) {
             tokensEqual(selfAssign->right, otherAssign->right);
 }
 
-Token* copyAssignmentToken(Token* self) {
+Token* copyAssignmentToken(Token* self, CopyVisitor visitor, void* data) {
     AssignmentToken* assign = (AssignmentToken*) self;
-    return (Token*) createAssignmentToken(self->location,
-            (IdentifierToken*) copyToken((Token*) assign->left),
-            copyToken(assign->right));
+    IdentifierToken* left = (IdentifierToken*)
+            visitor((Token*) assign->left, data);
+    Token* right = visitor(assign->right, data);
+    return (Token*) createAssignmentToken(self->location, left, right);
 }
 
 Token ASSIGNMENT_TYPE = {
@@ -616,12 +630,19 @@ uint8_t equalsBlockToken(Token* self, Token* other) {
             ((BlockToken*) other)->children, tokensEqualVoid);
 }
 
+Token* copyBlockToken(Token* self, CopyVisitor visitor, void* data) {
+    BlockToken* block = (BlockToken*) self;
+    List* copied = copyTokenList(block->children, visitor, data);
+    SrcLoc location = self->location;
+    return (Token*) createBlockToken(location, copied);
+}
+
 Token BLOCK_TYPE = {
         TOKEN_BLOCK,
         destroyBlockToken,
         printBlockToken,
         equalsBlockToken,
-        NULL,
+        copyBlockToken,
         tokenInstanceFields
 };
 
@@ -676,12 +697,33 @@ uint8_t equalsIfToken(Token* self, Token* other) {
     return tokensEqual((Token*) selfIf->elseBranch, (Token*) otherIf->elseBranch);
 }
 
+List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
+    if(branches == NULL) {
+        return NULL;
+    } else {
+        IfBranch* branch = branches->head;
+        Token* condition = visitor(branch->condition, data);
+        BlockToken* block = (BlockToken*) visitor((Token*) branch->block, data);
+        IfBranch* head = createIfBranch(condition, block);
+        List* tail = copyIfBranches(branches->tail, visitor, data);
+        return consList(head, tail);
+    }
+}
+
+Token* copyIfToken(Token* self, CopyVisitor visitor, void* data) {
+    IfToken* ifToken = (IfToken*) self;
+    List* branches = copyIfBranches(ifToken->branches, visitor, data);
+    Token* elseBranch = visitor((Token*) ifToken->elseBranch, data);
+    return (Token*) createIfToken(self->location, branches,
+            (BlockToken*) elseBranch);
+}
+
 Token IF_TYPE = {
         TOKEN_IF,
         destroyIfToken,
         printIfToken,
         equalsIfToken,
-        NULL,
+        copyIfToken,
         tokenInstanceFields
 };
 
@@ -720,13 +762,19 @@ uint8_t equalsWhileToken(Token* self, Token* other) {
             tokensEqual((Token*) selfWhile->body, (Token*) otherWhile->body);
 }
 
+Token* copyWhileToken(Token* self, CopyVisitor visitor, void* data) {
+    WhileToken* whileToken = (WhileToken*) self;
+    Token* condition = visitor(whileToken->condition, data);
+    BlockToken* body = (BlockToken*) visitor((Token*) whileToken->body, data);
+    return (Token*) createWhileToken(self->location, condition, body);
+}
 
 Token WHILE_TYPE = {
         TOKEN_WHILE,
         destroyWhileToken,
         printWhileToken,
         equalsWhileToken,
-        NULL,
+        copyWhileToken,
         tokenInstanceFields
 };
 
@@ -766,12 +814,21 @@ uint8_t equalsFuncToken(Token* self, Token* other) {
             tokensEqual((Token*) selfFunc->body, (Token*) otherFunc->body);
 }
 
+Token* copyFuncToken(Token* self, CopyVisitor visitor, void* data) {
+    FuncToken* func = (FuncToken*) self;
+    IdentifierToken* name = (IdentifierToken*) visitor((Token*) func->name, data);
+    List* args = copyTokenList(func->args, visitor, data);
+    BlockToken* body = (BlockToken*) visitor((Token*) func->body, data);
+
+    return (Token*) createFuncToken(self->location, name, args, body);
+}
+
 Token FUNC_TYPE = {
         TOKEN_FUNC,
         destroyFuncToken,
         printFuncToken,
         equalsFuncToken,
-        NULL,
+        copyFuncToken,
         tokenInstanceFields
 };
 
@@ -799,9 +856,10 @@ uint8_t equalsReturnToken(Token* self, Token* other) {
     return tokensEqual(((ReturnToken*) self)->body, ((ReturnToken*) other)->body);
 }
 
-Token* copyReturnToken(Token* self) {
+Token* copyReturnToken(Token* self, CopyVisitor visitor, void* data) {
     ReturnToken* token = (ReturnToken*) self;
-    return (Token*) createReturnToken(self->location, copyToken(token->body));
+    Token* copied = visitor(token->body, data);
+    return (Token*) createReturnToken(self->location, copied);
 }
 
 Token RETURN_TYPE = {
@@ -834,12 +892,20 @@ uint8_t equalsLabelToken(Token* self, Token* other) {
     return strcmp(((LabelToken*) self)->name, ((LabelToken*) other)->name) == 0;
 }
 
+Token* copyLabelToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    LabelToken* label = (LabelToken*) self;
+    const char* name = newStr(label->name);
+    return (Token*) createLabelToken(name);
+}
+
 Token LABEL_TYPE = {
         TOKEN_LABEL,
         destroyLabelToken,
         printLabelToken,
         equalsLabelToken,
-        NULL,
+        copyLabelToken,
         tokenInstanceFields
 };
 
@@ -865,12 +931,20 @@ uint8_t equalsAbsJumpToken(Token* self, Token* other) {
     return strcmp(((AbsJumpToken*) self)->label, ((AbsJumpToken*) other)->label) == 0;
 }
 
+Token* copyAbsJumpToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    AbsJumpToken* jump = (AbsJumpToken*) self;
+    const char* label = newStr(jump->label);
+    return (Token*) createAbsJumpToken(label);
+}
+
 Token ABS_JUMP_TYPE = {
         TOKEN_ABS_JUMP,
         destroyAbsJumpToken,
         printAbsJumpToken,
         equalsAbsJumpToken,
-        NULL,
+        copyAbsJumpToken,
         tokenInstanceFields
 };
 
@@ -902,12 +976,20 @@ uint8_t equalsCondJumpToken(Token* self, Token* other) {
             a->when == b->when;
 }
 
+Token* copyCondJumpToken(Token* self, CopyVisitor visitor, void* data) {
+    CondJumpToken* jump = (CondJumpToken*) self;
+    Token* condition = visitor(jump->condition, data);
+    const char* label = newStr(jump->label);
+    return (Token*) createCondJumpToken(self->location, condition, label,
+            jump->when);
+}
+
 Token COND_JUMP_TYPE = {
         TOKEN_COND_JUMP,
         destroyCondJumpToken,
         printCondJumpToken,
         equalsCondJumpToken,
-        NULL,
+        copyCondJumpToken,
         tokenInstanceFields
 };
 
@@ -943,7 +1025,6 @@ void destroyIfBranch(void* x) {
     destroyToken((Token*) branch->block);
     free(branch);
 }
-
 
 /**
  * Prints the given token. Subchildren are indented.
@@ -986,6 +1067,6 @@ uint8_t branchesEqual(void* a, void* b) {
             tokensEqual((Token*) branchA->block, (Token*) branchB->block);
 }
 
-Token* copyToken(Token* token) {
-    return token->copy(token);
+Token* copyToken(Token* token, CopyVisitor visitor, void* data) {
+    return token->copy(token, visitor, data);
 }

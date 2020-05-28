@@ -34,22 +34,26 @@ typedef enum {
     TOKEN_COND_JUMP
 } TokenType;
 
+typedef struct Token Token;
+
+typedef struct Token* (*CopyVisitor)(struct Token*, void*);
+
 /**
  * Supertype for all tokens. This should be the first field of all tokens,
  * so tokens can be casted to their subtype and this supertype. All fields of
  * the token must be unique references.
  */
-typedef struct Token_ {
+struct Token {
     //class fields
     TokenType type;
-    void (*destroy)(struct Token_*);
-    void (*print)(struct Token_*, uint8_t);
-    uint8_t (*equals)(struct Token_*, struct Token_*);
-    struct Token_* (*copy)(struct Token_*);
+    void (*destroy)(struct Token*);
+    void (*print)(struct Token*, uint8_t);
+    uint8_t (*equals)(struct Token*, struct Token*);
+    struct Token* (*copy)(struct Token*, CopyVisitor, void*);
 
     //instance fields
     SrcLoc location;
-} Token;
+};
 
 typedef struct {
     Token token;
@@ -181,7 +185,7 @@ void destroyIfBranch(void*);
 
 uint8_t tokensEqual(Token* a, Token* b);
 
-Token* copyToken(Token*);
+Token* copyToken(Token*, CopyVisitor, void*);
 
 #if INCLUDE_TESTS
 IntToken* createIntToken(SrcLoc, int32_t);

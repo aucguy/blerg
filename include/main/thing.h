@@ -121,6 +121,7 @@ typedef struct {
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
 
-RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity, uint8_t expectedArity, ...);
+RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
+        uint8_t expectedArity, ...);
 
 #endif /* THING_H_ */

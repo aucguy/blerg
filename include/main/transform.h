@@ -4,6 +4,7 @@
 #include "main/tokens.h"
 
 BlockToken* transformControlToJumps(BlockToken* module);
+BlockToken* transformFlattenBlocks(BlockToken* module);
 
 /**
  * Takes the AST from parseModule and turns it into a form suitable for

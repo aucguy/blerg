@@ -6,6 +6,8 @@
 #include "main/util.h"
 #include "main/transform.h"
 
+#define UNUSED(x) (void)(x)
+
 /**
  * Used to create a unique name. This function takes an integer, concatenates
  * it with '$' and increments uniqueId.
@@ -20,18 +22,14 @@ const char* uniqueName(uint8_t* uniqueId) {
 
 /**
  * Each of the following functions takes a token, and returns a list of tokens
- * that represent it using jumps. In this way, control structures are flattened.
+ * that represent it using jumps.
  *
  * Also, any generated name should be one more than the highest generated name
  * that appears previous to the generated name's first appearance. In other
  * words, the generated names increase by one each time a new one appears.
  */
 
-List* toJumpsList(List* list, uint8_t* uniqueId);
-
-List* toJumpsBlock(BlockToken* token, uint8_t* uniqueId) {
-    return toJumpsList(token->children, uniqueId);
-}
+Token* toJumpsVisitor(Token* token, uint8_t* uniqueId);
 
 /**
  * Converts an IfToken to a list of tokens using jump tokens.
@@ -62,8 +60,7 @@ List* toJumpsBlock(BlockToken* token, uint8_t* uniqueId) {
  * condition check (nextLabel) and the end of each block jumps to the label at
  * the end of the output (endLabel).
  */
-List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
-    List* output = NULL;
+Token* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     List* stmts = NULL;
     //computed lazily to preserve the names of label and conditions
     const char* endLabel = NULL;
@@ -75,14 +72,13 @@ List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
         const char* nextLabel = uniqueName(uniqueId);
         CondJumpToken* condJump = createCondJumpToken(
                 branch->condition->location,
-                copyToken(branch->condition),
+                toJumpsVisitor(branch->condition, uniqueId),
                 newStr(nextLabel), 0);
         stmts = consList(condJump, stmts);
 
         //if the condition is true, the block is executed
-        output = toJumpsList(branch->block->children, uniqueId);
-        stmts = prependReverseList(output, stmts);
-        destroyShallowList(output);
+        Token* stmt = toJumpsVisitor((Token*) branch->block, uniqueId);
+        stmts = consList(stmt, stmts);
 
         //jump to after the if statement
         if(endLabel == NULL) {
@@ -98,9 +94,8 @@ List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
 
     //output the else branch
     if(token->elseBranch != NULL) {
-        output = toJumpsBlock(token->elseBranch, uniqueId);
-        stmts = prependReverseList(output, stmts);
-        destroyShallowList(output);
+        Token* stmt = toJumpsVisitor((Token*) token->elseBranch, uniqueId);
+        stmts = consList(stmt, stmts);
     }
 
     if(endLabel == NULL) {
@@ -113,7 +108,7 @@ List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     free((void*) endLabel);
     List* ret = reverseList(stmts);
     destroyShallowList(stmts);
-    return ret;
+    return (Token*) createBlockToken(token->token.location, ret);
 }
 
 /**
@@ -132,8 +127,7 @@ List* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
  * $absJump $startLabel
  * label $endLabel
  */
-List* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
-    List* output = NULL;
+Token* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     List* stmts = NULL;
     const char* startLabel = uniqueName(uniqueId);
 
@@ -144,14 +138,12 @@ List* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     const char* endLabel = uniqueName(uniqueId);
     CondJumpToken* condJump = createCondJumpToken(
             token->condition->location,
-            copyToken(token->condition),
+            toJumpsVisitor(token->condition, uniqueId),
             newStr(endLabel), 0);
     stmts = consList(condJump, stmts);
 
     //output the body
-    output = toJumpsList(token->body->children, uniqueId);
-    stmts = prependReverseList(output, stmts);
-    destroyShallowList(output);
+    stmts = consList(toJumpsVisitor((Token*) token->body, uniqueId), stmts);
 
     //end of the loop
     stmts = consList(createAbsJumpToken(newStr(startLabel)), stmts);
@@ -162,33 +154,38 @@ List* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
 
     List* ret = reverseList(stmts);
     destroyShallowList(stmts);
-    return ret;
+    return (Token*) createBlockToken(token->token.location, ret);
 }
 
 /**
  * Converts a function token's contents from using control structures to using
  * jumps.
  */
-FuncToken* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
+Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     //copy the arguments since each token holds a unique reference
     List* newArgs = NULL;
     List* oldArgs = token->args;
     while(oldArgs != NULL) {
         IdentifierToken* oldId = (IdentifierToken*) oldArgs->head;
         SrcLoc location = oldId->token.location;
-        IdentifierToken* newId = createIdentifierToken(location, newStr(oldId->value));
+        const char* newName = newStr(oldId->value);
+        IdentifierToken* newId = createIdentifierToken(location, newName);
         newArgs = consList((void*) newId, newArgs);
         oldArgs = oldArgs->tail;
     }
 
-    FuncToken* ret = createFuncToken(token->token.location,
-            createIdentifierToken(token->token.location, newStr(token->name->value)),
-            reverseList(newArgs),
-            createBlockToken(token->body->token.location,
-                    toJumpsBlock(token->body, uniqueId)));
+    SrcLoc location = token->token.location;
+    IdentifierToken* name = (IdentifierToken*)
+            copyToken((Token*) token->name, (CopyVisitor) toJumpsVisitor, uniqueId);
+
+    List* args = reverseList(newArgs);
+    BlockToken* body = (BlockToken*)
+            toJumpsVisitor((Token*) token->body, uniqueId);
+
+    FuncToken* ret = createFuncToken(location, name, args, body);
 
     destroyShallowList(newArgs);
-    return ret;
+    return (Token*) ret;
 }
 
 /**
@@ -198,57 +195,38 @@ FuncToken* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
  * The uniqueId is used to create a unique name for each generated label and
  * variable. It is modified each time a new name is created.
  */
-List* toJumpsList(List* list, uint8_t* uniqueId) {
-    List* stmts = NULL;
-
-    for(; list != NULL; list = list->tail) {
-        Token* token = (Token*) list->head;
-
-        List* output;
-
-        switch(token->type) {
-        case TOKEN_INT:
-        case TOKEN_FLOAT:
-        case TOKEN_LITERAL:
-        case TOKEN_IDENTIFIER:
-        case TOKEN_TUPLE:
-        case TOKEN_LIST:
-            //this case shouldn't happen, but its here for future-proofing
-        case TOKEN_CALL:
-        case TOKEN_BINARY_OP:
-        case TOKEN_UNARY_OP:
-        case TOKEN_ASSIGNMENT:
-        case TOKEN_RETURN:
-            stmts = consList(copyToken(token), stmts);
-            break;
-        case TOKEN_BLOCK:
-            output = toJumpsList(((BlockToken*) token)->children, uniqueId);
-            stmts = prependReverseList(output, stmts);
-            destroyShallowList(output);
-            break;
-        case TOKEN_IF:
-            output = toJumpsIf((IfToken*) token, uniqueId);
-            stmts = prependReverseList(output, stmts);
-            destroyShallowList(output);
-            break;
-        case TOKEN_WHILE:
-            output = toJumpsWhile((WhileToken*) token, uniqueId);
-            stmts = prependReverseList(output, stmts);
-            destroyShallowList(output);
-            break;
-        case TOKEN_FUNC:
-            stmts = consList(toJumpsFunc((FuncToken*) token, uniqueId), stmts);
-            break;
-        case TOKEN_LABEL:
-        case TOKEN_ABS_JUMP:
-        case TOKEN_COND_JUMP:
-            break; //shouldn't happen anyway
-        }
+Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
+    switch(token->type) {
+    case TOKEN_INT:
+    case TOKEN_FLOAT:
+    case TOKEN_LITERAL:
+    case TOKEN_IDENTIFIER:
+    case TOKEN_TUPLE:
+    case TOKEN_LIST:
+        //this case shouldn't happen, but its here for future-proofing
+    case TOKEN_CALL:
+    case TOKEN_BINARY_OP:
+    case TOKEN_UNARY_OP:
+    case TOKEN_ASSIGNMENT:
+    case TOKEN_RETURN:
+    case TOKEN_BLOCK:
+        return copyToken(token, (CopyVisitor) toJumpsVisitor, uniqueId);
+    case TOKEN_IF:
+        return toJumpsIf((IfToken*) token, uniqueId);
+    case TOKEN_WHILE:
+        return toJumpsWhile((WhileToken*) token, uniqueId);
+    case TOKEN_FUNC:
+        return toJumpsFunc((FuncToken*) token, uniqueId);
+    case TOKEN_LABEL:
+    case TOKEN_ABS_JUMP:
+    case TOKEN_COND_JUMP:
+        //shouldn't happen anyway
+        return NULL;
+    case TOKEN_OBJECT:
+        //not handled yet
+        return NULL;
     }
-
-    List* ret = reverseList(stmts);
-    destroyShallowList(stmts);
-    return ret;
+    return NULL;
 }
 
 /**
@@ -256,94 +234,74 @@ List* toJumpsList(List* list, uint8_t* uniqueId) {
  */
 BlockToken* transformControlToJumps(BlockToken* module) {
     uint8_t uniqueId = 0;
-    SrcLoc location = module->token.location;
-    return createBlockToken(location, toJumpsBlock(module, &uniqueId));
+    return (BlockToken*) toJumpsVisitor((Token*) module, &uniqueId);
 }
 
-Token* transformListToCons(Token* token);
+Token* flattenBlocksVisitor(Token* token, void* data);
 
-void* transformListToConsVoid(void* token) {
-    return transformListToCons(token);
+List* flatList(BlockToken* token) {
+    List* list = token->children;
+    List* flattened = NULL;
+
+    while(list != NULL) {
+        Token* stmt = list->head;
+        if(stmt->type == TOKEN_BLOCK) {
+            List* output = flatList((BlockToken*) stmt);
+            flattened = prependReverseList(output, flattened);
+            destroyShallowList(output);
+        } else {
+            flattened = consList(flattenBlocksVisitor(stmt, NULL), flattened);
+        }
+        list = list->tail;
+    }
+
+    List* ret = reverseList(flattened);
+    destroyShallowList(flattened);
+    return ret;
 }
 
-Token* listToConsCall(Token* token) {
-    CallToken* call = (CallToken*) token;
-    List* transformed = mapList(call->children, transformListToConsVoid);
-    return (Token*) createCallToken(token->location, transformed);
+Token* flattenBlocksVisitor(Token* token, void* data) {
+    UNUSED(data);
+    switch(token->type) {
+     case TOKEN_INT:
+     case TOKEN_FLOAT:
+     case TOKEN_LITERAL:
+     case TOKEN_IDENTIFIER:
+     case TOKEN_TUPLE:
+     case TOKEN_LIST:
+         //this case shouldn't happen, but its here for future-proofing
+     case TOKEN_CALL:
+     case TOKEN_BINARY_OP:
+     case TOKEN_UNARY_OP:
+     case TOKEN_ASSIGNMENT:
+     case TOKEN_RETURN:
+     case TOKEN_IF:
+     case TOKEN_WHILE:
+     case TOKEN_FUNC:
+     case TOKEN_LABEL:
+     case TOKEN_ABS_JUMP:
+     case TOKEN_COND_JUMP:
+         //shouldn't happen anyway
+         return copyToken(token, (CopyVisitor) flattenBlocksVisitor, NULL);
+     case TOKEN_BLOCK:
+         return (Token*) createBlockToken(token->location,
+                 flatList((BlockToken*) token));
+     case TOKEN_OBJECT:
+         //not handled yet
+         return NULL;
+     }
+     return NULL;
 }
 
-Token* listToConsBinaryOp(Token* token) {
-    BinaryOpToken* binaryOp = (BinaryOpToken*) token;
-    const char* op = newStr(binaryOp->op);
-    Token* left = transformListToCons(binaryOp->left);
-    Token* right = transformListToCons(binaryOp->right);
-    return (Token*) createBinaryOpToken(token->location, op, left, right);
+BlockToken* transformFlattenBlocks(BlockToken* module) {
+    return (BlockToken*) flattenBlocksVisitor((Token*) module, NULL);
 }
 
-Token* listToConsUnaryOp(Token* token) {
-    UnaryOpToken* unaryOp = (UnaryOpToken*) token;
-    const char* op = newStr(unaryOp->op);
-    Token* child = transformListToCons(unaryOp->child);
-    return (Token*) createUnaryOpToken(token->location, op, child);
-}
-
-Token* listToConsAssignment(Token* token) {
-    AssignmentToken* assignment = (AssignmentToken*) token;
-    IdentifierToken* left = (IdentifierToken*)
-            transformListToCons((Token*) assignment->left);
-    Token* right = transformListToCons(assignment->right);
-    return (Token*) createAssignmentToken(token->location, left, right);
-}
-
-Token* listToConsBlock(Token* token) {
-    BlockToken* call = (BlockToken*) token;
-    List* transformed = mapList(call->children, transformListToConsVoid);
-    return (Token*) createBlockToken(token->location, transformed);
-}
-
-IfBranch* listToConsBranch(IfBranch* branch) {
-    Token* condition = transformListToCons(branch->condition);
-    BlockToken* block = (BlockToken*) listToConsBlock((Token*) branch->block);
-    return createIfBranch(condition, block);
-}
-
-void* listToConsBranchVoid(void* branch) {
-    return listToConsBranch(branch);
-}
-
-Token* listToConsIf(Token* token) {
-    IfToken* ifToken = (IfToken*) token;
-    List* branches = mapList(ifToken->branches, listToConsBranchVoid);
-    BlockToken* elseBranch = (BlockToken*)
-            listToConsBlock((Token*) ifToken->elseBranch);
-    return (Token*) createIfToken(token->location, branches, elseBranch);
-}
-
-Token* listToConsWhile(Token* token) {
-    WhileToken* whileToken = (WhileToken*) token;
-    Token* condition = transformListToCons(whileToken->condition);
-    BlockToken* body = (BlockToken*)
-            transformListToCons((Token*) whileToken->body);
-    return (Token*) createWhileToken(token->location, condition, body);
-}
-
-Token* listToConsFunc(Token* token) {
-    FuncToken* func = (FuncToken*) token;
-    IdentifierToken* name = (IdentifierToken*) copyToken((Token*) func->name);
-    List* args = mapList(func->args, transformListToConsVoid);
-    BlockToken* body = (BlockToken*) listToConsBlock((Token*) func->body);
-    return (Token*) createFuncToken(token->location, name, args, body);
-}
-
-Token* listToConsReturn(Token* token) {
-    ReturnToken* returnToken = (ReturnToken*) token;
-    Token* body = transformListToCons(returnToken->body);
-    return (Token*) createReturnToken(token->location, body);
-}
+Token* listToConsVisitor(Token* token, void* data);
 
 Token* listToConsListHelper(List* elements) {
     if(elements == NULL) {
-        //TODO create a token that always resolves to none, instead of refering
+        //TODO create a token that always resolves to none, instead of referring
         //to the global scope
         SrcLoc location;
         location.line = 0;
@@ -351,7 +309,7 @@ Token* listToConsListHelper(List* elements) {
         return (Token*) createIdentifierToken(location, newStr("none"));
     } else {
         const char* op = newStr("::");
-        Token* left = transformListToCons(elements->head);
+        Token* left = listToConsVisitor(elements->head, NULL);
         Token* right = listToConsListHelper(elements->tail);
         return (Token*) createBinaryOpToken(left->location, op, left, right);
     }
@@ -362,45 +320,43 @@ Token* listToConsList(Token* token) {
     return listToConsListHelper(list->elements);
 }
 
-Token* transformListToCons(Token* token) {
+Token* listToConsVisitor(Token* token, void* data) {
+    UNUSED(data);
     switch(token->type) {
     case TOKEN_INT:
     case TOKEN_FLOAT:
     case TOKEN_LITERAL:
     case TOKEN_IDENTIFIER:
     case TOKEN_TUPLE:
+    case TOKEN_OBJECT: //this case shouldn't happen
+    case TOKEN_CALL:
+    case TOKEN_BINARY_OP:
+    case TOKEN_UNARY_OP:
+    case TOKEN_ASSIGNMENT:
+    case TOKEN_BLOCK:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_FUNC:
+    case TOKEN_RETURN:
     case TOKEN_LABEL:
     case TOKEN_ABS_JUMP:
     case TOKEN_COND_JUMP:
-        return copyToken(token);
-        break;
-    case TOKEN_CALL:
-        return listToConsCall(token);
-    case TOKEN_BINARY_OP:
-        return listToConsBinaryOp(token);
-    case TOKEN_UNARY_OP:
-        return listToConsUnaryOp(token);
-    case TOKEN_ASSIGNMENT:
-        return listToConsAssignment(token);
-    case TOKEN_BLOCK:
-        return listToConsBlock(token);
-    case TOKEN_IF:
-        return listToConsIf(token);
-    case TOKEN_WHILE:
-        return listToConsWhile(token);
-    case TOKEN_FUNC:
-        return listToConsFunc(token);
-    case TOKEN_RETURN:
-        return listToConsReturn(token);
+        return copyToken(token, listToConsVisitor, NULL);
     case TOKEN_LIST:
         return listToConsList(token);
     }
     return NULL;
 }
 
+BlockToken* transformListToCons(BlockToken* token) {
+    return (BlockToken*) listToConsVisitor((Token*) token, NULL);
+}
+
 BlockToken* transformModule(BlockToken* module1) {
-    BlockToken* module2 = (BlockToken*) transformListToCons((Token*) module1);
+    BlockToken* module2 = (BlockToken*) transformListToCons(module1);
     BlockToken* module3 = transformControlToJumps(module2);
     destroyToken((Token*) module2);
-    return module3;
+    BlockToken* module4 = transformFlattenBlocks(module3);
+    destroyToken((Token*) module3);
+    return module4;
 }
