@@ -352,6 +352,61 @@ BlockToken* transformListToCons(BlockToken* token) {
     return (BlockToken*) listToConsVisitor((Token*) token, NULL);
 }
 
+Token* objectDesugarVisitor(Token* token, void* data);
+
+Token* objectDesugarObject(Token* token) {
+    ObjectToken* object = (ObjectToken*) token;
+    List* tuples = NULL;
+    List* elements = object->elements;
+    SrcLoc loc = token->location;
+
+    while(elements != NULL) {
+        ObjectPair* pair = elements->head;
+        Token* key = objectDesugarVisitor(pair->key, NULL);
+        Token* value = objectDesugarVisitor(pair->value, NULL);
+        List* tupleElems = consList(key, consList(value, NULL));
+        Token* tuple = (Token*) createTupleToken(loc, tupleElems);
+        tuples = consList(tuple, tuples);
+        elements = elements->tail;
+    }
+
+    ListToken* list = createListToken(loc, reverseList(tuples));
+    destroyShallowList(tuples);
+    return (Token*) createUnaryOpToken(loc, newStr("object"), (Token*) list);
+}
+
+Token* objectDesugarVisitor(Token* token, void* data) {
+    UNUSED(data);
+    switch(token->type) {
+    case TOKEN_INT:
+    case TOKEN_FLOAT:
+    case TOKEN_LITERAL:
+    case TOKEN_IDENTIFIER:
+    case TOKEN_TUPLE:
+    case TOKEN_LIST:
+    case TOKEN_CALL:
+    case TOKEN_BINARY_OP:
+    case TOKEN_UNARY_OP:
+    case TOKEN_ASSIGNMENT:
+    case TOKEN_BLOCK:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_FUNC:
+    case TOKEN_RETURN:
+    case TOKEN_LABEL:
+    case TOKEN_ABS_JUMP:
+    case TOKEN_COND_JUMP:
+        return copyToken(token, listToConsVisitor, NULL);
+    case TOKEN_OBJECT:
+        return objectDesugarObject(token);
+    }
+    return NULL; //shouldn't happen
+}
+
+Token* transformObjectDesugar(Token* module) {
+    return objectDesugarVisitor(module, NULL);
+}
+
 BlockToken* transformModule(BlockToken* module1) {
     BlockToken* module2 = (BlockToken*) transformListToCons(module1);
     BlockToken* module3 = transformControlToJumps(module2);

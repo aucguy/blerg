@@ -43,6 +43,7 @@ uint8_t runTests() {
     runTest("validateTestNoInnerFuncs", validateTestNoInnerFuncs(), &status);
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
+    runTest("transformationTestObjectDesugar", transformationTestObjectDesugar(), &status);
 
     runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);

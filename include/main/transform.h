@@ -5,6 +5,7 @@
 
 BlockToken* transformControlToJumps(BlockToken* module);
 BlockToken* transformFlattenBlocks(BlockToken* module);
+Token* transformObjectDesugar(Token* module);
 
 /**
  * Takes the AST from parseModule and turns it into a form suitable for

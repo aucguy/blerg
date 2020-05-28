@@ -3,6 +3,7 @@
 #define createLiteralToken(x) createLiteralToken(nowhere, x)
 #define createIdentifierToken(x) createIdentifierToken(nowhere, x)
 #define createTupleToken(x) createTupleToken(nowhere, x)
+#define createListToken(x) createListToken(nowhere, x)
 #define createObjectToken(x) createObjectToken(nowhere, x)
 #define createCallToken(x) createCallToken(nowhere, x)
 #define createBinaryOpToken(op, left, right) createBinaryOpToken(nowhere, op, left, right)

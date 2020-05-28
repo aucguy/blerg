@@ -53,3 +53,32 @@ const char* transformTestControlToJumps() {
 
     return NULL;
 }
+
+const char* transformationTestObjectDesugar() {
+    ParseState* state = createParseState("{a: b, c: d}");
+    Token* parsed = parseFactor(state);
+    Token* transformed = transformObjectDesugar(parsed);
+
+    Token* key = (Token*) createIdentifierToken(newStr("a"));
+    Token* value = (Token*) createIdentifierToken(newStr("b"));
+    List* elements = consList(key, consList(value, NULL));
+    Token* pair1 = (Token*) createTupleToken(elements);
+
+    key = (Token*) createIdentifierToken(newStr("c"));
+    value = (Token*) createIdentifierToken(newStr("d"));
+    elements = consList(key, consList(value, NULL));
+    Token* pair2 = (Token*) createTupleToken(elements);
+
+    elements = consList(pair1, consList(pair2, NULL));
+    Token* list = (Token*) createListToken(elements);
+
+    Token* expected = (Token*) createUnaryOpToken(newStr("object"), list);
+
+    assert(tokensEqual(expected, transformed), "transformation failed");
+
+    destroyToken(parsed);
+    destroyToken(transformed);
+    destroyToken(expected);
+    free(state);
+    return NULL;
+}

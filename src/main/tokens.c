@@ -210,8 +210,8 @@ void printTupleToken(Token* self, uint8_t indent) {
 
     while(elements != NULL) {
         printIndent(indent + 1);
-        printf("%i: ", i);
-        printTokenWithIndent(elements->head, indent + 1);
+        printf("%i:\n", i);
+        printTokenWithIndent(elements->head, indent + 2);
         elements = elements->tail;
         i++;
     }
@@ -259,8 +259,8 @@ void printListToken(Token* self, uint8_t indent) {
     while(elements != NULL) {
         //TODO remove this line to fix formating
         printIndent(indent + 1);
-        printf("%i: ", i);
-        printTokenWithIndent(elements->head, indent + 1);
+        printf("%i:\n", i);
+        printTokenWithIndent(elements->head, indent + 2);
         elements = elements->tail;
         i++;
     }
@@ -318,7 +318,7 @@ void destroyObjectToken(Token* self) {
 
 void printObjectToken(Token* self, uint8_t indent) {
     ObjectToken* object = (ObjectToken*) self;
-    printf("elements:\n");
+    printf("object:\n");
 
     List* elements = object->elements;
     uint8_t count = 0;
