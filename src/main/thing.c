@@ -52,10 +52,12 @@ uint32_t getSymbolId(Thing* self);
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 //RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyObjectThing(Thing* thing);
 void destroyErrorThing(Thing* thing);
 void destroyTupleThing(Thing* thing);
+void destroyObject2Thing(Thing* thing);
 
 static uint8_t initialized = 0;
 
@@ -121,6 +123,11 @@ void initThing() {
         setCallThingType(THING_TYPE_LIST, errorCall);
         setDispatchThingType(THING_TYPE_LIST, errorCall);
 
+        THING_TYPE_OBJECT = createThingType();
+        setDestroyThingType(THING_TYPE_OBJECT, destroyObject2Thing);
+        setCallThingType(THING_TYPE_OBJECT, errorCall);
+        setDispatchThingType(THING_TYPE_OBJECT, objectDispatch);
+
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -177,6 +184,9 @@ void deinitThing() {
 
         free(THING_TYPE_LIST);
         THING_TYPE_LIST = NULL;
+
+        free(THING_TYPE_OBJECT);
+        THING_TYPE_OBJECT = NULL;
 
         SYM_ADD = 0;
         SYM_SUB = 0;
@@ -704,6 +714,14 @@ Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
     return self;
 }
 
+uint8_t getTupleSize(Thing* tuple) {
+    return ((TupleThing*) tuple)->size;
+}
+
+Thing* getTupleElem(Thing* tuple, uint8_t index) {
+    return ((TupleThing*) tuple)->elements[index];
+}
+
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     //TODO check self is really a symbol first
     uint32_t id = getSymbolId(self);
@@ -786,6 +804,37 @@ Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
     list->head = head;
     list->tail = tail;
     return list;
+}
+
+typedef struct {
+    Map* map;
+} ObjectThing2;
+
+Thing* createObjectThing(Runtime* runtime, Map* map) {
+    ObjectThing2* object = createThing(runtime, THING_TYPE_OBJECT,
+            sizeof(ObjectThing2));
+    object->map = map;
+    return object;
+}
+
+RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
+        uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_OBJECT);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+    ObjectThing2* object = args[0];
+    Thing* value = getMapUint32(object->map, getSymbolId(self));
+    if(value == NULL) {
+        return throwMsg(runtime, newStr("object does not respond to that symbol"));
+    } else {
+        return createRetVal(value, 0);
+    }
+}
+
+void destroyObject2Thing(Thing* self) {
+    ObjectThing2* object = (ObjectThing2*) self;
+    destroyMap(object->map, free, nothing);
 }
 
 /*RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {

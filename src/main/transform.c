@@ -203,6 +203,7 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_IDENTIFIER:
     case TOKEN_TUPLE:
     case TOKEN_LIST:
+    case TOKEN_OBJECT:
         //this case shouldn't happen, but its here for future-proofing
     case TOKEN_CALL:
     case TOKEN_BINARY_OP:
@@ -210,6 +211,9 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_ASSIGNMENT:
     case TOKEN_RETURN:
     case TOKEN_BLOCK:
+    case TOKEN_LABEL:
+    case TOKEN_ABS_JUMP:
+    case TOKEN_COND_JUMP:
         return copyToken(token, (CopyVisitor) toJumpsVisitor, uniqueId);
     case TOKEN_IF:
         return toJumpsIf((IfToken*) token, uniqueId);
@@ -217,14 +221,6 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
         return toJumpsWhile((WhileToken*) token, uniqueId);
     case TOKEN_FUNC:
         return toJumpsFunc((FuncToken*) token, uniqueId);
-    case TOKEN_LABEL:
-    case TOKEN_ABS_JUMP:
-    case TOKEN_COND_JUMP:
-        //shouldn't happen anyway
-        return NULL;
-    case TOKEN_OBJECT:
-        //not handled yet
-        return NULL;
     }
     return NULL;
 }
@@ -269,6 +265,7 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_IDENTIFIER:
      case TOKEN_TUPLE:
      case TOKEN_LIST:
+     case TOKEN_OBJECT:
          //this case shouldn't happen, but its here for future-proofing
      case TOKEN_CALL:
      case TOKEN_BINARY_OP:
@@ -286,9 +283,6 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_BLOCK:
          return (Token*) createBlockToken(token->location,
                  flatList((BlockToken*) token));
-     case TOKEN_OBJECT:
-         //not handled yet
-         return NULL;
      }
      return NULL;
 }
@@ -396,7 +390,7 @@ Token* objectDesugarVisitor(Token* token, void* data) {
     case TOKEN_LABEL:
     case TOKEN_ABS_JUMP:
     case TOKEN_COND_JUMP:
-        return copyToken(token, listToConsVisitor, NULL);
+        return copyToken(token, objectDesugarVisitor, NULL);
     case TOKEN_OBJECT:
         return objectDesugarObject(token);
     }
@@ -408,10 +402,12 @@ Token* transformObjectDesugar(Token* module) {
 }
 
 BlockToken* transformModule(BlockToken* module1) {
-    BlockToken* module2 = (BlockToken*) transformListToCons(module1);
-    BlockToken* module3 = transformControlToJumps(module2);
+    Token* module2 = transformObjectDesugar((Token*) module1);
+    BlockToken* module3 = (BlockToken*) transformListToCons((BlockToken*) module2);
     destroyToken((Token*) module2);
-    BlockToken* module4 = transformFlattenBlocks(module3);
+    BlockToken* module4 = transformControlToJumps(module3);
     destroyToken((Token*) module3);
-    return module4;
+    BlockToken* module5 = transformFlattenBlocks(module4);
+    destroyToken((Token*) module4);
+    return module5;
 }

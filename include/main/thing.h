@@ -32,6 +32,7 @@ ThingType* THING_TYPE_NATIVE_FUNC;
 ThingType* THING_TYPE_ERROR;
 ThingType* THING_TYPE_TUPLE;
 ThingType* THING_TYPE_LIST;
+ThingType* THING_TYPE_OBJECT;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -101,6 +102,7 @@ uint32_t SYM_GET;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
+uint32_t getSymbolId(Thing* symbol);
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope);
@@ -113,6 +115,8 @@ Thing* createErrorThing(Runtime* runtime, const char* msg);
 const char* errorStackTrace(Runtime* runtime, Thing* self);
 
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements);
+uint8_t getTupleSize(Thing* tuple);
+Thing* getTupleElem(Thing* tuple, uint8_t index);
 
 typedef struct {
     Thing* head;
@@ -120,6 +124,8 @@ typedef struct {
 } ListThing;
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
+
+Thing* createObjectThing(Runtime* runtime, Map* map);
 
 RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         uint8_t expectedArity, ...);

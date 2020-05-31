@@ -26,5 +26,9 @@ RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
+RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
 
 #endif /* LIB_H_ */

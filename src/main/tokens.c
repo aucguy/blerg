@@ -275,7 +275,7 @@ uint8_t equalsListToken(Token* self, Token* other) {
 Token* copyListToken(Token* self, CopyVisitor visitor, void* data) {
     TupleToken* list = (TupleToken*) self;
     List* copied = copyTokenList(list->elements, visitor, data);
-    return (Token*) createTupleToken(list->token.location, copied);
+    return (Token*) createListToken(list->token.location, copied);
 }
 
 Token LIST_TYPE = {

@@ -1,0 +1,12 @@
+def main x do
+	width = createSymbol 1;
+	height = createSymbol 1;
+
+    rectangle = {
+    	width: 5,
+    	height: 10
+    };
+   	    
+    assert (width rectangle == 5);
+    assert (height rectangle == 10);
+end

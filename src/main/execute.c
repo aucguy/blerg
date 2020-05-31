@@ -79,6 +79,7 @@ Runtime* createRuntime() {
     putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
     putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
     putMapStr(ops, "::", createNativeFuncThing(runtime, libCons));
+    putMapStr(ops, "object", createNativeFuncThing(runtime, libObject));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -95,6 +96,8 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "head", createNativeFuncThing(runtime, libHead));
     setScopeLocal(builtins, "tail", createNativeFuncThing(runtime, libTail));
     setScopeLocal(builtins, "get", createSymbolThing(runtime, SYM_GET, 2));
+    setScopeLocal(builtins, "createSymbol",
+            createNativeFuncThing(runtime, libCreateSymbol));
 
     return runtime;
 }

@@ -145,3 +145,61 @@ RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     return createRetVal(((ListThing*) args[0])->tail, 0);
 }
+
+RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args,
+        uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_INT);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    uint8_t id = newSymbolId();
+    uint32_t argNo = thingAsInt(args[0]);
+
+    if(argNo == 0) {
+        return throwMsg(runtime, newStr("symbol arity cannot be 0"));
+    } else if(argNo > 255) {
+        const char* msg = "symbol arity cannot be more than 255";
+        return throwMsg(runtime, newStr(msg));
+    }
+
+    Thing* symbol = createSymbolThing(runtime, id, argNo);
+    return createRetVal(symbol, 0);
+}
+
+RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    //TODO allow empty objects
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    Map* map = createMap();
+
+    ListThing* elements = args[0];
+    while(typeOfThing(elements) == THING_TYPE_LIST) {
+        if(typeOfThing(elements->head) != THING_TYPE_TUPLE) {
+            const char* msg = "internal error: expected pair to be a tuple";
+            return throwMsg(runtime, newStr(msg));
+        }
+
+        Thing* pair = elements->head;
+        if(getTupleSize(pair) != 2) {
+            const char* msg = "internal error: expected pair to have two elements";
+            return throwMsg(runtime, newStr(msg));
+        }
+
+        Thing* key = getTupleElem(pair, 0);
+        if(typeOfThing(key) != THING_TYPE_SYMBOL) {
+            const char* msg = "key is not a symbol";
+            return throwMsg(runtime, newStr(msg));
+        }
+
+        Thing* value = getTupleElem(pair, 1);
+        putMapUint32(map, getSymbolId(key), value);
+
+        elements = elements->tail;
+    }
+
+    return createRetVal(createObjectThing(runtime, map), 0);
+}
