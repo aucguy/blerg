@@ -82,3 +82,34 @@ const char* transformationTestObjectDesugar() {
     free(state);
     return NULL;
 }
+
+const char* transformationTestDestructureTuple() {
+    ParseState* state = createParseState("(a, b) = (1, 2)");
+    Token* parsed = parseFactor(state);
+    Token* transformed = transformDestructure(parsed);
+
+    List* stmts = NULL;
+
+    stmts = consList(createPushBuiltinToken("get"), stmts);
+    stmts = consList(createPushBuiltinToken("get"), stmts);
+
+    stmts = consList(createTupleToken(
+            consList(createIntToken(1),
+                    consList(createIntToken(2), NULL))), stmts);
+
+    stmts = consList(createDupToken(), stmts);
+
+    stmts = consList(createPushIntToken(0), stmts);
+    stmts = consList(createCallToken(2), stmts);
+    stmts = consList(createStoreToken(newStr("a")), stmts);
+
+    stmts = consList(createPushIntToken(1), stmts);
+    stmts = consList(createCallToken(2), stmts);
+    stmts = consList(createStoreToken(newStr("b")), stmts);
+
+    Token* expected = createBlockToken(reverseList(stmts));
+
+    assert(tokensEqual(parsed, expected), "transformation failed");
+
+    return NULL;
+}

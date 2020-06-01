@@ -1004,6 +1004,181 @@ CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
     return token;
 }
 
+void destroyPushBuiltinToken(Token* self) {
+}
+
+void printPushBuiltinToken(Token* self, uint8_t indent) {
+    PushBuiltinToken* builtin = self;
+    printf("push_builtin: %s\n", builtin->name);
+}
+
+uint8_t equalsPushBuiltinToken(Token* self, Token* other) {
+    PushBuiltinToken* builtin1 = self;
+    PushBuiltinToken* builtin2 = other;
+    return strcmp(builtin1->name, builtin2->name) == 0;
+}
+
+Token* copyPushBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
+    PushBuiltinToken* builtin = self;
+    return createPushBuiltinToken(self->location, newStr(builtin->name));
+}
+
+Token PUSH_BUILTIN_TYPE = {
+        TOKEN_PUSH_BUILTIN,
+        destroyPushBuiltinToken,
+        printPushBuiltinToken,
+        equalsPushBuiltinToken,
+        copyPushBuiltinToken,
+        tokenInstanceFields
+};
+
+PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
+    PushBuiltinToken* builtin = malloc(sizeof(PushBuiltinToken));
+    builtin->token = PUSH_BUILTIN_TYPE;
+    builtin->token.location = loc;
+    builtin->name = name;
+    return builtin;
+}
+
+void destroyPushIntToken(Token* self) {
+}
+
+Token* printPushIntToken(Token* self, uint8_t indent) {
+    PushIntToken* push = self;
+    printf("push_int: %i", push->value);
+}
+
+uint8_t equalsPushIntToken(Token* self, Token* other) {
+    PushIntToken* push1 = self;
+    PushIntToken* push2 = other;
+    return push1->value == push2->value;
+}
+
+Token* copyPushIntToken(Token* self, CopyVisitor visitor, void* data) {
+    PushIntToken* push = self;
+    return createPushIntToken(self->location, push->value);
+}
+
+Token PUSH_INT_TYPE = {
+        TOKEN_PUSH_INT,
+        destroyPushIntToken,
+        printPushIntToken,
+        equalsPushIntToken,
+        copyPushIntToken,
+        tokenInstanceFields
+};
+
+PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
+    PushIntToken* push = malloc(sizeof(PushIntToken));
+    push->token = PUSH_INT_TYPE;
+    push->token.location = loc;
+    push->value = value;
+    return push;
+}
+
+void destroyCallOpToken() {
+}
+
+void printCallOpToken(Token* self, uint8_t indent) {
+    CallOpToken* call = self;
+    printf("op_call: %i\n", call->arity);
+}
+
+uint8_t equalsCallOpToken(Token* self, Token* other) {
+    CallOpToken* call1 = self;
+    CallOpToken* call2 = other;
+    return call1->arity == call2->arity;
+}
+
+Token* copyCallOpToken(Token* self, CopyVisitor visitor, void* data) {
+    CallOpToken* call = self;
+    return createCallOpToken(self->location, call->arity);
+}
+
+Token CALL_OP_TYPE = {
+        TOKEN_OP_CALL,
+        destroyCallOpToken,
+        printCallOpToken,
+        equalsCallOpToken,
+        copyCallOpToken,
+        tokenInstanceFields
+};
+
+CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
+    CallOpToken* call = malloc(sizeof(CallOpToken));
+    call->token = CALL_OP_TYPE;
+    call->token.location = loc;
+    call->arity = arity;
+    return call;
+}
+
+void destroyStoreToken(Token* self) {
+}
+
+void printStoreToken(Token* self, uint8_t indent) {
+    StoreToken* store = self;
+    printf("store: %s\n", store->name);
+}
+
+uint8_t equalsStoreToken(Token* self, Token* other) {
+    StoreToken* store1 = self;
+    StoreToken* store2 = other;
+    return strcmp(store1->name, store2->name) == 0;
+}
+
+Token* copyStoreToken(Token* self, CopyVisitor visitor, void* data) {
+    StoreToken* store = self;
+    return createStoreToken(self->location, newStr(store->name));
+}
+
+Token STORE_TYPE = {
+        TOKEN_STORE,
+        destroyStoreToken,
+        printStoreToken,
+        equalsStoreToken,
+        copyStoreToken,
+        tokenInstanceFields
+};
+
+StoreToken* createStoreToken(SrcLoc loc, const char* name) {
+    StoreToken* store = malloc(sizeof(StoreToken));
+    store->token = STORE_TYPE;
+    store->token.location = loc;
+    store->name = name;
+    return store;
+}
+
+void destroyDupToken(Token* self) {
+}
+
+void printDupToken(Token* self) {
+    printf("dup\n");
+}
+
+uint8_t equalsDupToken(Token* self, Token* other) {
+    return 1;
+}
+
+Token* copyDupToken(Token* self) {
+    return createDupToken(self->location);
+}
+
+Token DUP_TYPE = {
+        TOKEN_DUP,
+        destroyStoreToken,
+        printStoreToken,
+        equalsStoreToken,
+        copyStoreToken,
+        tokenInstanceFields
+};
+
+DupToken* createDupToken(SrcLoc loc) {
+    DupToken* dup = malloc(sizeof(DupToken));
+    dup->token = DUP_TYPE;
+    dup->token.location = loc;
+    return dup;
+}
+
 /**
  * Frees a token's memory, it's data's memory and subtokens recursively
  */

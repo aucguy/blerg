@@ -31,7 +31,12 @@ typedef enum {
     //passes
     TOKEN_LABEL,
     TOKEN_ABS_JUMP,
-    TOKEN_COND_JUMP
+    TOKEN_COND_JUMP,
+    TOKEN_PUSH_BUILTIN,
+    TOKEN_PUSH_INT,
+    TOKEN_OP_CALL,
+    TOKEN_STORE,
+    TOKEN_DUP,
 } TokenType;
 
 typedef struct Token Token;
@@ -172,6 +177,30 @@ typedef struct {
     uint8_t when;
 } CondJumpToken;
 
+typedef struct {
+    Token token;
+    const char* name;
+} PushBuiltinToken;
+
+typedef struct {
+    Token token;
+    int32_t value;
+} PushIntToken;
+
+typedef struct {
+    Token token;
+    uint8_t arity;
+} CallOpToken;
+
+typedef struct {
+    Token token;
+    const char* name;
+} StoreToken;
+
+typedef struct {
+  Token token;
+} DupToken;
+
 void printTokenWithIndent(Token* token, uint8_t indent);
 void printToken(Token* token);
 void printIndent(uint8_t indent);
@@ -211,5 +240,10 @@ ReturnToken* createReturnToken(SrcLoc, Token* body);
 LabelToken* createLabelToken(const char*);
 AbsJumpToken* createAbsJumpToken(const char*);
 CondJumpToken* createCondJumpToken(SrcLoc, Token*, const char*, uint8_t);
+PushBuiltinToken* createPushBuiltinToken(SrcLoc, const char* name);
+PushIntToken* createPushIntToken(SrcLoc, int32_t value);
+CallOpToken* createCallOpToken(SrcLoc, uint8_t arity);
+StoreToken* createStoreToken(SrcLoc, const char* name);
+DupToken* createDupToken(SrcLoc);
 
 #endif /* TOKENS_H_ */

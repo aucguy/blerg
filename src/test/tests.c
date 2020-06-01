@@ -44,6 +44,7 @@ uint8_t runTests() {
 
     runTest("transformTestControlToJumps", transformTestControlToJumps(), &status);
     runTest("transformationTestObjectDesugar", transformationTestObjectDesugar(), &status);
+    runTest("transformationTestDestructureTuple", transformationTestDestructureTuple(), &status);
 
     runTest("codegenTestSimple", codegenTestSimple(), &status);
     runTest("codegenTestJumps", codegenTestJumps(), &status);

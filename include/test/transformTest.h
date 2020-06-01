@@ -3,5 +3,6 @@
 
 const char* transformTestControlToJumps();
 const char* transformationTestObjectDesugar();
+const char* transformationTestDestructureTuple();
 
 #endif /* TRANSFORMTEST_H_ */
