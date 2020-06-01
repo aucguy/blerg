@@ -26,7 +26,7 @@ ThingType* THING_TYPE_FLOAT;
 ThingType* THING_TYPE_STR;
 ThingType* THING_TYPE_BOOL;
 ThingType* THING_TYPE_SYMBOL;
-ThingType* THING_TYPE_OBJ;
+ThingType* THING_TYPE_MODULE;
 ThingType* THING_TYPE_FUNC;
 ThingType* THING_TYPE_NATIVE_FUNC;
 ThingType* THING_TYPE_ERROR;
@@ -63,10 +63,10 @@ int32_t thingAsInt(Thing* thing);
 const char* thingAsStr(Thing* thing);
 
 /**
- * Gets the value associated with the given name in the given ObjectThing. If
- * the thing is not an ObjectThing, this results in undefined behavior.
+ * Gets the value associated with the given name in the given ModuleThing. If
+ * the thing is not an ModuleThing, this results in undefined behavior.
  */
-Thing* getObjectProperty(Thing* thing, const char* name);
+Thing* getModuleProperty(Thing* thing, const char* name);
 
 /**
  * Returns the type of the given thing. Use this to check its type before
@@ -107,7 +107,7 @@ uint32_t getSymbolId(Thing* symbol);
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope);
 
-Thing* createObjectThingFromMap(Runtime* runtime, Map* map);
+Thing* createModuleThing(Runtime* runtime, Map* map);
 
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func);
 

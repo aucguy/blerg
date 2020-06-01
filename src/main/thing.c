@@ -54,10 +54,10 @@ RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 //RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
-void destroyObjectThing(Thing* thing);
+void destroyModuleThing(Thing* thing);
 void destroyErrorThing(Thing* thing);
 void destroyTupleThing(Thing* thing);
-void destroyObject2Thing(Thing* thing);
+void destroyObjectThing(Thing* thing);
 
 static uint8_t initialized = 0;
 
@@ -93,10 +93,10 @@ void initThing() {
         setCallThingType(THING_TYPE_BOOL, errorCall);
         setDispatchThingType(THING_TYPE_BOOL, boolDispatch);
 
-        THING_TYPE_OBJ = createThingType();
-        setDestroyThingType(THING_TYPE_OBJ, destroyObjectThing);
-        setCallThingType(THING_TYPE_OBJ, errorCall);
-        setDispatchThingType(THING_TYPE_OBJ, errorCall);
+        THING_TYPE_MODULE = createThingType();
+        setDestroyThingType(THING_TYPE_MODULE, destroyModuleThing);
+        setCallThingType(THING_TYPE_MODULE, errorCall);
+        setDispatchThingType(THING_TYPE_MODULE, errorCall);
 
         THING_TYPE_FUNC = createThingType();
         setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
@@ -124,7 +124,7 @@ void initThing() {
         setDispatchThingType(THING_TYPE_LIST, errorCall);
 
         THING_TYPE_OBJECT = createThingType();
-        setDestroyThingType(THING_TYPE_OBJECT, destroyObject2Thing);
+        setDestroyThingType(THING_TYPE_OBJECT, destroyObjectThing);
         setCallThingType(THING_TYPE_OBJECT, errorCall);
         setDispatchThingType(THING_TYPE_OBJECT, objectDispatch);
 
@@ -167,8 +167,8 @@ void deinitThing() {
         free(THING_TYPE_SYMBOL);
         THING_TYPE_SYMBOL = NULL;
 
-        free(THING_TYPE_OBJ);
-        THING_TYPE_OBJ = NULL;
+        free(THING_TYPE_MODULE);
+        THING_TYPE_MODULE = NULL;
 
         free(THING_TYPE_FUNC);
         THING_TYPE_FUNC = NULL;
@@ -534,21 +534,21 @@ RetVal symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
  */
 typedef struct {
     Map* properties;
-} ObjectThing;
+} ModuleThing;
 
-Thing* createObjectThingFromMap(Runtime* runtime, Map* map) {
-    ObjectThing* thing = createThing(runtime, THING_TYPE_OBJ,
-            sizeof(ObjectThing));
+Thing* createModuleThing(Runtime* runtime, Map* map) {
+    ModuleThing* thing = createThing(runtime, THING_TYPE_MODULE,
+            sizeof(ModuleThing));
     thing->properties = copyMap(map);
     return thing;
 }
 
-void destroyObjectThing(Thing* thing) {
-    destroyMap(((ObjectThing*) thing)->properties, nothing, nothing);
+void destroyModuleThing(Thing* thing) {
+    destroyMap(((ModuleThing*) thing)->properties, nothing, nothing);
 }
 
-Thing* getObjectProperty(Thing* thing, const char* name) {
-    return getMapStr(((ObjectThing*) thing)->properties, name);
+Thing* getModuleProperty(Thing* thing, const char* name) {
+    return getMapStr(((ModuleThing*) thing)->properties, name);
 }
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
@@ -808,11 +808,11 @@ Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
 
 typedef struct {
     Map* map;
-} ObjectThing2;
+} ObjectThing;
 
 Thing* createObjectThing(Runtime* runtime, Map* map) {
-    ObjectThing2* object = createThing(runtime, THING_TYPE_OBJECT,
-            sizeof(ObjectThing2));
+    ObjectThing* object = createThing(runtime, THING_TYPE_OBJECT,
+            sizeof(ObjectThing));
     object->map = map;
     return object;
 }
@@ -823,7 +823,7 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
     if(isRetValError(ret)) {
         return ret;
     }
-    ObjectThing2* object = args[0];
+    ObjectThing* object = args[0];
     Thing* value = getMapUint32(object->map, getSymbolId(self));
     if(value == NULL) {
         return throwMsg(runtime, newStr("object does not respond to that symbol"));
@@ -832,8 +832,8 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
     }
 }
 
-void destroyObject2Thing(Thing* self) {
-    ObjectThing2* object = (ObjectThing2*) self;
+void destroyObjectThing(Thing* self) {
+    ObjectThing* object = (ObjectThing*) self;
     destroyMap(object->map, free, nothing);
 }
 

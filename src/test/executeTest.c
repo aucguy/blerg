@@ -53,9 +53,9 @@ const char* executeTestGlobalHasMainFunc() {
 
     RetVal global = executeModule(runtime, module);
     assert(!isRetValError(global), "error occurred while executing the module");
-    assert(typeOfThing(getRetVal(global)) == THING_TYPE_OBJ, "global is not an object");
+    assert(typeOfThing(getRetVal(global)) == THING_TYPE_MODULE, "global is not a module");
 
-    Thing* mainFunc = getObjectProperty(getRetVal(global), "main");
+    Thing* mainFunc = getModuleProperty(getRetVal(global), "main");
     assert(mainFunc != NULL, "main function not found");
     assert(typeOfThing(mainFunc) == THING_TYPE_FUNC, "main is not a function");
 

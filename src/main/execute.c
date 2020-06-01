@@ -385,7 +385,7 @@ RetVal executeModule(Runtime* runtime, Module* module) {
     Scope* scope = createScope(runtime, runtime->builtins);
     StackFrame* frame = createStackFrameDef(module, 0, scope);
     executeCode(runtime, frame);
-    return createRetVal(createObjectThingFromMap(runtime, scope->locals), 0);
+    return createRetVal(createModuleThing(runtime, scope->locals), 0);
 }
 
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {

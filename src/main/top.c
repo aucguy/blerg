@@ -55,12 +55,12 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     if(isRetValError(global)) {
         out.errorMsg = errorStackTrace(in.runtime, getRetVal(global));
         return out;
-    } else if(typeOfThing(getRetVal(global)) != THING_TYPE_OBJ) {
-        out.errorMsg = newStr("global scope is not an object");
+    } else if(typeOfThing(getRetVal(global)) != THING_TYPE_MODULE) {
+        out.errorMsg = newStr("global scope is not a module");
         return out;
     }
 
-    Thing* func = getObjectProperty(getRetVal(global), in.name);
+    Thing* func = getModuleProperty(getRetVal(global), in.name);
     if(func == NULL) {
         out.errorMsg = newStr("function not found");
         return out;
