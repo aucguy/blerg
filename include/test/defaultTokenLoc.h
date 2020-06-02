@@ -19,3 +19,6 @@
 #define createPushIntToken(x) createPushIntToken(nowhere, x)
 #define createStoreToken(x) createStoreToken(nowhere, x)
 #define createDupToken() createDupToken(nowhere)
+#define createCallOpToken(x) createCallOpToken(nowhere, x)
+#define createPushToken(x) createPushToken(nowhere, x)
+#define createRot3Token() createRot3Token(nowhere)

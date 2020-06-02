@@ -373,8 +373,9 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         compileToken(builder, labels, assign->right);
 
         //TODO point to the equal sign?
+        //TODO don't assume assignment lvalues are identifiers
         emitSrcLoc(builder, token->location);
-        emitStore(builder, assign->left->value);
+        emitStore(builder, ((IdentifierToken*) assign->left)->value);
     } else {
         printf("warning: unknown token type\n");
     }

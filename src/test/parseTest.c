@@ -97,13 +97,13 @@ const char* testParseAssignments() {
     BlockToken* parsed = parseModule("a = 1 + 2; b = 3; c;", &error);
 
     AssignmentToken* stmt1 = createAssignmentToken(
-            createIdentifierToken(newStr("a")),
+            (Token*) createIdentifierToken(newStr("a")),
             (Token*) createBinaryOpToken(newStr("+"),
                     (Token*) createIntToken(1),
                     (Token*) createIntToken(2)));
 
     AssignmentToken* stmt2 = createAssignmentToken(
-            createIdentifierToken(newStr("b")),
+            (Token*) createIdentifierToken(newStr("b")),
             (Token*) createIntToken(3));
 
     IdentifierToken* stmt3 = createIdentifierToken(newStr("c"));
@@ -138,7 +138,7 @@ const char* parseTestIfStmt() {
                     (Token*) createIdentifierToken(newStr("b"))),
             createBlockToken(consList(
                     createAssignmentToken(
-                            createIdentifierToken(newStr("c")),
+                            (Token*) createIdentifierToken(newStr("c")),
                             (Token*) createIntToken(1)), NULL)));
 
 
@@ -146,12 +146,12 @@ const char* parseTestIfStmt() {
             (Token*) createIdentifierToken(newStr("d")),
             createBlockToken(consList(
                 createAssignmentToken(
-                        createIdentifierToken(newStr("c")),
+                        (Token*) createIdentifierToken(newStr("c")),
                         (Token*) createIntToken(2)), NULL)));
 
     BlockToken* elseBranch = createBlockToken(consList(
             createAssignmentToken(
-                    createIdentifierToken(newStr("c")),
+                    (Token*) createIdentifierToken(newStr("c")),
                     (Token*) createIntToken(3)), NULL));
 
     IfToken* ifToken = createIfToken(consList(branch1, consList(branch2, NULL)), elseBranch);
@@ -169,7 +169,7 @@ const char* parseTestWhileStmt() {
     Token* parsed = (Token*) parseModule("x = 0; while x < 10 do x = x + 1; end", &error);
 
     Token* stmt1 = (Token*) createAssignmentToken(
-            createIdentifierToken(newStr("x")),
+            (Token*) createIdentifierToken(newStr("x")),
             (Token*) createIntToken(0));
 
     Token* stmt2 = (Token*) createWhileToken(
@@ -178,7 +178,7 @@ const char* parseTestWhileStmt() {
                     (Token*) createIntToken(10)),
             createBlockToken(consList(
                     createAssignmentToken(
-                            createIdentifierToken(newStr("x")),
+                            (Token*) createIdentifierToken(newStr("x")),
                             (Token*) createBinaryOpToken(newStr("+"),
                                     (Token*) createIdentifierToken(newStr("x")),
                                     (Token*) createIntToken(1))), NULL)));

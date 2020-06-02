@@ -21,20 +21,24 @@ const char* transformTestControlToJumps() {
     List* args = consList(createIdentifierToken(newStr("z")), NULL);
 
     Token* stmts[12] = {
-        (Token*) createAssignmentToken(createIdentifierToken(newStr("a")), (Token*) createIntToken(1)),
+        (Token*) createAssignmentToken((Token*) createIdentifierToken(newStr("a")),
+                (Token*) createIntToken(1)),
         (Token*) createLabelToken(newStr("$0")),
         (Token*) createCondJumpToken((Token*) createIntToken(0), newStr("$1"), 0),
         (Token*) createCondJumpToken((Token*) createIntToken(0), newStr("$2"), 0),
-        (Token*) createAssignmentToken(createIdentifierToken(newStr("b")), (Token*) createCallToken(
-                consList(createIdentifierToken(newStr("g")),
-                consList((Token*) createIntToken(2), NULL)))),
+        (Token*) createAssignmentToken((Token*)
+                createIdentifierToken(newStr("b")), (Token*) createCallToken(
+                        consList(createIdentifierToken(newStr("g")),
+                        consList((Token*) createIntToken(2), NULL)))),
         (Token*) createAbsJumpToken(newStr("$3")),
         (Token*) createLabelToken(newStr("$2")),
-        (Token*) createAssignmentToken(createIdentifierToken(newStr("c")), (Token*) createIntToken(3)),
+        (Token*) createAssignmentToken((Token*) createIdentifierToken(newStr("c")),
+                (Token*) createIntToken(3)),
         (Token*) createLabelToken(newStr("$3")),
         (Token*) createAbsJumpToken(newStr("$0")),
         (Token*) createLabelToken(newStr("$1")),
-        (Token*) createAssignmentToken(createIdentifierToken(newStr("d")), (Token*) createIntToken(4))
+        (Token*) createAssignmentToken((Token*) createIdentifierToken(newStr("d")),
+                (Token*) createIntToken(4))
     };
 
     List* body = NULL;
@@ -84,32 +88,42 @@ const char* transformationTestObjectDesugar() {
 }
 
 const char* transformationTestDestructureTuple() {
-    ParseState* state = createParseState("(a, b) = (1, 2)");
-    Token* parsed = parseFactor(state);
-    Token* transformed = transformDestructure(parsed);
+    ParseState* state = createParseState("(a, b) = (1, 2);");
+    Token* parsed = parseAssignment(state);
+    assert(parsed != NULL, "parse failed");
+    Token* transformed1 = transformDestructure(parsed);
+    Token* transformed2 = (Token*) transformFlattenBlocks((BlockToken*) transformed1);
 
     List* stmts = NULL;
 
-    stmts = consList(createPushBuiltinToken("get"), stmts);
-    stmts = consList(createPushBuiltinToken("get"), stmts);
-
-    stmts = consList(createTupleToken(
+    stmts = consList(createPushToken((Token*) createTupleToken(
             consList(createIntToken(1),
-                    consList(createIntToken(2), NULL))), stmts);
+                    consList(createIntToken(2), NULL)))), stmts);
 
     stmts = consList(createDupToken(), stmts);
 
+    stmts = consList(createPushBuiltinToken(newStr("get")), stmts);
     stmts = consList(createPushIntToken(0), stmts);
-    stmts = consList(createCallToken(2), stmts);
+    stmts = consList(createRot3Token(), stmts);
+    stmts = consList(createCallOpToken(2), stmts);
     stmts = consList(createStoreToken(newStr("a")), stmts);
 
+    stmts = consList(createPushBuiltinToken(newStr("get")), stmts);
     stmts = consList(createPushIntToken(1), stmts);
-    stmts = consList(createCallToken(2), stmts);
+    stmts = consList(createRot3Token(), stmts);
+    stmts = consList(createCallOpToken(2), stmts);
     stmts = consList(createStoreToken(newStr("b")), stmts);
 
-    Token* expected = createBlockToken(reverseList(stmts));
+    Token* expected = (Token*) createBlockToken(reverseList(stmts));
 
-    assert(tokensEqual(parsed, expected), "transformation failed");
+    assert(tokensEqual(transformed2, expected), "transformation failed");
+
+    destroyToken(parsed);
+    destroyToken(transformed1);
+    destroyToken(transformed2);
+    destroyToken(expected);
+    destroyShallowList(stmts);
+    free(state);
 
     return NULL;
 }

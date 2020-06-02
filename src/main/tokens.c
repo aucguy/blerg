@@ -569,8 +569,15 @@ void destroyAssignmentToken(Token* self) {
 
 void printAssignmentToken(Token* self, uint8_t indent) {
     AssignmentToken* assignment = (AssignmentToken*) self;
-    printf("assignment: %s\n", assignment->left->value);
-    printTokenWithIndent(assignment->right, indent + 1);
+    printf("assignment:\n");
+
+    printIndent(indent + 1);
+    printf("lvalue:\n");
+    printTokenWithIndent(assignment->left, indent + 2);
+
+    printIndent(indent + 1);
+    printf("rvalue:\n");
+    printTokenWithIndent(assignment->right, indent + 2);
 }
 
 uint8_t equalsAssignmentToken(Token* self, Token* other) {
@@ -582,8 +589,7 @@ uint8_t equalsAssignmentToken(Token* self, Token* other) {
 
 Token* copyAssignmentToken(Token* self, CopyVisitor visitor, void* data) {
     AssignmentToken* assign = (AssignmentToken*) self;
-    IdentifierToken* left = (IdentifierToken*)
-            visitor((Token*) assign->left, data);
+    Token* left = visitor((Token*) assign->left, data);
     Token* right = visitor(assign->right, data);
     return (Token*) createAssignmentToken(self->location, left, right);
 }
@@ -603,8 +609,7 @@ Token ASSIGNMENT_TYPE = {
  * @param left a unique reference to the token's lvalue.
  * @param right a unique reference to the token's rvalue.
  */
-AssignmentToken* createAssignmentToken(SrcLoc loc, IdentifierToken* left,
-        Token* right) {
+AssignmentToken* createAssignmentToken(SrcLoc loc, Token* left, Token* right) {
     AssignmentToken* token = (AssignmentToken*) malloc(sizeof(AssignmentToken));
     token->token = ASSIGNMENT_TYPE;
     token->token.location = loc;
@@ -1005,22 +1010,27 @@ CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
 }
 
 void destroyPushBuiltinToken(Token* self) {
+    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
+    free((char*) builtin->name);
 }
 
 void printPushBuiltinToken(Token* self, uint8_t indent) {
-    PushBuiltinToken* builtin = self;
+    UNUSED(indent);
+    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
     printf("push_builtin: %s\n", builtin->name);
 }
 
 uint8_t equalsPushBuiltinToken(Token* self, Token* other) {
-    PushBuiltinToken* builtin1 = self;
-    PushBuiltinToken* builtin2 = other;
+    PushBuiltinToken* builtin1 = (PushBuiltinToken*) self;
+    PushBuiltinToken* builtin2 = (PushBuiltinToken*) other;
     return strcmp(builtin1->name, builtin2->name) == 0;
 }
 
 Token* copyPushBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
-    PushBuiltinToken* builtin = self;
-    return createPushBuiltinToken(self->location, newStr(builtin->name));
+    UNUSED(visitor);
+    UNUSED(data);
+    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
+    return (Token*) createPushBuiltinToken(self->location, newStr(builtin->name));
 }
 
 Token PUSH_BUILTIN_TYPE = {
@@ -1041,22 +1051,26 @@ PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
 }
 
 void destroyPushIntToken(Token* self) {
+    UNUSED(self);
 }
 
-Token* printPushIntToken(Token* self, uint8_t indent) {
-    PushIntToken* push = self;
-    printf("push_int: %i", push->value);
+void printPushIntToken(Token* self, uint8_t indent) {
+    UNUSED(indent);
+    PushIntToken* push = (PushIntToken*) self;
+    printf("push_int: %i\n", push->value);
 }
 
 uint8_t equalsPushIntToken(Token* self, Token* other) {
-    PushIntToken* push1 = self;
-    PushIntToken* push2 = other;
+    PushIntToken* push1 = (PushIntToken*) self;
+    PushIntToken* push2 = (PushIntToken*) other;
     return push1->value == push2->value;
 }
 
 Token* copyPushIntToken(Token* self, CopyVisitor visitor, void* data) {
-    PushIntToken* push = self;
-    return createPushIntToken(self->location, push->value);
+    UNUSED(visitor);
+    UNUSED(data);
+    PushIntToken* push = (PushIntToken*) self;
+    return (Token*) createPushIntToken(self->location, push->value);
 }
 
 Token PUSH_INT_TYPE = {
@@ -1076,23 +1090,27 @@ PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
     return push;
 }
 
-void destroyCallOpToken() {
+void destroyCallOpToken(Token* self) {
+    UNUSED(self);
 }
 
 void printCallOpToken(Token* self, uint8_t indent) {
-    CallOpToken* call = self;
+    UNUSED(indent);
+    CallOpToken* call = (CallOpToken*) self;
     printf("op_call: %i\n", call->arity);
 }
 
 uint8_t equalsCallOpToken(Token* self, Token* other) {
-    CallOpToken* call1 = self;
-    CallOpToken* call2 = other;
+    CallOpToken* call1 = (CallOpToken*) self;
+    CallOpToken* call2 = (CallOpToken*) other;
     return call1->arity == call2->arity;
 }
 
 Token* copyCallOpToken(Token* self, CopyVisitor visitor, void* data) {
-    CallOpToken* call = self;
-    return createCallOpToken(self->location, call->arity);
+    UNUSED(visitor);
+    UNUSED(data);
+    CallOpToken* call = (CallOpToken*) self;
+    return (Token*) createCallOpToken(self->location, call->arity);
 }
 
 Token CALL_OP_TYPE = {
@@ -1113,22 +1131,27 @@ CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
 }
 
 void destroyStoreToken(Token* self) {
+    StoreToken* store = (StoreToken*) self;
+    free((char*) store->name);
 }
 
 void printStoreToken(Token* self, uint8_t indent) {
-    StoreToken* store = self;
+    UNUSED(indent);
+    StoreToken* store = (StoreToken*) self;
     printf("store: %s\n", store->name);
 }
 
 uint8_t equalsStoreToken(Token* self, Token* other) {
-    StoreToken* store1 = self;
-    StoreToken* store2 = other;
+    StoreToken* store1 = (StoreToken*) self;
+    StoreToken* store2 = (StoreToken*) other;
     return strcmp(store1->name, store2->name) == 0;
 }
 
 Token* copyStoreToken(Token* self, CopyVisitor visitor, void* data) {
-    StoreToken* store = self;
-    return createStoreToken(self->location, newStr(store->name));
+    UNUSED(visitor);
+    UNUSED(data);
+    StoreToken* store = (StoreToken*) self;
+    return (Token*) createStoreToken(self->location, newStr(store->name));
 }
 
 Token STORE_TYPE = {
@@ -1149,26 +1172,33 @@ StoreToken* createStoreToken(SrcLoc loc, const char* name) {
 }
 
 void destroyDupToken(Token* self) {
+    UNUSED(self);
 }
 
-void printDupToken(Token* self) {
+void printDupToken(Token* self, uint8_t indent) {
+    UNUSED(self);
+    UNUSED(indent);
     printf("dup\n");
 }
 
 uint8_t equalsDupToken(Token* self, Token* other) {
+    UNUSED(self);
+    UNUSED(other);
     return 1;
 }
 
-Token* copyDupToken(Token* self) {
-    return createDupToken(self->location);
+Token* copyDupToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    return (Token*) createDupToken(self->location);
 }
 
 Token DUP_TYPE = {
         TOKEN_DUP,
-        destroyStoreToken,
-        printStoreToken,
-        equalsStoreToken,
-        copyStoreToken,
+        destroyDupToken,
+        printDupToken,
+        equalsDupToken,
+        copyDupToken,
         tokenInstanceFields
 };
 
@@ -1177,6 +1207,83 @@ DupToken* createDupToken(SrcLoc loc) {
     dup->token = DUP_TYPE;
     dup->token.location = loc;
     return dup;
+}
+
+void destroyPushToken(Token* self) {
+    PushToken* push = (PushToken*) self;
+    destroyToken(push->value);
+}
+
+void printPushToken(Token* self, uint8_t ident) {
+    PushToken* push = (PushToken*) self;
+    printf("push:\n");
+    printTokenWithIndent(push->value, ident + 1);
+}
+
+uint8_t equalsPushToken(Token* self, Token* other) {
+    PushToken* push1 = (PushToken*) self;
+    PushToken* push2 = (PushToken*) other;
+    return tokensEqual(push1->value, push2->value);
+}
+
+Token* copyPushToken(Token* self, CopyVisitor visitor, void* data) {
+    PushToken* push = (PushToken*) self;
+    return (Token*) createPushToken(self->location, visitor(push->value, data));
+}
+
+Token PUSH_TYPE = {
+        TOKEN_PUSH,
+        destroyPushToken,
+        printPushToken,
+        equalsPushToken,
+        copyPushToken,
+        tokenInstanceFields
+};
+
+PushToken* createPushToken(SrcLoc loc, Token* value) {
+    PushToken* push = malloc(sizeof(PushToken));
+    push->token = PUSH_TYPE;
+    push->token.location = loc;
+    push->value = value;
+    return push;
+}
+
+void destroyRot3Token(Token* self) {
+    UNUSED(self);
+}
+
+void printRot3Token(Token* self, uint8_t indent) {
+    UNUSED(self);
+    UNUSED(indent);
+    printf("rot3\n");
+}
+
+uint8_t equalsRot3Token(Token* self, Token* other) {
+    UNUSED(self);
+    UNUSED(other);
+    return 1;
+}
+
+Token* copyRot3Token(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    return (Token*) createRot3Token(self->location);
+}
+
+Token ROT3_TYPE = {
+        TOKEN_ROT3,
+        destroyRot3Token,
+        printRot3Token,
+        equalsRot3Token,
+        copyRot3Token,
+        tokenInstanceFields
+};
+
+Rot3Token* createRot3Token(SrcLoc location) {
+    Rot3Token* rot = malloc(sizeof(Rot3Token));
+    rot->token = ROT3_TYPE;
+    rot->token.location = location;
+    return rot;
 }
 
 /**

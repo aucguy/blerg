@@ -676,11 +676,6 @@ Token* parseAssignment(ParseState* state) {
         Token* right = parseExpression(state);
         if(right == NULL) {
             return NULL;
-        } else if(left->type != TOKEN_IDENTIFIER) {
-            //TODO fix memleak
-            free(left);
-            state->error = "expected identifier";
-            return NULL;
         } else if(getChar(state) != ';') {
             //TODO fix memleak
             free(left);
@@ -688,8 +683,7 @@ Token* parseAssignment(ParseState* state) {
             return NULL;
         }
         advance(state, 1); //skip the ;
-        IdentifierToken* identifier = (IdentifierToken*) left;
-        return (Token*) createAssignmentToken(location, identifier, right);
+        return (Token*) createAssignmentToken(location, left, right);
     } else {
         state->error = "expected ';' or '='";
         destroyToken(left);

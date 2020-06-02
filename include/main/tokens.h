@@ -37,6 +37,8 @@ typedef enum {
     TOKEN_OP_CALL,
     TOKEN_STORE,
     TOKEN_DUP,
+    TOKEN_PUSH,
+    TOKEN_ROT3
 } TokenType;
 
 typedef struct Token Token;
@@ -120,7 +122,7 @@ typedef struct {
 
 typedef struct {
     Token token;
-    IdentifierToken* left;
+    Token* left;
     Token* right;
 } AssignmentToken;
 
@@ -201,6 +203,15 @@ typedef struct {
   Token token;
 } DupToken;
 
+typedef struct {
+    Token token;
+    Token* value;
+} PushToken;
+
+typedef struct {
+    Token token;
+} Rot3Token;
+
 void printTokenWithIndent(Token* token, uint8_t indent);
 void printToken(Token* token);
 void printIndent(uint8_t indent);
@@ -228,7 +239,7 @@ ObjectToken* createObjectToken(SrcLoc, List*);
 CallToken* createCallToken(SrcLoc, List*);
 BinaryOpToken* createBinaryOpToken(SrcLoc, const char*, Token*, Token*);
 UnaryOpToken* createUnaryOpToken(SrcLoc, const char*, Token*);
-AssignmentToken* createAssignmentToken(SrcLoc, IdentifierToken*, Token*);
+AssignmentToken* createAssignmentToken(SrcLoc, Token*, Token*);
 BlockToken* createBlockToken(SrcLoc, List*);
 IfBranch* createIfBranch(Token*, BlockToken*);
 IfToken* createIfToken(SrcLoc, List*, BlockToken*);
@@ -245,5 +256,7 @@ PushIntToken* createPushIntToken(SrcLoc, int32_t value);
 CallOpToken* createCallOpToken(SrcLoc, uint8_t arity);
 StoreToken* createStoreToken(SrcLoc, const char* name);
 DupToken* createDupToken(SrcLoc);
+PushToken* createPushToken(SrcLoc, Token*);
+Rot3Token* createRot3Token(SrcLoc);
 
 #endif /* TOKENS_H_ */

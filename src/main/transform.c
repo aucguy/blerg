@@ -214,6 +214,13 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_LABEL:
     case TOKEN_ABS_JUMP:
     case TOKEN_COND_JUMP:
+    case TOKEN_PUSH_BUILTIN:
+    case TOKEN_PUSH_INT:
+    case TOKEN_OP_CALL:
+    case TOKEN_STORE:
+    case TOKEN_DUP:
+    case TOKEN_PUSH:
+    case TOKEN_ROT3:
         return copyToken(token, (CopyVisitor) toJumpsVisitor, uniqueId);
     case TOKEN_IF:
         return toJumpsIf((IfToken*) token, uniqueId);
@@ -279,6 +286,13 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_ABS_JUMP:
      case TOKEN_COND_JUMP:
          //shouldn't happen anyway
+     case TOKEN_PUSH_BUILTIN:
+     case TOKEN_PUSH_INT:
+     case TOKEN_OP_CALL:
+     case TOKEN_STORE:
+     case TOKEN_DUP:
+     case TOKEN_PUSH:
+     case TOKEN_ROT3:
          return copyToken(token, (CopyVisitor) flattenBlocksVisitor, NULL);
      case TOKEN_BLOCK:
          return (Token*) createBlockToken(token->location,
@@ -335,6 +349,13 @@ Token* listToConsVisitor(Token* token, void* data) {
     case TOKEN_LABEL:
     case TOKEN_ABS_JUMP:
     case TOKEN_COND_JUMP:
+    case TOKEN_PUSH_BUILTIN:
+    case TOKEN_PUSH_INT:
+    case TOKEN_OP_CALL:
+    case TOKEN_STORE:
+    case TOKEN_DUP:
+    case TOKEN_PUSH:
+    case TOKEN_ROT3:
         return copyToken(token, listToConsVisitor, NULL);
     case TOKEN_LIST:
         return listToConsList(token);
@@ -390,6 +411,13 @@ Token* objectDesugarVisitor(Token* token, void* data) {
     case TOKEN_LABEL:
     case TOKEN_ABS_JUMP:
     case TOKEN_COND_JUMP:
+    case TOKEN_PUSH_BUILTIN:
+    case TOKEN_PUSH_INT:
+    case TOKEN_OP_CALL:
+    case TOKEN_STORE:
+    case TOKEN_DUP:
+    case TOKEN_PUSH:
+    case TOKEN_ROT3:
         return copyToken(token, objectDesugarVisitor, NULL);
     case TOKEN_OBJECT:
         return objectDesugarObject(token);
@@ -399,6 +427,90 @@ Token* objectDesugarVisitor(Token* token, void* data) {
 
 Token* transformObjectDesugar(Token* module) {
     return objectDesugarVisitor(module, NULL);
+}
+
+Token* destructureVisitor(Token* token, void* data);
+
+Token* destructureLValue(Token* lvalue) {
+    SrcLoc loc = lvalue->location;
+    if(lvalue->type == TOKEN_IDENTIFIER) {
+        IdentifierToken* identifier = (IdentifierToken*) lvalue;
+        StoreToken* ret = createStoreToken(loc, newStr(identifier->value));
+        return (Token*) ret;
+    } else if(lvalue->type == TOKEN_TUPLE) {
+        List* stmts = NULL;
+        TupleToken* tuple = (TupleToken*) lvalue;
+        List* elements = tuple->elements;
+        uint8_t i = 0;
+        while(elements != NULL) {
+            if(elements->tail != NULL) {
+                stmts = consList(createDupToken(loc), stmts);
+            }
+            stmts = consList(createPushBuiltinToken(loc, newStr("get")), stmts);
+            stmts = consList(createPushIntToken(loc, i), stmts);
+            stmts = consList(createRot3Token(loc), stmts);
+            stmts = consList(createCallOpToken(loc, 2), stmts);
+            stmts = consList(destructureLValue(elements->head), stmts);
+            i++;
+            elements = elements->tail;
+        }
+        Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
+        destroyShallowList(stmts);
+        return ret;
+    } else {
+        //not implemented yet
+        return NULL;
+    }
+}
+
+Token* destructureAssignment(Token* token) {
+    AssignmentToken* assignment = (AssignmentToken*) token;
+    List* stmts = NULL;
+    Token* right = copyToken(assignment->right, destructureVisitor, NULL);
+    stmts = consList(createPushToken(assignment->right->location, right), stmts);
+    stmts = consList(destructureLValue(assignment->left), stmts);
+    Token* ret = (Token*) createBlockToken(token->location, reverseList(stmts));
+    destroyShallowList(stmts);
+    return ret;
+}
+
+Token* destructureVisitor(Token* token, void* data) {
+    UNUSED(data);
+    switch(token->type) {
+    case TOKEN_INT:
+    case TOKEN_FLOAT:
+    case TOKEN_LITERAL:
+    case TOKEN_IDENTIFIER:
+    case TOKEN_TUPLE:
+    case TOKEN_LIST:
+    case TOKEN_OBJECT:
+    case TOKEN_CALL:
+    case TOKEN_BINARY_OP:
+    case TOKEN_UNARY_OP:
+    case TOKEN_BLOCK:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_FUNC:
+    case TOKEN_RETURN:
+    case TOKEN_LABEL:
+    case TOKEN_ABS_JUMP:
+    case TOKEN_COND_JUMP:
+    case TOKEN_PUSH_BUILTIN:
+    case TOKEN_PUSH_INT:
+    case TOKEN_OP_CALL:
+    case TOKEN_STORE:
+    case TOKEN_DUP:
+    case TOKEN_PUSH:
+    case TOKEN_ROT3:
+        return copyToken(token, destructureVisitor, NULL);
+    case TOKEN_ASSIGNMENT:
+        return destructureAssignment(token);
+    }
+    return NULL; //shouldn't happen
+}
+
+Token* transformDestructure(Token* module) {
+    return destructureVisitor(module, NULL);
 }
 
 BlockToken* transformModule(BlockToken* module1) {
