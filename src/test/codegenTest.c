@@ -29,6 +29,12 @@ uint32_t readUInt(Module* module, uint32_t* index) {
     return arg;
 }
 
+float readFloat(Module* module, uint32_t* index) {
+    //TODO don't assume float is not in the IEEE-754 format?
+    uint32_t arg = readUInt(module, index);
+    return *((float*) &arg);
+}
+
 const char* getConstant(Module* module, uint32_t arg) {
     if(arg < module->constantsLength) {
         return module->constants[arg];
@@ -68,6 +74,8 @@ void printModule(Module* module) {
         unsigned char opcode = module->bytecode[i++];
         if(opcode == OP_PUSH_INT) {
             printf("PUSH_INT %i", readInt(module, &i));
+        } else if(opcode == OP_PUSH_FLOAT) {
+            printf("PUSH_FLOAT %f", readFloat(module, &i));
         } else if(opcode == OP_PUSH_BUILTIN) {
             printIndexArgOp("PUSH_BUILTIN", module, &i);
         } else if(opcode == OP_PUSH_LITERAL) {
@@ -98,6 +106,10 @@ void printModule(Module* module) {
                 const char* str = getConstant(module, arg);
                 printf("%i (%s), ", arg, str);
             }
+        } else if(opcode == OP_DUP) {
+            printf("DUP");
+        } else if(opcode == OP_ROT3) {
+            printf("ROT3");
         } else {
             printf("!CORRUPT_BYTECODE!\n");
         }

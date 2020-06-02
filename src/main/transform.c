@@ -519,7 +519,9 @@ BlockToken* transformModule(BlockToken* module1) {
     destroyToken((Token*) module2);
     BlockToken* module4 = transformControlToJumps(module3);
     destroyToken((Token*) module3);
-    BlockToken* module5 = transformFlattenBlocks(module4);
+    Token* module5 = transformDestructure((Token*) module4);
     destroyToken((Token*) module4);
-    return module5;
+    BlockToken* module6 = transformFlattenBlocks((BlockToken*) module5);
+    destroyToken((Token*) module5);
+    return module6;
 }

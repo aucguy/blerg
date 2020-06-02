@@ -80,6 +80,7 @@ Runtime* createRuntime() {
     putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
     putMapStr(ops, "::", createNativeFuncThing(runtime, libCons));
     putMapStr(ops, "object", createNativeFuncThing(runtime, libObject));
+    putMapStr(ops, "get", createSymbolThing(runtime, SYM_GET, 2));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -95,7 +96,7 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "trycatch", createNativeFuncThing(runtime, libTryCatch));
     setScopeLocal(builtins, "head", createNativeFuncThing(runtime, libHead));
     setScopeLocal(builtins, "tail", createNativeFuncThing(runtime, libTail));
-    setScopeLocal(builtins, "get", createSymbolThing(runtime, SYM_GET, 2));
+    setScopeLocal(builtins, "get", getMapStr(ops, "get"));
     setScopeLocal(builtins, "createSymbol",
             createNativeFuncThing(runtime, libCreateSymbol));
 
@@ -234,6 +235,7 @@ StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
  */
 RetVal executeCode(Runtime* runtime, StackFrame* frame) {
     //TODO have index increments in the readXModule functions
+    //TODO check if stack is empty
     uint32_t initStackFrameSize = stackFrameSize(runtime);
 
     pushStackFrame(runtime, frame);
@@ -366,6 +368,15 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             }
         } else if(opcode == OP_ABS_JUMP) {
             index = readU32Module(module, index);
+        } else if(opcode == OP_DUP) {
+            pushStack(runtime, peekStackIndex(runtime, 0));
+        } else if(opcode == OP_ROT3) {
+            Thing* value1 = popStack(runtime);
+            Thing* value2 = popStack(runtime);
+            Thing* value3 = popStack(runtime);
+            pushStack(runtime, value2);
+            pushStack(runtime, value3);
+            pushStack(runtime, value1);
         } else {
             RetVal error = throwMsg(runtime, "internal error: unknown bytecode");
             unwindStackFrame(runtime, initStackFrameSize);

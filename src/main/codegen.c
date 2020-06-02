@@ -195,6 +195,14 @@ void emitAbsJump(ModuleBuilder* builder, uint32_t label) {
     emitLabelRef(builder, label);
 }
 
+void emitDup(ModuleBuilder* builder) {
+    emitByte(builder, OP_DUP);
+}
+
+void emitRot3(ModuleBuilder* builder) {
+    emitByte(builder, OP_ROT3);
+}
+
 void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args) {
     emitByte(builder, OP_DEF_FUNC);
     emitByte(builder, argNum);
@@ -368,14 +376,27 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
 
         emitSrcLoc(builder, token->location);
         emitReturn(builder);
-    } else if(token->type == TOKEN_ASSIGNMENT) {
-        AssignmentToken* assign = (AssignmentToken*) token;
-        compileToken(builder, labels, assign->right);
-
-        //TODO point to the equal sign?
-        //TODO don't assume assignment lvalues are identifiers
+    } else if(token->type == TOKEN_PUSH_BUILTIN) {
         emitSrcLoc(builder, token->location);
-        emitStore(builder, ((IdentifierToken*) assign->left)->value);
+        emitPushBuiltin(builder, ((PushBuiltinToken*) token)->name);
+    } else if(token->type == TOKEN_PUSH_INT) {
+        emitSrcLoc(builder, token->location);
+        emitPushInt(builder, ((IntToken*) token)->value);
+    } else if(token->type == TOKEN_OP_CALL) {
+        emitSrcLoc(builder, token->location);
+        emitCall(builder, ((CallOpToken*) token)->arity);
+    } else if(token->type == TOKEN_STORE) {
+        emitSrcLoc(builder, token->location);
+        emitStore(builder, ((StoreToken*) token)->name);
+    } else if(token->type == TOKEN_DUP) {
+        emitSrcLoc(builder, token->location);
+        emitDup(builder);
+    } else if(token->type == TOKEN_PUSH) {
+        emitSrcLoc(builder, token->location);
+        compileToken(builder, labels, ((PushToken*) token)->value);
+    } else if(token->type == TOKEN_ROT3) {
+        emitSrcLoc(builder, token->location);
+        emitRot3(builder);
     } else {
         printf("warning: unknown token type\n");
     }

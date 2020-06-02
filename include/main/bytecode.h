@@ -55,6 +55,8 @@ enum INSTRUCTIONS {
     //args: label (uint32)
     //The instruction jumps to the label unconditionally.
     OP_ABS_JUMP,
+    OP_DUP,
+    OP_ROT3,
     //This opcode performs no operations, but denotes the beginning of a
     //function. It is used to tell the runtime function object the function's
     //arity and the names to bind the arguments to. The format is

@@ -1,0 +1,10 @@
+def main x do
+    (a, b) = (1, 2);
+    assert (a == 1);
+    assert (b == 2);
+    
+    ((c, d), e) = ((3, 4), 5);
+    assert (c == 3);
+    assert (d == 4);
+    assert (e == 5);
+end
