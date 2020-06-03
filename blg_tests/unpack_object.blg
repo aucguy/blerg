@@ -1,0 +1,9 @@
+def main x do
+    width = createSymbol 1;
+    height = createSymbol 1;
+    
+    { width: x, height: y } = { width: 5, height: 4 };
+    
+    assert (x == 5);
+    assert (y == 4);
+end

@@ -506,6 +506,32 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
+    } else if(lvalue->type == TOKEN_OBJECT) {
+        ObjectToken* object = (ObjectToken*) lvalue;
+        List* stmts = NULL;
+
+        List* pairs = object->elements;
+
+        while(pairs != NULL) {
+            ObjectPair* pair = pairs->head;
+
+            if(pairs->tail != NULL) {
+                stmts = consList(createDupToken(loc), stmts);
+            }
+
+            Token* key = copyToken(pair->key, destructureVisitor, NULL);
+
+            stmts = consList(createPushToken(loc, key), stmts);
+            stmts = consList(createSwapToken(loc), stmts);
+            stmts = consList(createCallOpToken(loc, 1), stmts);
+            stmts = consList(destructureLValue(pair->value), stmts);
+
+            pairs = pairs->tail;
+        }
+
+        Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
+        destroyShallowList(stmts);
+        return ret;
     } else {
         //not implemented yet
         return NULL;
@@ -566,14 +592,22 @@ Token* transformDestructure(Token* module) {
 }
 
 BlockToken* transformModule(BlockToken* module1) {
-    Token* module2 = transformObjectDesugar((Token*) module1);
-    BlockToken* module3 = (BlockToken*) transformListToCons((BlockToken*) module2);
+    BlockToken* module2 = (BlockToken*) transformListToCons((BlockToken*) module1);
+
+    BlockToken* module3 = transformControlToJumps(module2);
     destroyToken((Token*) module2);
-    BlockToken* module4 = transformControlToJumps(module3);
+
+    Token* module4 = transformDestructure((Token*) module3);
     destroyToken((Token*) module3);
-    Token* module5 = transformDestructure((Token*) module4);
-    destroyToken((Token*) module4);
-    BlockToken* module6 = transformFlattenBlocks((BlockToken*) module5);
+
+    Token* module5 = transformObjectDesugar((Token*) module4);
+    destroyToken(module4);
+
+    BlockToken* module6 = (BlockToken*) transformListToCons((BlockToken*) module5);
     destroyToken((Token*) module5);
-    return module6;
+
+    BlockToken* module7 = transformFlattenBlocks((BlockToken*) module6);
+    destroyToken((Token*) module6);
+
+    return module7;
 }
