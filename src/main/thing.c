@@ -53,6 +53,8 @@ RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 //RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal consCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal consDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyModuleThing(Thing* thing);
 void destroyErrorThing(Thing* thing);

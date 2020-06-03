@@ -110,6 +110,10 @@ void printModule(Module* module) {
             printf("DUP");
         } else if(opcode == OP_ROT3) {
             printf("ROT3");
+        } else if(opcode == OP_SWAP) {
+            printf("SWAP");
+        } else if(opcode == OP_CHECK_NONE) {
+            printf("CHECK_NONE");
         } else {
             printf("!CORRUPT_BYTECODE!\n");
         }

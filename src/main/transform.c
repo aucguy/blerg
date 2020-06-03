@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "main/util.h"
 #include "main/transform.h"
@@ -221,6 +222,9 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_DUP:
     case TOKEN_PUSH:
     case TOKEN_ROT3:
+    case TOKEN_SWAP:
+    case TOKEN_BUILTIN:
+    case TOKEN_CHECK_NONE:
         return copyToken(token, (CopyVisitor) toJumpsVisitor, uniqueId);
     case TOKEN_IF:
         return toJumpsIf((IfToken*) token, uniqueId);
@@ -293,6 +297,9 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_DUP:
      case TOKEN_PUSH:
      case TOKEN_ROT3:
+     case TOKEN_SWAP:
+     case TOKEN_BUILTIN:
+     case TOKEN_CHECK_NONE:
          return copyToken(token, (CopyVisitor) flattenBlocksVisitor, NULL);
      case TOKEN_BLOCK:
          return (Token*) createBlockToken(token->location,
@@ -314,7 +321,7 @@ Token* listToConsListHelper(List* elements) {
         SrcLoc location;
         location.line = 0;
         location.column = 0;
-        return (Token*) createIdentifierToken(location, newStr("none"));
+        return (Token*) createBuiltinToken(location, newStr("none"));
     } else {
         const char* op = newStr("::");
         Token* left = listToConsVisitor(elements->head, NULL);
@@ -356,6 +363,9 @@ Token* listToConsVisitor(Token* token, void* data) {
     case TOKEN_DUP:
     case TOKEN_PUSH:
     case TOKEN_ROT3:
+    case TOKEN_SWAP:
+    case TOKEN_BUILTIN:
+    case TOKEN_CHECK_NONE:
         return copyToken(token, listToConsVisitor, NULL);
     case TOKEN_LIST:
         return listToConsList(token);
@@ -418,6 +428,9 @@ Token* objectDesugarVisitor(Token* token, void* data) {
     case TOKEN_DUP:
     case TOKEN_PUSH:
     case TOKEN_ROT3:
+    case TOKEN_SWAP:
+    case TOKEN_BUILTIN:
+    case TOKEN_CHECK_NONE:
         return copyToken(token, objectDesugarVisitor, NULL);
     case TOKEN_OBJECT:
         return objectDesugarObject(token);
@@ -437,6 +450,13 @@ Token* destructureLValue(Token* lvalue) {
         IdentifierToken* identifier = (IdentifierToken*) lvalue;
         StoreToken* ret = createStoreToken(loc, newStr(identifier->value));
         return (Token*) ret;
+    } else if(lvalue->type == TOKEN_BUILTIN) {
+        BuiltinToken* builtin = (BuiltinToken*) lvalue;
+        if(strcmp(builtin->name, "none") != 0) {
+            //TODO handle error condition
+            return NULL;
+        }
+        return (Token*) createCheckNoneToken(loc);
     } else if(lvalue->type == TOKEN_TUPLE) {
         List* stmts = NULL;
         TupleToken* tuple = (TupleToken*) lvalue;
@@ -454,6 +474,35 @@ Token* destructureLValue(Token* lvalue) {
             i++;
             elements = elements->tail;
         }
+        Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
+        destroyShallowList(stmts);
+        return ret;
+    } else if(lvalue->type == TOKEN_BINARY_OP) {
+        BinaryOpToken* binOp = (BinaryOpToken*) lvalue;
+        if(strcmp(binOp->op, "::") != 0) {
+            //TODO handle error condition
+            return NULL;
+        }
+
+        List* stmts = NULL;
+        //the bytecode assumes that unpack_cons returns a tuple of size 2
+        stmts = consList(createPushBuiltinToken(loc, newStr("unpack_cons")), stmts);
+        stmts = consList(createSwapToken(loc), stmts);
+        stmts = consList(createCallOpToken(loc, 1), stmts);
+
+        stmts = consList(createDupToken(loc), stmts);
+        stmts = consList(createPushBuiltinToken(loc, newStr("get")), stmts);
+        stmts = consList(createPushIntToken(loc, 0), stmts);
+        stmts = consList(createRot3Token(loc), stmts);
+        stmts = consList(createCallOpToken(loc, 2), stmts);
+        stmts = consList(destructureLValue(binOp->left), stmts);
+
+        stmts = consList(createPushBuiltinToken(loc, newStr("get")), stmts);
+        stmts = consList(createPushIntToken(loc, 1), stmts);
+        stmts = consList(createRot3Token(loc), stmts);
+        stmts = consList(createCallOpToken(loc, 2), stmts);
+        stmts = consList(destructureLValue(binOp->right), stmts);
+
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
@@ -502,6 +551,9 @@ Token* destructureVisitor(Token* token, void* data) {
     case TOKEN_DUP:
     case TOKEN_PUSH:
     case TOKEN_ROT3:
+    case TOKEN_SWAP:
+    case TOKEN_BUILTIN:
+    case TOKEN_CHECK_NONE:
         return copyToken(token, destructureVisitor, NULL);
     case TOKEN_ASSIGNMENT:
         return destructureAssignment(token);

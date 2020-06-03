@@ -203,3 +203,18 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     return createRetVal(createObjectThing(runtime, map), 0);
 }
+
+RetVal libUnpackCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    //even though none is a list, it can't be unpacked, so we only check for lists
+    //TODO give a better error message when one attempts to unpack a none
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    ListThing* list = (ListThing*) args[0];
+    Thing** elements = malloc(2 * sizeof(Thing*));
+    elements[0] = list->head;
+    elements[1] = list->tail;
+    return createRetVal(createTupleThing(runtime, 2, elements), 0);
+}

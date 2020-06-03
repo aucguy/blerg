@@ -33,6 +33,7 @@ ThingType* THING_TYPE_ERROR;
 ThingType* THING_TYPE_TUPLE;
 ThingType* THING_TYPE_LIST;
 ThingType* THING_TYPE_OBJECT;
+//ThingType* THING_TYPE_CONS;
 
 /**
  * Describes an 'object' within the blerg program.

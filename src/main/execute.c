@@ -81,6 +81,8 @@ Runtime* createRuntime() {
     putMapStr(ops, "::", createNativeFuncThing(runtime, libCons));
     putMapStr(ops, "object", createNativeFuncThing(runtime, libObject));
     putMapStr(ops, "get", createSymbolThing(runtime, SYM_GET, 2));
+    putMapStr(ops, "unpack_cons", createNativeFuncThing(runtime, libUnpackCons));
+    putMapStr(ops, "none", runtime->noneThing);
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -377,8 +379,21 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             pushStack(runtime, value2);
             pushStack(runtime, value3);
             pushStack(runtime, value1);
+        } else if(opcode == OP_SWAP) {
+            Thing* value1 = popStack(runtime);
+            Thing* value2 = popStack(runtime);
+            pushStack(runtime, value1);
+            pushStack(runtime, value2);
+        } else if(opcode == OP_CHECK_NONE) {
+            Thing* value = popStack(runtime);
+            if(value != runtime->noneThing) {
+                RetVal error = throwMsg(runtime, newStr("value is not none"));
+                unwindStackFrame(runtime, initStackFrameSize);
+                return error;
+            }
         } else {
-            RetVal error = throwMsg(runtime, "internal error: unknown bytecode");
+            const char* msg = "internal error: unknown bytecode";
+            RetVal error = throwMsg(runtime, newStr(msg));
             unwindStackFrame(runtime, initStackFrameSize);
             return error;
         }

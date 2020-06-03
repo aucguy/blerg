@@ -203,6 +203,14 @@ void emitRot3(ModuleBuilder* builder) {
     emitByte(builder, OP_ROT3);
 }
 
+void emitSwap(ModuleBuilder* builder) {
+    emitByte(builder, OP_SWAP);
+}
+
+void emitCheckNone(ModuleBuilder* builder) {
+    emitByte(builder, OP_CHECK_NONE);
+}
+
 void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args) {
     emitByte(builder, OP_DEF_FUNC);
     emitByte(builder, argNum);
@@ -397,6 +405,15 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     } else if(token->type == TOKEN_ROT3) {
         emitSrcLoc(builder, token->location);
         emitRot3(builder);
+    } else if(token->type == TOKEN_SWAP) {
+        emitSrcLoc(builder, token->location);
+        emitSwap(builder);
+    } else if(token->type == TOKEN_BUILTIN) {
+        emitSrcLoc(builder, token->location);
+        emitPushBuiltin(builder, ((BuiltinToken*) token)->name);
+    } else if(token->type == TOKEN_CHECK_NONE) {
+        emitSrcLoc(builder, token->location);
+        emitCheckNone(builder);
     } else {
         printf("warning: unknown token type\n");
     }

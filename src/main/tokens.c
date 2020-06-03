@@ -1286,6 +1286,123 @@ Rot3Token* createRot3Token(SrcLoc location) {
     return rot;
 }
 
+void destroyBuiltinToken(Token* self) {
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    free((char*) builtin->name);
+}
+
+void printBuiltinToken(Token* self, uint8_t indent) {
+    UNUSED(indent);
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    printf("builtin: %s\n", builtin->name);
+}
+
+uint8_t equalsBuiltinToken(Token* self, Token* other) {
+    BuiltinToken* builtin1 = (BuiltinToken*) self;
+    BuiltinToken* builtin2 = (BuiltinToken*) other;
+    return strcmp(builtin1->name, builtin2->name) == 0;
+}
+
+Token* copyBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    return (Token*) createBuiltinToken(self->location, newStr(builtin->name));
+}
+
+Token BUILTIN_TYPE = {
+        TOKEN_BUILTIN,
+        destroyBuiltinToken,
+        printBuiltinToken,
+        equalsBuiltinToken,
+        copyBuiltinToken,
+        tokenInstanceFields
+};
+
+BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
+    BuiltinToken* builtin = malloc(sizeof(BuiltinToken));
+    builtin->token = BUILTIN_TYPE;
+    builtin->token.location = loc;
+    builtin->name = name;
+    return builtin;
+}
+
+void destroySwapToken(Token* self) {
+    UNUSED(self);
+}
+
+void printSwapToken(Token* self, uint8_t indent) {
+    UNUSED(self);
+    UNUSED(indent);
+    printf("swap\n");
+}
+
+uint8_t equalsSwapToken(Token* self, Token* other) {
+    UNUSED(self);
+    UNUSED(other);
+    return 1;
+}
+
+Token* copySwapToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    return (Token*) createSwapToken(self->location);
+}
+
+Token SWAP_TYPE = {
+        TOKEN_SWAP,
+        destroySwapToken,
+        printSwapToken,
+        equalsSwapToken,
+        copySwapToken,
+        tokenInstanceFields
+};
+
+SwapToken* createSwapToken(SrcLoc loc) {
+    SwapToken* swap = malloc(sizeof(SwapToken));
+    swap->token = SWAP_TYPE;
+    swap->token.location = loc;
+    return swap;
+}
+
+void destroyCheckNoneToken(Token* self) {
+    UNUSED(self);
+}
+
+void printCheckNoneToken(Token* self, uint8_t indent) {
+    UNUSED(self);
+    UNUSED(indent);
+    printf("check_none\n");
+}
+
+uint8_t equalsCheckNoneToken(Token* self, Token* other) {
+    UNUSED(self);
+    UNUSED(other);
+    return 1;
+}
+
+Token* copyCheckNoneToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    return (Token*) createCheckNoneToken(self->location);
+}
+
+Token CHECK_NONE_TYPE = {
+        TOKEN_CHECK_NONE,
+        destroyCheckNoneToken,
+        printCheckNoneToken,
+        equalsCheckNoneToken,
+        copyCheckNoneToken,
+        tokenInstanceFields
+};
+
+CheckNoneToken* createCheckNoneToken(SrcLoc location) {
+    CheckNoneToken* check = malloc(sizeof(CheckNoneToken));
+    check->token = CHECK_NONE_TYPE;
+    check->token.location = location;
+    return check;
+}
+
 /**
  * Frees a token's memory, it's data's memory and subtokens recursively
  */

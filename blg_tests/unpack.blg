@@ -7,4 +7,18 @@ def main x do
     assert (c == 3);
     assert (d == 4);
     assert (e == 5);
+
+	[h, t] = [6, 7];
+	assert (h == 6);
+	assert (t == 7);
+
+	assert (trycatch check_none failed == 'success');
+end
+
+def check_none x do
+	[h, t] = [6, 7, 8];
+end
+
+def failed x do
+	<- 'success';
 end

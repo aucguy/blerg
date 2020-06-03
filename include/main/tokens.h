@@ -38,7 +38,10 @@ typedef enum {
     TOKEN_STORE,
     TOKEN_DUP,
     TOKEN_PUSH,
-    TOKEN_ROT3
+    TOKEN_ROT3,
+    TOKEN_SWAP,
+    TOKEN_BUILTIN,
+    TOKEN_CHECK_NONE
 } TokenType;
 
 typedef struct Token Token;
@@ -212,6 +215,19 @@ typedef struct {
     Token token;
 } Rot3Token;
 
+typedef struct {
+    Token token;
+} SwapToken;
+
+typedef struct {
+    Token token;
+    const char* name;
+} BuiltinToken;
+
+typedef struct {
+    Token token;
+} CheckNoneToken;
+
 void printTokenWithIndent(Token* token, uint8_t indent);
 void printToken(Token* token);
 void printIndent(uint8_t indent);
@@ -258,5 +274,8 @@ StoreToken* createStoreToken(SrcLoc, const char* name);
 DupToken* createDupToken(SrcLoc);
 PushToken* createPushToken(SrcLoc, Token*);
 Rot3Token* createRot3Token(SrcLoc);
+SwapToken* createSwapToken(SrcLoc);
+BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name);
+CheckNoneToken* createCheckNoneToken(SrcLoc loc);
 
 #endif /* TOKENS_H_ */
