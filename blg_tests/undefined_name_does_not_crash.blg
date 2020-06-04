@@ -3,7 +3,7 @@ def main x do
 end
 
 def bad_block x do
-    <- someUndefinedName someArg;
+    return someUndefinedName someArg;
 end
 
 def good_block error do

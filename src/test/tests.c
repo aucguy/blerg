@@ -52,7 +52,7 @@ uint8_t runTests() {
 
     runTest("executeTestGlobalHasMainFunc", executeTestGlobalHasMainFunc(), &status);
     runTest("executeTestMainFuncReturns1", executeTestMainFuncReturns1(), &status);
-    runTest("executeTestAddFunction", executeTestAddSubFunction(), &status);
+    runTest("executeTestAddSubFunction", executeTestAddSubFunction(), &status);
     runTest("executeTestMathExpr", executeTestMathExpr(), &status);
     runTest("executeTestStrRet", executeTestStrRet(), &status);
     runTest("executeTestStrConcat", executeTestStrConcat(), &status);

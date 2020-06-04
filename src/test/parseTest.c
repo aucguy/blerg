@@ -193,7 +193,7 @@ const char* parseTestWhileStmt() {
 
 const char* parseTestFunc() {
     char* error = NULL;
-    Token* parsed = (Token*) parseModule("def add a b do <- a + b; end", &error);
+    Token* parsed = (Token*) parseModule("def add a b do return a + b; end", &error);
 
     List* args = consList(createIdentifierToken(newStr("a")),
             consList(createIdentifierToken(newStr("b")), NULL));
@@ -218,7 +218,7 @@ const char* parseTestFunc() {
 
 const char* parseTestFuncWithoutDo() {
     char* error = NULL;
-    parseModule("def one <- 1; end", &error);
+    parseModule("def one return 1; end", &error);
     if(error != NULL) {
         free(error);
     }
@@ -227,7 +227,7 @@ const char* parseTestFuncWithoutDo() {
 
 const char* parseTestGreaterAndLessThan() {
     char* error = NULL;
-    Token* parsed = (Token*) parseModule("def check x do <- 1 <= 2 and 3 >= 4; end", &error);
+    Token* parsed = (Token*) parseModule("def check x do return 1 <= 2 and 3 >= 4; end", &error);
 
     Token* ret = (Token*) createReturnToken(
             (Token*) createBinaryOpToken(newStr("and"),

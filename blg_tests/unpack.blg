@@ -20,5 +20,5 @@ def check_none x do
 end
 
 def failed x do
-	<- 'success';
+	return 'success';
 end

@@ -7,5 +7,5 @@ def blockA x do
 end
 
 def blockB error do
-    <- 'hello';
+    return 'hello';
 end

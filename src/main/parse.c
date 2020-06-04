@@ -110,7 +110,7 @@ char* sliceStr(const char* str, uint32_t start, uint32_t end) {
 }
 
 const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
-        "end", "and", "or", "not", "~" };
+        "end", "and", "or", "not", "return", "~" };
 
 /**
  * Returns whether or not the next characters matches the given string. If the
@@ -848,6 +848,8 @@ List* parseArgs(ParseState* state, uint8_t* error) {
 
     skipWhitespace(state);
     if(!containsChar(IDENTIFIER_CHARS, getChar(state))) {
+        state->error = "expected an identifier";
+        *error = 1;
         return NULL;
     }
     IdentifierToken* head = parseIdentifier(state);
@@ -914,13 +916,13 @@ FuncToken* parseFuncStmt(ParseState* state) {
 }
 
 ReturnToken* parseReturnStmt(ParseState* state) {
-    if(!lookAhead(state, "<-")) {
-        state->error = "expected '<-'";
+    if(!lookAhead(state, "return")) {
+        state->error = "expected 'return'";
         return NULL;
     }
 
     SrcLoc location = state->location;
-    advance(state, strlen("<-"));
+    advance(state, strlen("return"));
 
     Token* body = parseExpression(state);
     if(body == NULL) {
@@ -944,7 +946,7 @@ Token* parseStatement(ParseState* state) {
         return (Token*) parseWhileStmt(state);
     } else if(lookAhead(state, "def")) {
         return (Token*) parseFuncStmt(state);
-    } else if(lookAhead(state, "<-")) {
+    } else if(lookAhead(state, "return")) {
         return (Token*) parseReturnStmt(state);
     } else {
         return parseAssignment(state);
