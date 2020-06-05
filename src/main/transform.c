@@ -9,9 +9,13 @@
 
 #define UNUSED(x) (void)(x)
 
+//TODO flatten PushTokens
+
 /**
  * Used to create a unique name. This function takes an integer, concatenates
  * it with '$' and increments uniqueId.
+ *
+ * TODO use uint32_t instead
  */
 const char* uniqueName(uint8_t* uniqueId) {
     int length = snprintf(NULL, 0, "$%d", *uniqueId);
@@ -225,6 +229,7 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_SWAP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
+    case TOKEN_NEW_FUNC:
         return copyToken(token, (CopyVisitor) toJumpsVisitor, uniqueId);
     case TOKEN_IF:
         return toJumpsIf((IfToken*) token, uniqueId);
@@ -300,6 +305,7 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_SWAP:
      case TOKEN_BUILTIN:
      case TOKEN_CHECK_NONE:
+     case TOKEN_NEW_FUNC:
          return copyToken(token, (CopyVisitor) flattenBlocksVisitor, NULL);
      case TOKEN_BLOCK:
          return (Token*) createBlockToken(token->location,
@@ -366,6 +372,7 @@ Token* listToConsVisitor(Token* token, void* data) {
     case TOKEN_SWAP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
+    case TOKEN_NEW_FUNC:
         return copyToken(token, listToConsVisitor, NULL);
     case TOKEN_LIST:
         return listToConsList(token);
@@ -431,6 +438,7 @@ Token* objectDesugarVisitor(Token* token, void* data) {
     case TOKEN_SWAP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
+    case TOKEN_NEW_FUNC:
         return copyToken(token, objectDesugarVisitor, NULL);
     case TOKEN_OBJECT:
         return objectDesugarObject(token);
@@ -580,6 +588,7 @@ Token* destructureVisitor(Token* token, void* data) {
     case TOKEN_SWAP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
+    case TOKEN_NEW_FUNC:
         return copyToken(token, destructureVisitor, NULL);
     case TOKEN_ASSIGNMENT:
         return destructureAssignment(token);
@@ -630,8 +639,118 @@ Token* transformFuncAssignToName(Token* module) {
     return ret;
 }
 
+typedef struct {
+    List* funcs;
+    uint8_t uniqueId;
+} ClosureData;
+
+Token* closureVisitor(Token* token, ClosureData* data);
+
+Token* closureCreateFunc(Token* token, ClosureData* data) {
+    UNUSED(closureVisitor);
+    const char* name = uniqueName(&data->uniqueId);
+    FuncToken* func = (FuncToken*)
+            copyToken(token, (CopyVisitor) closureVisitor, data);
+    destroyToken((Token*) func->name);
+    func->name = createIdentifierToken(token->location, name);
+    data->funcs = consList(func, data->funcs);
+
+    return (Token*) createPushToken(token->location,
+            (Token*) createNewFuncToken(token->location, newStr(name)));
+}
+
+Token* closureVisitor(Token* token, ClosureData* data) {
+    switch(token->type) {
+        case TOKEN_INT:
+        case TOKEN_FLOAT:
+        case TOKEN_LITERAL:
+        case TOKEN_IDENTIFIER:
+        case TOKEN_TUPLE:
+        case TOKEN_LIST:
+        case TOKEN_OBJECT:
+        case TOKEN_CALL:
+        case TOKEN_BINARY_OP:
+        case TOKEN_UNARY_OP:
+        case TOKEN_BLOCK:
+        case TOKEN_ASSIGNMENT:
+        case TOKEN_IF:
+        case TOKEN_WHILE:
+        case TOKEN_RETURN:
+        case TOKEN_LABEL:
+        case TOKEN_ABS_JUMP:
+        case TOKEN_COND_JUMP:
+        case TOKEN_PUSH_BUILTIN:
+        case TOKEN_PUSH_INT:
+        case TOKEN_OP_CALL:
+        case TOKEN_STORE:
+        case TOKEN_DUP:
+        case TOKEN_PUSH:
+        case TOKEN_ROT3:
+        case TOKEN_SWAP:
+        case TOKEN_BUILTIN:
+        case TOKEN_CHECK_NONE:
+        case TOKEN_NEW_FUNC:
+            return copyToken(token, (CopyVisitor) closureVisitor, data);
+        case TOKEN_FUNC:
+            return closureCreateFunc(token, data);
+        }
+        return NULL; //shouldn't happen
+}
+
+Token* transformClosures(Token* module) {
+    ClosureData data;
+    data.funcs = NULL;
+    data.uniqueId = 0;
+
+    Token* outside = closureVisitor(module, &data);
+    Token* extracted = (Token*) createBlockToken(module->location, data.funcs);
+
+    return (Token*) createBlockToken(module->location,
+            consList(outside, consList(extracted, NULL)));
+}
+
+Token* transformInitFunc(Token* module) {
+    BlockToken* block = (BlockToken*) module;
+    List* stmts = block->children;
+    List* funcs = NULL;
+    List* other = NULL;
+
+    while(stmts != NULL) {
+        Token* stmt = copyToken(stmts->head, copyVisitor, NULL);
+
+        if(stmt->type == TOKEN_FUNC) {
+            funcs = consList(stmt, funcs);
+        } else {
+            other = consList(stmt, other);
+        }
+
+        stmts = stmts->tail;
+    }
+
+    List* oldFuncs = funcs;
+    List* oldOther = other;
+
+    funcs = reverseList(funcs);
+    other = reverseList(other);
+
+    destroyShallowList(oldFuncs);
+    destroyShallowList(oldOther);
+
+    List* parts = NULL;
+    parts = consList(createBlockToken(module->location, funcs), NULL);
+
+    IdentifierToken* name = createIdentifierToken(module->location,
+            newStr("$init"));
+    BlockToken* body = createBlockToken(module->location, other);
+    List* args = consList(createIdentifierToken(module->location,
+            newStr("$arg")), NULL);
+    parts = consList(createFuncToken(module->location, name, args, body), parts);
+
+    return (Token*) createBlockToken(module->location, parts);
+}
+
 BlockToken* transformModule(BlockToken* module1) {
-    Token* moduleT = transformFuncAssignToName((Token*) module1);
+    Token* moduleT = transformClosures((Token*) module1);
 
     BlockToken* module2 = (BlockToken*) transformListToCons((BlockToken*) moduleT);
     destroyToken(moduleT);
@@ -651,5 +770,11 @@ BlockToken* transformModule(BlockToken* module1) {
     BlockToken* module7 = transformFlattenBlocks((BlockToken*) module6);
     destroyToken((Token*) module6);
 
-    return module7;
+    Token* module8 = transformInitFunc((Token*) module7);
+    destroyToken((Token*) module7);
+
+    Token* module9 = (Token*) transformFlattenBlocks((BlockToken*) module8);
+    destroyToken(module8);
+
+    return (BlockToken*) module9;
 }

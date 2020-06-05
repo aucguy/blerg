@@ -211,11 +211,14 @@ void emitCheckNone(ModuleBuilder* builder) {
     emitByte(builder, OP_CHECK_NONE);
 }
 
-void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args) {
-    emitByte(builder, OP_DEF_FUNC);
-    emitByte(builder, argNum);
-    for(uint8_t i = 0; i < argNum; i++) {
-        emitUInt(builder, internConstant(builder, args[i]));
+void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args,
+        uint8_t isInit) {
+    if(!isInit) {
+        emitByte(builder, OP_DEF_FUNC);
+        emitByte(builder, argNum);
+        for(uint8_t i = 0; i < argNum; i++) {
+            emitUInt(builder, internConstant(builder, args[i]));
+        }
     }
 }
 
@@ -266,7 +269,7 @@ char* compactSegments(uint32_t numElems, List* segment, uint8_t elemSize) {
     return compacted;
 }
 
-Module* builderToModule(ModuleBuilder* builder) {
+Module* builderToModule(ModuleBuilder* builder, uint32_t entryLabel) {
     char** constants = (char**) compactSegments(builder->constantsLength,
             builder->constants, sizeof(char*));
     uint8_t* bytecode = (unsigned char*) compactSegments(
@@ -276,6 +279,7 @@ Module* builderToModule(ModuleBuilder* builder) {
 
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
+        //TODO change ot getMapUint32_t
         uint32_t* definition = getMapStr(builder->labelDefs, (char*) i->key);
         for(List* k = (List*) i->value; k != NULL; k = k->tail) {
             uint32_t reference = *((uint32_t*) k->head);
@@ -293,6 +297,8 @@ Module* builderToModule(ModuleBuilder* builder) {
     module->bytecode = bytecode;
     module->srcLocLength = builder->srcLocLength;
     module->srcLoc = srcLoc;
+    uint32_t* entryIndex = getMapUint32(builder->labelDefs, entryLabel);
+    module->entryIndex = *entryIndex;
     return module;
 }
 
@@ -305,7 +311,8 @@ Module* builderToModule(ModuleBuilder* builder) {
  *          createLabel
  * @param token the token to compile
  */
-void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
+void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
+        Token* token) {
     if(token->type == TOKEN_INT) {
         emitSrcLoc(builder, token->location);
         emitPushInt(builder, ((IntToken*) token)->value);
@@ -327,7 +334,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         emitAbsJump(builder, *label);
     } else if(token->type == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
-        compileToken(builder, labels, condJump->condition);
+        compileToken(builder, globalFuncs, labels, condJump->condition);
 
         uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
         emitSrcLoc(builder, token->location);
@@ -341,7 +348,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         uint8_t count = 0;
 
         while(elements != NULL) {
-            compileToken(builder, labels, elements->head);
+            compileToken(builder, globalFuncs, labels, elements->head);
             elements = elements->tail;
             count++;
         }
@@ -353,7 +360,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         List* children = call->children;
         uint32_t count = 0;
         while(children != NULL) {
-            compileToken(builder, labels, children->head);
+            compileToken(builder, globalFuncs, labels, children->head);
             children = children->tail;
             count++;
         }
@@ -365,7 +372,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
         emitPushBuiltin(builder, unaryOp->op);
 
-        compileToken(builder, labels, unaryOp->child);
+        compileToken(builder, globalFuncs, labels, unaryOp->child);
 
         emitSrcLoc(builder, token->location);
         emitCall(builder, 1);
@@ -373,14 +380,14 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         emitSrcLoc(builder, token->location);
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
         emitPushBuiltin(builder, binaryOp->op);
-        compileToken(builder, labels, binaryOp->left);
-        compileToken(builder, labels, binaryOp->right);
+        compileToken(builder, globalFuncs, labels, binaryOp->left);
+        compileToken(builder, globalFuncs, labels, binaryOp->right);
 
         emitSrcLoc(builder, token->location);
         emitCall(builder, 2);
     } else if(token->type == TOKEN_RETURN) {
         ReturnToken* ret = (ReturnToken*) token;
-        compileToken(builder, labels, ret->body);
+        compileToken(builder, globalFuncs, labels, ret->body);
 
         emitSrcLoc(builder, token->location);
         emitReturn(builder);
@@ -401,7 +408,7 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
         emitDup(builder);
     } else if(token->type == TOKEN_PUSH) {
         emitSrcLoc(builder, token->location);
-        compileToken(builder, labels, ((PushToken*) token)->value);
+        compileToken(builder, globalFuncs, labels, ((PushToken*) token)->value);
     } else if(token->type == TOKEN_ROT3) {
         emitSrcLoc(builder, token->location);
         emitRot3(builder);
@@ -414,6 +421,10 @@ void compileToken(ModuleBuilder* builder, Map* labels, Token* token) {
     } else if(token->type == TOKEN_CHECK_NONE) {
         emitSrcLoc(builder, token->location);
         emitCheckNone(builder);
+    } else if(token->type == TOKEN_NEW_FUNC) {
+        emitSrcLoc(builder, token->location);
+        uint32_t* label = getMapStr(globalFuncs, ((NewFuncToken*) token)->name);
+        emitCreateFunc(builder, *label);
     } else {
         printf("warning: unknown token type\n");
     }
@@ -440,7 +451,8 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     }
     //indicate the beginning of the function
     emitSrcLoc(builder, func->token.location);
-    emitDefFunc(builder, argNum, (const char**) args);
+    uint8_t isInit = strcmp(func->name->value, "$init") == 0;
+    emitDefFunc(builder, argNum, (const char**) args, isInit);
     free(args);
 
     //create a label for each LabelToken and map its name to the value
@@ -456,7 +468,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
 
     //finally, generate each statement / jump
     for(List* list = func->body->children; list != NULL; list = list->tail) {
-        compileToken(builder, labels, (Token*) list->head);
+        compileToken(builder, globalFuncs, labels, (Token*) list->head);
     }
 
     destroyMap(labels, nothing, free);
@@ -479,16 +491,20 @@ Module* compileModule(Token* ast) {
             uint32_t label = createLabel(builder);
             putMapStr(globalFuncs, newStr(func->name->value), boxUint32(label));
 
-            emitSrcLoc(builder, func->token.location);
-            emitCreateFunc(builder, label);
+            //emitSrcLoc(builder, func->token.location);
+            //emitCreateFunc(builder, label);
 
-            emitSrcLoc(builder, func->token.location);
-            emitStore(builder, func->name->value);
+            //emitSrcLoc(builder, func->token.location);
+            //emitStore(builder, func->name->value);
         }
     }
 
-    emitPushNone(builder);
-    emitReturn(builder);
+    //emitLoad(builder, "$init");
+    //emitPushBuiltin(builder, "none");
+    //emitCall(builder, 1);
+
+    //emitPushNone(builder);
+    //emitReturn(builder);
 
     //compile each function
     for(List* list = block->children; list != NULL; list = list->tail) {
@@ -498,7 +514,8 @@ Module* compileModule(Token* ast) {
         }
     }
 
-    Module* module = builderToModule(builder);
+    uint32_t* labelEntry = getMapStr(globalFuncs, "$init");
+    Module* module = builderToModule(builder, *labelEntry);
     destroyModuleBuilder(builder);
     destroyMap(globalFuncs, free, free);
     return module;

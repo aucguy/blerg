@@ -74,7 +74,7 @@ enum INSTRUCTIONS {
     //For example, "def myFunc x y then ..." would become "OP_DEF_FUNC 2 35 36"
     //assuming that 35 corresponds to "x" and 36 corresponds to "y" in the
     //constant table.
-    OP_DEF_FUNC
+    OP_DEF_FUNC,
 };
 
 typedef struct {
@@ -99,6 +99,8 @@ typedef struct {
 
     uint32_t srcLocLength;
     const BytecodeSrcLoc* srcLoc;
+
+    uint32_t entryIndex;
 } Module;
 
 #endif /* BYTECODE_H_ */

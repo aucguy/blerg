@@ -1,0 +1,11 @@
+main = def x do
+	value = 1;
+
+	closure = def y do
+		assert (value == 1);
+	#TODO give an error message with a nonexistant semicolon
+	end;
+	
+	#a value is still on the stack
+	closure none;
+end;

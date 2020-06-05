@@ -1403,6 +1403,47 @@ CheckNoneToken* createCheckNoneToken(SrcLoc location) {
     return check;
 }
 
+void destroyNewFuncToken(Token* self) {
+    NewFuncToken* func = (NewFuncToken*) self;
+    free((char*) func->name);
+}
+
+void printNewFuncToken(Token* self, uint8_t indent) {
+    UNUSED(indent);
+    NewFuncToken* func = (NewFuncToken*) self;
+    printf("new_func: %s\n", func->name);
+}
+
+uint8_t equalsNewFuncToken(Token* self, Token* other) {
+    NewFuncToken* func1 = (NewFuncToken*) self;
+    NewFuncToken* func2 = (NewFuncToken*) other;
+    return strcmp(func1->name, func2->name) == 0;
+}
+
+Token* copyNewFuncToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    NewFuncToken* func = (NewFuncToken*) self;
+    return (Token*) createNewFuncToken(self->location, newStr(func->name));
+}
+
+Token NEW_FUNC_TYPE = {
+        TOKEN_NEW_FUNC,
+        destroyNewFuncToken,
+        printNewFuncToken,
+        equalsNewFuncToken,
+        copyNewFuncToken,
+        tokenInstanceFields
+};
+
+NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
+    NewFuncToken* func = malloc(sizeof(NewFuncToken));
+    func->token = NEW_FUNC_TYPE;
+    func->token.location = location;
+    func->name = name;
+    return func;
+}
+
 /**
  * Frees a token's memory, it's data's memory and subtokens recursively
  */

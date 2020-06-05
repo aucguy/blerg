@@ -200,7 +200,8 @@ StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
     }
     FuncThing* funcThing = func;
     uint32_t index = funcThing->entry;
-    if(funcThing->module->bytecode[index++] != OP_DEF_FUNC) {
+    uint8_t opcode = funcThing->module->bytecode[index++];
+    if(opcode != OP_DEF_FUNC) {
         *error = 1;
         return NULL;
     }
@@ -211,9 +212,11 @@ StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
         return NULL;
     }
 
+    //if its the init function, the local scope is the parent scope
+    Scope* scope = createScope(runtime, funcThing->parentScope);
+
     //assign the arguments provided to the names of the variables in the local
     //scope.
-    Scope* scope = createScope(runtime, funcThing->parentScope);
     for(uint32_t i = 0; i < argNo; i++) {
         const char* constant = readConstantModule(funcThing->module, index);
         setScopeLocal(scope, constant, args[i]);
@@ -330,7 +333,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 if(error) {
                     free(args);
                     //TODO make this error message better
-                    const char* msg = "error creating stack frame for"
+                    const char* msg = "error creating stack frame for "
                             "function call";
                     RetVal error = throwMsg(runtime, newStr(msg));
                     unwindStackFrame(runtime, initStackFrameSize);
@@ -358,7 +361,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
 
             if(typeOfThing(condition) != THING_TYPE_BOOL) {
                 //TODO report what type was found
-                const char* msg =" boolean needed for branches, but a boolean"
+                const char* msg =" boolean needed for branches, but a boolean "
                         "was not found";
                 RetVal error = throwMsg(runtime, newStr(msg));
                 unwindStackFrame(runtime, initStackFrameSize);
@@ -409,9 +412,14 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
 RetVal executeModule(Runtime* runtime, Module* module) {
     //modules have no global scope.
     Scope* scope = createScope(runtime, runtime->builtins);
-    StackFrame* frame = createStackFrameDef(module, 0, scope);
-    executeCode(runtime, frame);
-    return createRetVal(createModuleThing(runtime, scope->locals), 0);
+    uint32_t start = module->entryIndex;
+    StackFrame* frame = createStackFrameDef(module, start, scope);
+    RetVal ret = executeCode(runtime, frame);
+    if(isRetValError(ret)) {
+        return ret;
+    } else {
+        return createRetVal(createModuleThing(runtime, scope->locals), 0);
+    }
 }
 
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {

@@ -126,7 +126,8 @@ void emitAbsJump(ModuleBuilder* builder, uint32_t label);
  *      reference to the array or any of its elements; it will copy them as
  *      necessary.
  */
-void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args);
+void emitDefFunc(ModuleBuilder* builder, uint8_t argNum, const char** args,
+        uint8_t isInit);
 
 void emitSrcLoc(ModuleBuilder* builder, SrcLoc location);
 
@@ -134,7 +135,7 @@ void emitSrcLoc(ModuleBuilder* builder, SrcLoc location);
  * Turns a ModuleBuilder into a module suitable for interpreting. This compacts
  * the segments into a single array and patches the label references.
  */
-Module* builderToModule(ModuleBuilder* builder);
+Module* builderToModule(ModuleBuilder* builder, uint32_t entry);
 
 /**
  * Takes the AST and turns into a compiled Module object.
