@@ -146,10 +146,12 @@ uint8_t modulesEqual(Module* a, Module* b) {
 
 const char* codegenTestSimple() {
     char* error;
-    Token* ast = (Token*) parseModule("def main x do return 1 + 2; end", &error);
+    Token* ast = (Token*) parseModule("main = def x do return 1 + 2; end;", &error);
     assert(ast != NULL, "incorrect parse");
-    Module* parsed = compileModule(ast);
+    Token* transformed = transformFuncAssignToName(ast);
+    Module* parsed = compileModule(transformed);
     destroyToken(ast);
+    destroyToken(transformed);
 
     ModuleBuilder* builder = createModuleBuilder();
 
@@ -187,7 +189,7 @@ const char* codegenTestSimple() {
 
 const char* codegenTestJumps() {
     char* error;
-    BlockToken* ast = parseModule("def factorial n do if n == 0 then return 0; else return n * factorial (n - 1); end end", &error);
+    BlockToken* ast = parseModule("factorial = def n do if n == 0 then return 0; else return n * factorial (n - 1); end end;", &error);
     assert(ast != NULL, "incorrect parse");
     assert(validateModule(ast), "invalid ast");
     Token* transformed = (Token*) transformModule(ast);
@@ -249,7 +251,7 @@ const char* codegenTestJumps() {
 
 const char* codegenTestLiteralUnaryOp() {
     char* error = NULL;
-    BlockToken* ast = parseModule("def main x do return not 'hello'; end", &error);
+    BlockToken* ast = parseModule("main = def x do return not 'hello'; end;", &error);
     assert(ast != NULL, "incorrect parse");
     assert(validateModule(ast), "invalid ast");
     Token* transformed = (Token*) transformModule(ast);

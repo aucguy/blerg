@@ -48,7 +48,7 @@ const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
     char* errorMsg;
-    Module* module = sourceToModule("def main x do return 1; end", &errorMsg);
+    Module* module = sourceToModule("main = def x do return 1; end;", &errorMsg);
     assert(module != NULL, "error in source code");
 
     RetVal global = executeModule(runtime, module);
@@ -70,7 +70,7 @@ const char* executeTestMainFuncReturns1() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def main x do return 1; end";
+    in.src = "main = def x do return 1; end;";
     in.name = "main";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -89,7 +89,7 @@ const char* executeTestAddSubFunction() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def add_sub x y z do return x + y - z; end";
+    in.src = "add_sub = def x y z do return x + y - z; end;";
     in.name = "add_sub";
     in.arity = 3;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -110,7 +110,7 @@ const char* executeTestMathExpr() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def math x do return (x*2 - 5) / 7; end";
+    in.src = "math = def x do return (x*2 - 5) / 7; end;";
     in.name = "math";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -129,7 +129,7 @@ const char* executeTestStrRet() {
 
    ExecFuncIn in;
    in.runtime = createRuntime();
-   in.src = "def main x do return 'hello world'; end";
+   in.src = "main = def x do return 'hello world'; end;";
    in.name = "main";
    in.arity = 1;
    in.args = malloc(sizeof(Thing*) * in.arity);
@@ -148,7 +148,7 @@ const char* executeTestStrConcat() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def greet name do return 'hello ' + name + '!'; end";
+    in.src = "greet = def name do return 'hello ' + name + '!'; end;";
     in.name = "greet";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -167,7 +167,7 @@ const char* executeTestIntEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def equal x y do return x == y; end";
+    in.src = "equal = def x y do return x == y; end;";
     in.name = "equal";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -187,7 +187,7 @@ const char* executeTestIntNotEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def not_equal x y do return x != y; end";
+    in.src = "not_equal = def x y do return x != y; end;";
     in.name = "not_equal";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -207,7 +207,7 @@ const char* executeTestIntLessThan() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def less_than x y do return x < y; end";
+    in.src = "less_than = def x y do return x < y; end;";
     in.name = "less_than";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -227,7 +227,7 @@ const char* executeTestIntLessThanEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def less_than_eq x y do return x <= y; end";
+    in.src = "less_than_eq = def x y do return x <= y; end;";
     in.name = "less_than_eq";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -246,7 +246,7 @@ const char* executeTestIntGreaterThan() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def greater_than x y do return x > y; end";
+    in.src = "greater_than = def x y do return x > y; end;";
     in.name = "greater_than";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -265,7 +265,7 @@ const char* executeTestIntGreaterThanEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def greater_than_eq x y do return x >= y; end";
+    in.src = "greater_than_eq = def x y do return x >= y; end;";
     in.name = "greater_than_eq";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -285,7 +285,7 @@ const char* executeTestStrEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def str_eq x y do return x == y; end";
+    in.src = "str_eq = def x y do return x == y; end;";
     in.name = "str_eq";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -305,7 +305,7 @@ const char* executeTestStrNotEq() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def str_not_eq x y do return x != y; end";
+    in.src = "str_not_eq = def x y do return x != y; end;";
     in.name = "str_not_eq";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -325,7 +325,7 @@ const char* executeTestBoolAnd() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def bool_and x y do return x and y; end";
+    in.src = "bool_and = def x y do return x and y; end;";
     in.name = "bool_and";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -345,7 +345,7 @@ const char* executeTestBoolOr() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def bool_and x y do return x or y; end";
+    in.src = "bool_and = def x y do return x or y; end;";
     in.name = "bool_and";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -361,11 +361,12 @@ const char* executeTestBoolOr() {
 }
 
 const char* executeTestBoolNot() {
+    //TODO make function name consistent
     initThing();
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def bool_and x y do return not x; end";
+    in.src = "bool_and = def x y do return not x; end;";
     in.name = "bool_and";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -384,7 +385,7 @@ const char* executeTestIfStmt() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def if_stmt x y do if x == y then a = 'equal'; else b ='not_equal'; end return a; end";
+    in.src = "if_stmt = def x y do if x == y then a = 'equal'; else b ='not_equal'; end return a; end;";
     in.name = "if_stmt";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -404,7 +405,7 @@ const char* executeTestAssignment() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def assign x do y = 1; return y; end";
+    in.src = "assign = def x do y = 1; return y; end;";
     in.name = "assign";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -423,7 +424,7 @@ const char* executeTestWhileLoop() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def fact x do y = 1; while x > 1 do y = y * x; x = x - 1; end return y; end";
+    in.src = "fact = def x do y = 1; while x > 1 do y = y * x; x = x - 1; end return y; end;";
     in.name = "fact";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -460,7 +461,7 @@ const char* executeTestNativeFunc() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def apply f x do return f x; end";
+    in.src = "apply = def f x do return f x; end;";
     in.name = "apply";
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
@@ -480,7 +481,7 @@ const char* executeTestRecFunc() {
 
     ExecFuncIn in;
     in.runtime = createRuntime();
-    in.src = "def fact x do if x == 1 then return 1; else return x * fact (x - 1); end end";
+    in.src = "fact = def x do if x == 1 then return 1; else return x * fact (x - 1); end end;";
     in.name = "fact";
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);

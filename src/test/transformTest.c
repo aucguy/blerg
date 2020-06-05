@@ -13,7 +13,8 @@
 
 const char* transformTestControlToJumps() {
     char* error = NULL;
-    Token* parsed = (Token*) parseModule("def f z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end", &error);
+    Token* parsed = (Token*) parseModule("def z do a = 1; while 0 do if 0 then b = g 2; else c = 3; end end d = 4; end;", &error);
+    assert(parsed != NULL, "incorrect parse");
     Token* transformed1 = (Token*) transformControlToJumps((BlockToken*) parsed);
     Token* transformed2 = (Token*) transformFlattenBlocks((BlockToken*) transformed1);
     destroyToken(transformed1);
@@ -47,7 +48,7 @@ const char* transformTestControlToJumps() {
     }
 
     Token* expected = (Token*) createBlockToken(consList(createFuncToken(
-            createIdentifierToken(newStr("f")), args, createBlockToken(body)), NULL));
+            createIdentifierToken(newStr("name")), args, createBlockToken(body)), NULL));
 
     assert(tokensEqual(expected, transformed2), "transformation failed");
 

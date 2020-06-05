@@ -193,7 +193,7 @@ const char* parseTestWhileStmt() {
 
 const char* parseTestFunc() {
     char* error = NULL;
-    Token* parsed = (Token*) parseModule("def add a b do return a + b; end", &error);
+    Token* parsed = (Token*) parseModule("def a b do return a + b; end;", &error);
 
     List* args = consList(createIdentifierToken(newStr("a")),
             consList(createIdentifierToken(newStr("b")), NULL));
@@ -203,7 +203,7 @@ const char* parseTestFunc() {
                     (Token*) createIdentifierToken(newStr("a")),
                     (Token*) createIdentifierToken(newStr("b"))));
 
-    FuncToken* func = createFuncToken(createIdentifierToken(newStr("add")), args,
+    FuncToken* func = createFuncToken(createIdentifierToken(newStr("name")), args,
             createBlockToken(consList(stmt, NULL)));
 
     Token* expected = (Token*) createBlockToken(consList(func, NULL));
@@ -227,7 +227,7 @@ const char* parseTestFuncWithoutDo() {
 
 const char* parseTestGreaterAndLessThan() {
     char* error = NULL;
-    Token* parsed = (Token*) parseModule("def check x do return 1 <= 2 and 3 >= 4; end", &error);
+    Token* parsed = (Token*) parseModule("def x do return 1 <= 2 and 3 >= 4; end;", &error);
 
     Token* ret = (Token*) createReturnToken(
             (Token*) createBinaryOpToken(newStr("and"),
@@ -240,7 +240,7 @@ const char* parseTestGreaterAndLessThan() {
 
     Token* expected = (Token*) createBlockToken(consList(
             createFuncToken(
-                    createIdentifierToken(newStr("check")),
+                    createIdentifierToken(newStr("name")),
                     consList(createIdentifierToken(newStr("x")), NULL),
                     createBlockToken(consList(ret, NULL))), NULL));
 

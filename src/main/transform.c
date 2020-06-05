@@ -591,8 +591,50 @@ Token* transformDestructure(Token* module) {
     return destructureVisitor(module, NULL);
 }
 
+Token* copyVisitor(Token* token, void* data) {
+    UNUSED(data);
+    return copyToken(token, copyVisitor, NULL);
+}
+
+//this is a temporary transformation
+Token* transformFuncAssignToName(Token* module) {
+    BlockToken* block = (BlockToken*) module;
+    List* newStmts = NULL;
+    List* oldStmts = block->children;
+
+    while(oldStmts != NULL) {
+        Token* stmt = oldStmts->head;
+        Token* copy;
+        if(stmt->type == TOKEN_ASSIGNMENT) {
+            AssignmentToken* assignment = (AssignmentToken*) stmt;
+            Token* left = assignment->left;
+            Token* right = assignment->right;
+            if(left->type == TOKEN_IDENTIFIER && right->type == TOKEN_FUNC) {
+                FuncToken* func = (FuncToken*) copyVisitor(right, NULL);
+                destroyToken((Token*) func->name);
+                func->name = (IdentifierToken*) copyVisitor(left, NULL);
+                copy = (Token*) func;
+            } else {
+                //this is a problem
+                copy = copyVisitor(stmt, NULL);
+            }
+        } else {
+            copy = copyVisitor(stmt, NULL);
+        }
+        newStmts = consList(copy, newStmts);
+        oldStmts = oldStmts->tail;
+    }
+
+    Token* ret = (Token*) createBlockToken(module->location, reverseList(newStmts));
+    destroyShallowList(newStmts);
+    return ret;
+}
+
 BlockToken* transformModule(BlockToken* module1) {
-    BlockToken* module2 = (BlockToken*) transformListToCons((BlockToken*) module1);
+    Token* moduleT = transformFuncAssignToName((Token*) module1);
+
+    BlockToken* module2 = (BlockToken*) transformListToCons((BlockToken*) moduleT);
+    destroyToken(moduleT);
 
     BlockToken* module3 = transformControlToJumps(module2);
     destroyToken((Token*) module2);

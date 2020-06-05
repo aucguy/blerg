@@ -1,11 +1,11 @@
-def main x do
+main = def x do
     assert ((trycatch blockA blockB) == 'hello');
-end
+end;
 
-def blockA x do
+blockA = def x do
     assert false;
-end
+end;
 
-def blockB error do
+blockB = def error do
     return 'hello';
-end
+end;

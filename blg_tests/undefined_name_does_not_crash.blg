@@ -1,11 +1,11 @@
-def main x do
+main = def x do
     trycatch bad_block good_block;
-end
+end;
 
-def bad_block x do
+bad_block = def x do
     return someUndefinedName someArg;
-end
+end;
 
-def good_block error do
+good_block = def error do
     assert true;
-end
+end;

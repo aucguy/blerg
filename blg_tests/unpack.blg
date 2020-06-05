@@ -1,4 +1,4 @@
-def main x do
+main = def x do
     (a, b) = (1, 2);
     assert (a == 1);
     assert (b == 2);
@@ -13,12 +13,12 @@ def main x do
 	assert (t == 7);
 
 	assert (trycatch check_none failed == 'success');
-end
+end;
 
-def check_none x do
+check_none = def x do
 	[h, t] = [6, 7, 8];
-end
+end;
 
-def failed x do
+failed = def x do
 	return 'success';
-end
+end;

@@ -3,6 +3,8 @@
 
 #include "main/tokens.h"
 
+#define UNUSED(x) (void)(x)
+
 uint8_t validateOnlyFuncsToplevel(BlockToken* module) {
     if(module->token.type != TOKEN_BLOCK) {
         return 0;
@@ -79,5 +81,8 @@ uint8_t validateNoInnerFuncs(BlockToken* module) {
 }
 
 uint8_t validateModule(BlockToken* module) {
-    return validateOnlyFuncsToplevel(module) && validateNoInnerFuncs(module);
+    UNUSED(module);
+    //the checks are going away soon
+    return 1;
+    //return validateOnlyFuncsToplevel(module) && validateNoInnerFuncs(module);
 }

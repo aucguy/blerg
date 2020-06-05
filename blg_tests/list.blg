@@ -1,4 +1,4 @@
-def main x do
+main = def x do
 	#cons operations
 	list = 1 :: 2 :: none;
 	assert ((head list) == 1);
@@ -8,4 +8,4 @@ def main x do
 	list = [3, 4];
 	assert ((head list) == 3);
 	assert ((head (tail list)) == 4);
-end
+end;

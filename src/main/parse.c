@@ -112,26 +112,45 @@ char* sliceStr(const char* str, uint32_t start, uint32_t end) {
 const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
         "end", "and", "or", "not", "return", "~" };
 
+const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+
 /**
  * Returns whether or not the next characters matches the given string. If the
  * string is "0" then the function returns if the end of the source has been
  * reached.
+ *
+ * TODO change return type to uint8_t
  */
 uint32_t lookAhead(ParseState* state, const char* str) {
     uint32_t i = 0;
     if(strcmp(str, "0") == 0) {
         return getChar(state) == 0;
     }
+    uint32_t ret;
     while(1) {
         char a = str[i];
         char b = state->src[state->index + i];
         if(a == 0) {
-            return 1;
+            ret = 1;
+            break;
         }
         if(b == 0 || a != b) {
-            return 0;
+            ret = 0;
+            break;
         }
         i++;
+    }
+
+    //TODO add change to docs
+    if(ret == 0) {
+        return 0;
+    }
+
+    if(containsChar(IDENTIFIER_CHARS, str[0])) {
+        char c = state->src[state->index + i];
+        return !containsChar(IDENTIFIER_CHARS, c);
+    } else {
+        return 1;
     }
 }
 
@@ -233,8 +252,6 @@ LiteralToken* parseLiteral(ParseState* state) {
 
     return createLiteralToken(location, value);
 }
-
-const char* IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 
 /**
  * Parses an identifier
@@ -414,6 +431,91 @@ Token* parseObject(ParseState* state) {
 }
 
 /**
+ * Parses the arguments.
+ *
+ * @param state the ParseState
+ * @param error set to 1 if an error occured
+ * @return the rest of the arguments as a list of IdentifierTokens or NULL if
+ *      there are no more arguments
+ */
+List* parseArgs(ParseState* state, uint8_t* error) {
+    skipWhitespace(state);
+    //end of the arguments
+    if(lookAhead(state, "do")) {
+        return NULL;
+    }
+
+    skipWhitespace(state);
+    if(!containsChar(IDENTIFIER_CHARS, getChar(state))) {
+        state->error = "expected an identifier";
+        *error = 1;
+        return NULL;
+    }
+    IdentifierToken* head = parseIdentifier(state);
+    if(head == NULL) {
+        //this shouldn't happen
+        *error = 1;
+        state->error = "expected an identifier (this shouldn't happen)";
+        return NULL;
+    }
+    //parse the rest
+    List* tail = parseArgs(state, error);
+    if(*error) {
+        //TODO fix memleak
+        destroyToken((Token*) head);
+        return NULL;
+    }
+    return consList(head, tail);
+}
+
+const char* FUNC_ENDS[] = { "end", "~" };
+
+/**
+ * Parses a function definition
+ */
+FuncToken* parseFunc(ParseState* state) {
+    //check just in case
+    if(!lookAhead(state, "def")) {
+        state->error = "expected 'def' (this shouldn't happen)";
+        return NULL;
+    }
+
+    SrcLoc location = state->location;
+    advance(state, strlen("def"));
+
+    //skipWhitespace(state);
+    //IdentifierToken* name = parseIdentifier(state);
+    //if(name == NULL) {
+    //    return NULL;
+    //}
+    IdentifierToken* name = createIdentifierToken(state->location, newStr("name"));
+
+    uint8_t error = 0;
+    List* args = parseArgs(state, &error);
+
+    uint8_t ahead = lookAhead(state, "do");
+    if(error || !ahead) {
+        if(!ahead) {
+            state->error = "expected 'do'";
+        }
+        destroyToken((Token*) name);
+        return NULL;
+    }
+    advance(state, strlen("do"));
+
+    BlockToken* body = parseBlock(state, FUNC_ENDS);
+    ahead = lookAhead(state, "end");
+    if(body == NULL) {
+        //TODO fix memleak?
+        destroyToken((Token*) name);
+        destroyList(args, destroyTokenVoid);
+        return NULL;
+    }
+    advance(state, strlen("end"));
+    return createFuncToken(location, name, args, body);
+}
+
+/**
  * Parses a factor.
  *
  * <factor> ::= <integer> | <literal> | <identifier> | ( <expression> ) | <tuple> | <list>
@@ -422,7 +524,9 @@ Token* parseFactor(ParseState* state) {
     skipWhitespace(state);
     SrcLoc location = state->location;
     char c = getChar(state);
-    if(c == '(') {
+    if(lookAhead(state, "def")) {
+        return (Token*) parseFunc(state);
+    } else if(c == '(') {
         advance(state, 1); //skip the (
         Token* token = parseExpression(state);
         skipWhitespace(state);
@@ -831,90 +935,6 @@ WhileToken* parseWhileStmt(ParseState* state) {
     return createWhileToken(location, conditional, body);
 }
 
-/**
- * Parses the arguments.
- *
- * @param state the ParseState
- * @param error set to 1 if an error occured
- * @return the rest of the arguments as a list of IdentifierTokens or NULL if
- *      there are no more arguments
- */
-List* parseArgs(ParseState* state, uint8_t* error) {
-    skipWhitespace(state);
-    //end of the arguments
-    if(lookAhead(state, "do")) {
-        return NULL;
-    }
-
-    skipWhitespace(state);
-    if(!containsChar(IDENTIFIER_CHARS, getChar(state))) {
-        state->error = "expected an identifier";
-        *error = 1;
-        return NULL;
-    }
-    IdentifierToken* head = parseIdentifier(state);
-    if(head == NULL) {
-        //this shouldn't happen
-        *error = 1;
-        state->error = "expected an identifier (this shouldn't happen)";
-        return NULL;
-    }
-    //parse the rest
-    List* tail = parseArgs(state, error);
-    if(*error) {
-        //TODO fix memleak
-        destroyToken((Token*) head);
-        return NULL;
-    }
-    return consList(head, tail);
-}
-
-const char* FUNC_ENDS[] = { "end", "~" };
-
-/**
- * Parses a function definition
- */
-FuncToken* parseFuncStmt(ParseState* state) {
-    //check just in case
-    if(!lookAhead(state, "def")) {
-        state->error = "expected 'def' (this shouldn't happen)";
-        return NULL;
-    }
-
-    SrcLoc location = state->location;
-    advance(state, strlen("def"));
-
-    skipWhitespace(state);
-    IdentifierToken* name = parseIdentifier(state);
-    if(name == NULL) {
-        return NULL;
-    }
-
-    uint8_t error = 0;
-    List* args = parseArgs(state, &error);
-
-    uint8_t ahead = lookAhead(state, "do");
-    if(error || !ahead) {
-        if(!ahead) {
-            state->error = "expected 'do'";
-        }
-        destroyToken((Token*) name);
-        return NULL;
-    }
-    advance(state, strlen("do"));
-
-    BlockToken* body = parseBlock(state, FUNC_ENDS);
-    ahead = lookAhead(state, "end");
-    if(body == NULL) {
-        //TODO fix memleak?
-        destroyToken((Token*) name);
-        destroyList(args, destroyTokenVoid);
-        return NULL;
-    }
-    advance(state, strlen("end"));
-    return createFuncToken(location, name, args, body);
-}
-
 ReturnToken* parseReturnStmt(ParseState* state) {
     if(!lookAhead(state, "return")) {
         state->error = "expected 'return'";
@@ -944,8 +964,6 @@ Token* parseStatement(ParseState* state) {
         return (Token*) parseIfStmt(state);
     } else if(lookAhead(state, "while")) {
         return (Token*) parseWhileStmt(state);
-    } else if(lookAhead(state, "def")) {
-        return (Token*) parseFuncStmt(state);
     } else if(lookAhead(state, "return")) {
         return (Token*) parseReturnStmt(state);
     } else {

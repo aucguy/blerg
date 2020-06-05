@@ -1,4 +1,4 @@
-def main x do
+main = def x do
 	width = createSymbol 1;
 	height = createSymbol 1;
 
@@ -9,4 +9,4 @@ def main x do
    	    
     assert (width rectangle == 5);
     assert (height rectangle == 10);
-end
+end;
