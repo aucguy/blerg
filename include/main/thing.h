@@ -33,7 +33,7 @@ ThingType* THING_TYPE_ERROR;
 ThingType* THING_TYPE_TUPLE;
 ThingType* THING_TYPE_LIST;
 ThingType* THING_TYPE_OBJECT;
-//ThingType* THING_TYPE_CONS;
+ThingType* THING_TYPE_CELL;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -127,6 +127,10 @@ typedef struct {
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
 
 Thing* createObjectThing(Runtime* runtime, Map* map);
+
+Thing* createCellThing(Runtime* runtime, Thing* value);
+Thing* getCellValue(Thing* cell);
+void setCellValue(Thing* cell, Thing* value);
 
 RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         uint8_t expectedArity, ...);

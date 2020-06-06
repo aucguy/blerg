@@ -101,6 +101,12 @@ Runtime* createRuntime() {
     setScopeLocal(builtins, "get", getMapStr(ops, "get"));
     setScopeLocal(builtins, "createSymbol",
             createNativeFuncThing(runtime, libCreateSymbol));
+    setScopeLocal(builtins, "createCell",
+            createNativeFuncThing(runtime, libCreateCell));
+    setScopeLocal(builtins, "getCell",
+            createNativeFuncThing(runtime, libGetCell));
+    setScopeLocal(builtins, "setCell",
+            createNativeFuncThing(runtime, libSetCell));
 
     return runtime;
 }

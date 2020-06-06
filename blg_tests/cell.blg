@@ -1,0 +1,7 @@
+main = def x do
+	c = createCell 1;
+	assert (getCell c == 1);
+	
+	setCell c 'value';
+	assert (getCell c == 'value');
+end;

@@ -218,3 +218,39 @@ RetVal libUnpackCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
     elements[1] = list->tail;
     return createRetVal(createTupleThing(runtime, 2, elements), 0);
 }
+
+RetVal libCreateCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    if(arity != 1) {
+        const char* msg = formatStr("expected 1 argument but got %i", arity);
+        return throwMsg(runtime, msg);
+    }
+
+    return createRetVal(createCellThing(runtime, args[0]), 0);
+}
+
+RetVal libGetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_CELL);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    return createRetVal(getCellValue(args[0]), 0);
+}
+
+RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    if(arity != 2) {
+        const char* msg = formatStr("expected 2 arguments but got %i", arity);
+        return throwMsg(runtime, msg);
+    }
+
+    if(typeOfThing(args[0]) != THING_TYPE_CELL) {
+        return throwMsg(runtime, newStr("expected argument 1 to be a cell"));
+    }
+
+    setCellValue(args[0], args[1]);
+    return createRetVal(runtime->noneThing, 0);
+}
+

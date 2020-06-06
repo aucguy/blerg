@@ -130,6 +130,11 @@ void initThing() {
         setCallThingType(THING_TYPE_OBJECT, errorCall);
         setDispatchThingType(THING_TYPE_OBJECT, objectDispatch);
 
+        THING_TYPE_CELL = createThingType();
+        setDestroyThingType(THING_TYPE_CELL, destroySimpleThing);
+        setCallThingType(THING_TYPE_CELL, errorCall);
+        setDispatchThingType(THING_TYPE_CELL, errorCall);
+
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -189,6 +194,9 @@ void deinitThing() {
 
         free(THING_TYPE_OBJECT);
         THING_TYPE_OBJECT = NULL;
+
+        free(THING_TYPE_CELL);
+        THING_TYPE_CELL = NULL;
 
         SYM_ADD = 0;
         SYM_SUB = 0;
@@ -837,6 +845,24 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
 void destroyObjectThing(Thing* self) {
     ObjectThing* object = (ObjectThing*) self;
     destroyMap(object->map, free, nothing);
+}
+
+typedef struct {
+    Thing* value;
+} CellThing;
+
+Thing* createCellThing(Runtime* runtime, Thing* value) {
+    CellThing* cell = createThing(runtime, THING_TYPE_CELL, sizeof(CellThing));
+    cell->value = value;
+    return cell;
+}
+
+Thing* getCellValue(Thing* cell) {
+    return ((CellThing*) cell)->value;
+}
+
+void setCellValue(Thing* cell, Thing* value) {
+    ((CellThing*) cell)->value = value;
 }
 
 /*RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {

@@ -32,5 +32,9 @@ RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args, uint8_t arit
 
 RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libCreateCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal libGetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
 
 #endif /* LIB_H_ */
