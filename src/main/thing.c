@@ -55,6 +55,7 @@ RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal consCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal consDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal moduleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 void destroyModuleThing(Thing* thing);
 void destroyErrorThing(Thing* thing);
@@ -98,7 +99,7 @@ void initThing() {
         THING_TYPE_MODULE = createThingType();
         setDestroyThingType(THING_TYPE_MODULE, destroyModuleThing);
         setCallThingType(THING_TYPE_MODULE, errorCall);
-        setDispatchThingType(THING_TYPE_MODULE, errorCall);
+        setDispatchThingType(THING_TYPE_MODULE, moduleDispatch);
 
         THING_TYPE_FUNC = createThingType();
         setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
@@ -149,6 +150,7 @@ void initThing() {
         SYM_OR = newSymbolId();
         SYM_NOT = newSymbolId();
         SYM_GET = newSymbolId();
+        SYM_DOT = newSymbolId();
 
         initialized = 1;
     }
@@ -211,6 +213,7 @@ void deinitThing() {
         SYM_OR = 0;
         SYM_NOT = 0;
         SYM_GET = 0;
+        SYM_DOT = 0;
 
         initialized = 0;
     }
@@ -559,6 +562,28 @@ void destroyModuleThing(Thing* thing) {
 
 Thing* getModuleProperty(Thing* thing, const char* name) {
     return getMapStr(((ModuleThing*) thing)->properties, name);
+}
+
+RetVal moduleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_MODULE,
+            THING_TYPE_STR);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    if(getSymbolId(self) != SYM_DOT) {
+        //TODO report the actual symbol
+        const char* msg = newStr("modules do not respond to that symbol");
+        return throwMsg(runtime, msg);
+    }
+
+    const char* name = thingAsStr(args[1]);
+    Thing* property = getModuleProperty(args[0], name);
+    if(property == NULL) {
+        return throwMsg(runtime, formatStr("export '%s' not found", name));
+    }
+
+    return createRetVal(property, 0);
 }
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,

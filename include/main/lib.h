@@ -36,5 +36,6 @@ RetVal libCreateCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 RetVal libGetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 #endif /* LIB_H_ */

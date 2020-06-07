@@ -60,6 +60,8 @@ Runtime* createRuntime() {
     runtime->allocatedThings = NULL;
     runtime->allocatedScopes = NULL;
     runtime->noneThing = createNoneThing(runtime);
+    runtime->modules = createMap();
+    runtime->moduleBytecode = NULL;
 
     Map* ops = createMap();
     runtime->operators = ops;
@@ -83,6 +85,7 @@ Runtime* createRuntime() {
     putMapStr(ops, "get", createSymbolThing(runtime, SYM_GET, 2));
     putMapStr(ops, "unpack_cons", createNativeFuncThing(runtime, libUnpackCons));
     putMapStr(ops, "none", runtime->noneThing);
+    putMapStr(ops, ".", createSymbolThing(runtime, SYM_DOT, 2));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -107,8 +110,13 @@ Runtime* createRuntime() {
             createNativeFuncThing(runtime, libGetCell));
     setScopeLocal(builtins, "setCell",
             createNativeFuncThing(runtime, libSetCell));
+    setScopeLocal(builtins, "import", createNativeFuncThing(runtime, libImport));
 
     return runtime;
+}
+
+void destroyModuleVoid(void* module) {
+    destroyModule(module);
 }
 
 void destroyRuntime(Runtime* runtime) {
@@ -117,6 +125,8 @@ void destroyRuntime(Runtime* runtime) {
     destroyList(runtime->allocatedThings, destroyThing);
     destroyList(runtime->allocatedScopes, destroyScope);
     destroyMap(runtime->operators, nothing, nothing);
+    destroyMap(runtime->modules, nothing, nothing);
+    destroyList(runtime->moduleBytecode, destroyModuleVoid);
     free(runtime);
 }
 

@@ -52,6 +52,8 @@ typedef struct {
     List* allocatedScopes;
     Map* operators;
     Scope* builtins;
+    Map* modules;
+    List* moduleBytecode;
 } Runtime;
 
 typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);

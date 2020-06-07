@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "main/thing.h"
 #include "main/execute.h"
+#include "main/top.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -254,3 +256,39 @@ RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return createRetVal(runtime->noneThing, 0);
 }
 
+//TODO make this work on non-posix systems
+RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_STR);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    const char* filename = thingAsStr(args[0]);
+    //TODO normalize import path
+    Thing* moduleThing = getMapStr(runtime->modules, filename);
+    if(moduleThing != NULL) {
+        return createRetVal(moduleThing, 0);
+    }
+
+    //check to see if the filename refers to a file
+    //TODO don't just search in the current directory
+    struct stat fileStat;
+    stat(filename, &fileStat);
+    if(!(fileStat.st_mode & S_IFREG)) {
+        return throwMsg(runtime, newStr("could not find the module"));
+    }
+    char* src = readFile(filename);
+    char* errorMsg = NULL;
+    Module* module = sourceToModule(src, &errorMsg);
+    free(src);
+    if(errorMsg != NULL) {
+        return throwMsg(runtime, errorMsg);
+    }
+    runtime->moduleBytecode = consList(module, runtime->moduleBytecode);
+    ret = executeModule(runtime, module);
+    if(isRetValError(ret)) {
+        return ret;
+    }
+    putMapStr(runtime->modules, filename, getRetVal(ret));
+    return ret;
+}

@@ -1,0 +1,5 @@
+module = import 'blg_tests/module.blg';
+
+main = def x do
+	assert (module.export == 'exported_value');
+end;

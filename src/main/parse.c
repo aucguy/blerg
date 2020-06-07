@@ -560,9 +560,10 @@ Token* parseFactor(ParseState* state) {
 }
 
 //'end' is not an operator; it signifies that the end of the array of operators
-#define OP_LEVELS 6
+#define OP_LEVELS 7
 #define OP_AMOUNT 8
 const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
+        { ".", "end" },
         { "*", "/", "end" },
         { "+", "-", "end" },
         { "==", "!=", ">=", "<=", "<", ">", "end" },
@@ -677,7 +678,16 @@ Token* parseBinaryOp(ParseState* state, uint8_t level) {
     const char* op;
     while((op = getOp(state, level)) != NULL) {
         advance(state, strlen(op));
-        Token* right = parseExpressionWithLevel(state, level - 1);
+        Token* right;
+        //TODO clean this up
+        if(strcmp(op, ".") == 0) {
+            IdentifierToken* id = parseIdentifier(state);
+            right = (Token*)
+                    createLiteralToken(id->token.location, newStr(id->value));
+            destroyToken((Token*) id);
+        } else {
+            right = parseExpressionWithLevel(state, level - 1);
+        }
         if(right == NULL) {
             free((void*) op);
             destroyToken(token);

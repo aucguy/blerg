@@ -39,7 +39,7 @@ void destroyRuntime(Runtime* runtime);
  *          begins at the beginning of the bytecode until the first
  *          return instruction.
  * @param error set to a nonzero value if an error occurs during execution.
- * @return the global scope as an ObjectThing, or NULL upon error.
+ * @return the global scope as a ModuleThing, or NULL upon error.
  */
 RetVal executeModule(Runtime* runtime, Module* module);
 

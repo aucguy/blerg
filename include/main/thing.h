@@ -100,6 +100,7 @@ uint32_t SYM_ADD;
 uint32_t SYM_OR;
 uint32_t SYM_NOT;
 uint32_t SYM_GET;
+uint32_t SYM_DOT;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
