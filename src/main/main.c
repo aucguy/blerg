@@ -12,14 +12,14 @@
 int main(int argc, const char* args[]) {
 #if INCLUDE_TESTS
     if(argc >= 2 && strcmp(args[1], "--test") == 0) {
-        return runTests();
+        return runTests(argc, args);
     }
 #endif
 
     if(argc == 2) {
         initThing();
         ExecFuncIn in;
-        in.runtime = createRuntime();
+        in.runtime = createRuntime(argc, args);
         in.src = readFile(args[1]);
         in.name = "main";
         in.arity = 1;

@@ -14,7 +14,7 @@ void initThing();
 
 /**
  * Deinitialize this module. Must be called or else memleaks will occur. Once
- * called, no other functions in this module may be called until initExecute is
+ * called, no other functions in this module may be called until initThing is
  * called.
  */
 void deinitThing();

@@ -142,7 +142,6 @@ def build(debugging=False):
                 print('failed to compile %s' %src)
                 failed = True
     
-
     if not failed:
         obj_files = list(map(lambda x: x[1], files))
         if any_newer_than(obj_files, executable(debugging)):
@@ -152,6 +151,13 @@ def build(debugging=False):
             if result.returncode != 0:
                 print('link failure')
                 failed = True
+    
+    if not failed:
+        dst = os.path.join(build_folder(debugging), 'std_lib')
+        print(dst)
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree('std_lib', dst)
     
     return not failed
 

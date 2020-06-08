@@ -92,23 +92,6 @@ void skipWhitespace(ParseState* state) {
     }
 }
 
-/**
- * Copies part of a string into a new string.
- *
- * @param str the string to take a slice of
- * @param start the index of the start of the slice
- * @param end the index of the end of the slice
- * @return a string containing the characters from the indexes of 'start' to
- *      'end' in 'src'
- */
-char* sliceStr(const char* str, uint32_t start, uint32_t end) {
-    uint32_t len = sizeof(char) * (end - start);
-    char* extracted = (char*) malloc(len + 1);
-    memcpy(extracted, &str[start], len);
-    extracted[len] = 0;
-    return extracted;
-}
-
 const char* KEYWORDS[] = { "def", "if", "then", "do", "elif", "else", "while",
         "end", "and", "or", "not", "return", "~" };
 

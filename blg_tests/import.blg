@@ -1,5 +1,9 @@
-module = import 'blg_tests/module.blg';
+custom_module = import 'blg_tests/module.blg';
+builtin_module = import 'std/builtin_test.blg';
+std_module = import 'std/version.blg';
 
 main = def x do
-	assert (module.export == 'exported_value');
+	assert (custom_module.export == 'exported_value');
+	assert (builtin_module.hello == 'world');
+	assert (std_module.version == '0.0.0');
 end;

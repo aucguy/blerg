@@ -25,7 +25,7 @@
  * that was defined in blerg will result in an error.
  */
 
-Runtime* createRuntime();
+Runtime* createRuntime(uint8_t argc, const char* args[]);
 void destroyRuntime(Runtime* runtime);
 
 /**

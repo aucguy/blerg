@@ -18,7 +18,10 @@ void runTest(const char* name, const char* msg, uint8_t* status) {
     }
 }
 
-uint8_t runTests() {
+uint8_t runTests(uint8_t argc, const char* args[]) {
+    cmdArgc = argc;
+    cmdArgs = args;
+
     uint8_t status = 0;
     printf("running tests...\n");
 
@@ -86,7 +89,7 @@ uint8_t runTests() {
 
                 initThing();
                 ExecFuncIn in;
-                in.runtime = createRuntime();
+                in.runtime = createRuntime(argc, args);
                 in.src = src;
                 in.name = "main";
                 in.arity = 1;

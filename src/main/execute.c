@@ -7,6 +7,8 @@
 #include "main/thing.h"
 #include "main/lib.h"
 
+#define UNUSED(x) (void)(x)
+
 Scope* createScope(Runtime* runtime, Scope* parent) {
     Scope* scope = malloc(sizeof(Scope));
     scope->parent = parent;
@@ -53,7 +55,9 @@ StackFrame* createStackFrameNative() {
     return frame;
 }
 
-Runtime* createRuntime() {
+Runtime* createRuntime(uint8_t argc, const char* args[]) {
+    UNUSED(argc);
+
     Runtime* runtime = malloc(sizeof(Runtime));
     runtime->stackFrame = NULL;
     runtime->stack = NULL;
@@ -62,6 +66,15 @@ Runtime* createRuntime() {
     runtime->noneThing = createNoneThing(runtime);
     runtime->modules = createMap();
     runtime->moduleBytecode = NULL;
+
+    uint32_t i;
+    for(i = strlen(args[0]); i > 0; i--) {
+        if(args[0][i] == '/' || args[0][i] == '\\') {
+            break;
+        }
+    }
+
+    runtime->execDir = sliceStr(args[0], 0, i);
 
     Map* ops = createMap();
     runtime->operators = ops;
@@ -127,6 +140,7 @@ void destroyRuntime(Runtime* runtime) {
     destroyMap(runtime->operators, nothing, nothing);
     destroyMap(runtime->modules, nothing, nothing);
     destroyList(runtime->moduleBytecode, destroyModuleVoid);
+    free((char*) runtime->execDir);
     free(runtime);
 }
 

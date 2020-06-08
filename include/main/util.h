@@ -10,6 +10,8 @@ char* newStr(const char* src);
 
 const char* formatStr(const char* format, ...);
 
+char* sliceStr(const char* str, uint32_t start, uint32_t end);
+
 /**
  * A forward linked list
  */

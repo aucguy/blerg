@@ -13,6 +13,7 @@
 #include "test/tests.h"
 
 #define UNUSED(x) (void)(x)
+#define createRuntime() createRuntime(cmdArgc, cmdArgs)
 
 uint8_t checkInt(RetVal ret, int32_t num) {
     if(isRetValError(ret)) {

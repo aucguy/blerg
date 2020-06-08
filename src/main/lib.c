@@ -256,6 +256,37 @@ RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return createRetVal(runtime->noneThing, 0);
 }
 
+uint8_t fileExists(const char* name) {
+    struct stat fileStat;
+    uint8_t error = stat(name, &fileStat);
+    return error == 0 && (fileStat.st_mode & S_IFREG);
+}
+
+const char* getModulePath(Runtime* runtime, const char* name) {
+    if(fileExists(name)) {
+        return newStr(name);
+    }
+    const char* stdPath = formatStr("%s/std_lib/%s", runtime->execDir, name);
+    if(fileExists(stdPath)) {
+        return stdPath;
+    } else {
+        free((char*) stdPath);
+        return NULL;
+    }
+}
+
+Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
+    if(strcmp(filename, "std/builtin_test.blg") == 0) {
+        Map* map = createMap();
+        putMapStr(map, "hello", createStrThing(runtime, "world", 1));
+        Thing* module =  createModuleThing(runtime, map);
+        destroyMap(map, nothing, nothing);
+        return module;
+    } else {
+        return NULL;
+    }
+}
+
 //TODO make this work on non-posix systems
 RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_STR);
@@ -270,25 +301,31 @@ RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return createRetVal(moduleThing, 0);
     }
 
-    //check to see if the filename refers to a file
-    //TODO don't just search in the current directory
-    struct stat fileStat;
-    stat(filename, &fileStat);
-    if(!(fileStat.st_mode & S_IFREG)) {
-        return throwMsg(runtime, newStr("could not find the module"));
-    }
-    char* src = readFile(filename);
-    char* errorMsg = NULL;
-    Module* module = sourceToModule(src, &errorMsg);
-    free(src);
-    if(errorMsg != NULL) {
-        return throwMsg(runtime, errorMsg);
-    }
-    runtime->moduleBytecode = consList(module, runtime->moduleBytecode);
-    ret = executeModule(runtime, module);
-    if(isRetValError(ret)) {
+    const char* path = getModulePath(runtime, filename);
+    if(path != NULL) {
+        char* src = readFile(path);
+        free((char*) path);
+        char* errorMsg = NULL;
+        Module* module = sourceToModule(src, &errorMsg);
+        free(src);
+        if(errorMsg != NULL) {
+            return throwMsg(runtime, errorMsg);
+        }
+        runtime->moduleBytecode = consList(module, runtime->moduleBytecode);
+        ret = executeModule(runtime, module);
+        if(isRetValError(ret)) {
+            return ret;
+        }
+        putMapStr(runtime->modules, filename, getRetVal(ret));
         return ret;
     }
-    putMapStr(runtime->modules, filename, getRetVal(ret));
-    return ret;
+
+    moduleThing = loadBuiltinModule(runtime, filename);
+    if(moduleThing == NULL) {
+        const char* format = "could not find module %s";
+        return throwMsg(runtime, formatStr(format, filename));
+    }
+
+    putMapStr(runtime->modules, filename, moduleThing);
+    return createRetVal(moduleThing, 0);
 }
