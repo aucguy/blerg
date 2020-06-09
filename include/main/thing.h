@@ -136,4 +136,12 @@ void setCellValue(Thing* cell, Thing* value);
 RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
         uint8_t expectedArity, ...);
 
+void destroySimpleThing(Thing* thing);
+RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity);
+ThingType* createThingType();
+void setDestroyThingType(ThingType* type, void (*destroy)(Thing*));
+void setCallThingType(ThingType* type, ExecFunc call);
+void setDispatchThingType(ThingType* type, ExecFunc dispatch);
+Thing* createThing(Runtime* runtime, ThingType* type, size_t size);
+
 #endif /* THING_H_ */

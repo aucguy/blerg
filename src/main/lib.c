@@ -7,6 +7,7 @@
 #include "main/thing.h"
 #include "main/execute.h"
 #include "main/top.h"
+#include "main/std_lib/modules.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -271,18 +272,6 @@ const char* getModulePath(Runtime* runtime, const char* name) {
         return stdPath;
     } else {
         free((char*) stdPath);
-        return NULL;
-    }
-}
-
-Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
-    if(strcmp(filename, "std/builtin_test.blg") == 0) {
-        Map* map = createMap();
-        putMapStr(map, "hello", createStrThing(runtime, "world", 1));
-        Thing* module =  createModuleThing(runtime, map);
-        destroyMap(map, nothing, nothing);
-        return module;
-    } else {
         return NULL;
     }
 }

@@ -1,0 +1,19 @@
+functools = import 'std/functools.blg';
+
+main = def x do
+	tup = functools.call f ['first', 'second'];
+	assert (get tup 0 == 'first');
+	assert (get tup 1 == 'second');
+
+	tup = functools.varargs g 'hello' 'world';
+	assert (get tup 0 == 'hello');
+	assert (get tup 1 == 'world');
+end;
+
+f = def x y do
+	return (x, y);
+end;
+
+g = def args do
+	return (head args, head (tail args));
+end;

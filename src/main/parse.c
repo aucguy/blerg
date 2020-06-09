@@ -45,7 +45,7 @@ void advance(ParseState* state, uint32_t amount) {
     for(uint32_t i = 0; i < amount; i++) {
         char c = getChar(state);
         //TODO support combinations of '\n' and '\r' denoting a single line break
-        if(c == '\n' || c == '\r') {
+        if(c == '\n') {
             state->location.line++;
             state->location.column = 1;
         } else if(c == '\t') {
@@ -84,7 +84,8 @@ void skipWhitespace(ParseState* state) {
     advanceWhile(state, WHITESPACE_CHARS);
 
     while(getChar(state) == '#') {
-        while(getChar(state) != '\n' && getChar(state) != '\r') {
+        while(getChar(state) != '\n' && getChar(state) != '\r' &&
+                getChar(state) != 0) {
             advance(state, 1);
         }
 
@@ -216,6 +217,7 @@ Token* parseIntOrFloat(ParseState* state) {
  * <literal> ::= ' .* '
  */
 LiteralToken* parseLiteral(ParseState* state) {
+    //TODO make an open literal not show out of bounds line numbers
     SrcLoc location = state->location;
     advance(state, 1); //skip the '
     uint32_t start = state->index;
@@ -466,11 +468,6 @@ FuncToken* parseFunc(ParseState* state) {
     SrcLoc location = state->location;
     advance(state, strlen("def"));
 
-    //skipWhitespace(state);
-    //IdentifierToken* name = parseIdentifier(state);
-    //if(name == NULL) {
-    //    return NULL;
-    //}
     IdentifierToken* name = createIdentifierToken(state->location, newStr("name"));
 
     uint8_t error = 0;
@@ -542,6 +539,36 @@ Token* parseFactor(ParseState* state) {
     }
 }
 
+Token* parseDotAccessHelper(ParseState* state, Token* left) {
+    skipWhitespace(state);
+    SrcLoc location = state->location;
+    if(getChar(state) == '.') {
+        advance(state, 1);
+        //TODO put in a transformation?
+        IdentifierToken* id = parseIdentifier(state);
+        if(id == NULL) {
+            return NULL;
+        }
+        Token* right = (Token*)
+                createLiteralToken(id->token.location, newStr(id->value));
+        destroyToken((Token*) id);
+
+        Token* access = (Token*)
+                createBinaryOpToken(location, newStr("."), left, right);
+        return parseDotAccessHelper(state, access);
+    } else {
+        return left;
+    }
+}
+
+Token* parseDotAccess(ParseState* state) {
+    Token* left = parseFactor(state);
+    if(left == NULL) {
+        return NULL;
+    }
+    return parseDotAccessHelper(state, left);
+}
+
 //'end' is not an operator; it signifies that the end of the array of operators
 #define OP_LEVELS 7
 #define OP_AMOUNT 8
@@ -560,6 +587,7 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
 uint8_t factorAhead(ParseState* state) {
     char c = getChar(state);
     return c == '(' || c == '\'' || containsChar(INT_CHARS, c) != 0 ||
+            c == '[' ||
             (containsChar(IDENTIFIER_CHARS, c) != 0 &&
                     !lookAheadMulti(state, KEYWORDS));
 }
@@ -568,7 +596,7 @@ Token* parseCall(ParseState* state) {
     skipWhitespace(state);
     SrcLoc location = state->location;
     //the first token may just be by itself or be the function in the call
-    Token* first = parseFactor(state);
+    Token* first = parseDotAccess(state);
     if(first == NULL) {
         return NULL;
     }
@@ -582,7 +610,7 @@ Token* parseCall(ParseState* state) {
     //its a function call
     List* children = consList(first, NULL);
     while(factorAhead(state)) {
-        children = consList(parseFactor(state), children);
+        children = consList(parseDotAccess(state), children);
         skipWhitespace(state);
     }
 
@@ -661,16 +689,7 @@ Token* parseBinaryOp(ParseState* state, uint8_t level) {
     const char* op;
     while((op = getOp(state, level)) != NULL) {
         advance(state, strlen(op));
-        Token* right;
-        //TODO clean this up
-        if(strcmp(op, ".") == 0) {
-            IdentifierToken* id = parseIdentifier(state);
-            right = (Token*)
-                    createLiteralToken(id->token.location, newStr(id->value));
-            destroyToken((Token*) id);
-        } else {
-            right = parseExpressionWithLevel(state, level - 1);
-        }
+        Token* right = parseExpressionWithLevel(state, level - 1);
         if(right == NULL) {
             free((void*) op);
             destroyToken(token);
