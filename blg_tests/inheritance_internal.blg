@@ -1,0 +1,16 @@
+inheritance_internal = import 'std/internal/inheritance.blg';
+
+main = def x do
+	symbol = createSymbol 1;
+
+	props = [
+		(symbol, 'value')
+	];
+	
+	obj = inheritance_internal.object props;
+	assert (symbol obj == 'value');
+	
+	ret = inheritance_internal.properties obj;
+	#symbol equality is not yet supported
+	assert (get (head ret) 1 == 'value');
+end;

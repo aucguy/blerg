@@ -910,6 +910,10 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
     }
 }
 
+Map* getObjectMap(Thing* object) {
+    return ((ObjectThing*) object)->map;
+}
+
 void destroyObjectThing(Thing* self) {
     ObjectThing* object = (ObjectThing*) self;
     destroyMap(object->map, free, nothing);

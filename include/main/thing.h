@@ -130,6 +130,7 @@ typedef struct {
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
 
 Thing* createObjectThing(Runtime* runtime, Map* map);
+Map* getObjectMap(Thing* object);
 
 Thing* createCellThing(Runtime* runtime, Thing* value);
 Thing* getCellValue(Thing* cell);

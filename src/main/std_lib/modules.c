@@ -6,6 +6,7 @@
 
 #include "main/std_lib/functools.h"
 #include "main/std_lib/operators.h"
+#include "main/std_lib/internal/inheritance.h"
 
 Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
     if(strcmp(filename, "std/builtin_test.blg") == 0) {
@@ -18,6 +19,8 @@ Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
         return initFunctoolsModule(runtime);
     } else if(strcmp(filename, "std/operators.blg") == 0) {
         return initOperatorsModule(runtime);
+    } else if(strcmp(filename, "std/internal/inheritance.blg") == 0) {
+        return initInheritanceModule(runtime);
     } else {
         return NULL;
     }
