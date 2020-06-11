@@ -6,6 +6,7 @@
 #include "main/execute.h"
 #include "main/thing.h"
 #include "main/lib.h"
+#include "main/std_lib/modules.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -142,6 +143,7 @@ void destroyRuntime(Runtime* runtime) {
     destroyList(runtime->moduleBytecode, destroyModuleVoid);
     free((char*) runtime->execDir);
     free(runtime);
+    destroyBuiltinModules();
 }
 
 StackFrame* currentStackFrame(Runtime* runtime) {

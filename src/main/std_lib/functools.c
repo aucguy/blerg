@@ -4,6 +4,8 @@
 
 #define UNUSED(x) (void)(x)
 
+uint8_t initialized = 0;
+
 RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
@@ -88,6 +90,7 @@ RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
 
 Thing* initFunctoolsModule(Runtime* runtime) {
+    initialized = 1;
     Map* map = createMap();
 
     THING_TYPE_VARARG = createThingType();
@@ -100,4 +103,13 @@ Thing* initFunctoolsModule(Runtime* runtime) {
     Thing* module = createModuleThing(runtime, map);
     destroyMap(map, nothing, nothing);
     return module;
+}
+
+void destroyFunctoolsModule() {
+    if(initialized) {
+        initialized = 0;
+
+        free(THING_TYPE_VARARG);
+        THING_TYPE_VARARG = NULL;
+    }
 }

@@ -22,3 +22,7 @@ Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
         return NULL;
     }
 }
+
+void destroyBuiltinModules() {
+    destroyFunctoolsModule();
+}

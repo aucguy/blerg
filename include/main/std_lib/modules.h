@@ -5,5 +5,6 @@
 #include "main/execute.h"
 
 Thing* loadBuiltinModule(Runtime* runtime, const char* filename);
+void destroyBuiltinModules();
 
 #endif /* STD_LIB_MODULES_H_ */
