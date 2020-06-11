@@ -1,0 +1,28 @@
+#include "main/util.h"
+#include "main/thing.h"
+#include "main/runtime.h"
+
+Thing* initOperatorsModule(Runtime* runtime) {
+    Map* map = createMap();
+
+    putMapStr(map, "add", getMapStr(runtime->operators, "+"));
+    putMapStr(map, "subract", getMapStr(runtime->operators, "-"));
+    putMapStr(map, "multiply", getMapStr(runtime->operators, "*"));
+    putMapStr(map, "divide", getMapStr(runtime->operators, "/"));
+    putMapStr(map, "equal", getMapStr(runtime->operators, "=="));
+    putMapStr(map, "not_equal", getMapStr(runtime->operators, "!="));
+    putMapStr(map, "less_than", getMapStr(runtime->operators, "<"));
+    putMapStr(map, "less_than_equal", getMapStr(runtime->operators, "<="));
+    putMapStr(map, "more_than", getMapStr(runtime->operators, ">"));
+    putMapStr(map, "more_than_equal", getMapStr(runtime->operators, ">="));
+    putMapStr(map, "and", getMapStr(runtime->operators, "and"));
+    putMapStr(map, "or", getMapStr(runtime->operators, "or"));
+    putMapStr(map, "not", getMapStr(runtime->operators, "not"));
+    putMapStr(map, "cons", getMapStr(runtime->operators, "::"));
+    putMapStr(map, "access", getMapStr(runtime->operators, "."));
+    putMapStr(map, "call", createSymbolThing(runtime, SYM_CALL, 0));
+
+    Thing* module = createModuleThing(runtime, map);
+    destroyMap(map, nothing, nothing);
+    return module;
+}

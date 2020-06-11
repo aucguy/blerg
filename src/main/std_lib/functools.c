@@ -77,6 +77,8 @@ Thing* createVarargThing(Runtime* runtime, Thing* func) {
 }
 
 RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
     if(arity != 1) {
         throwMsg(runtime, formatStr("expected 1 arg but got %i", arity));
     }

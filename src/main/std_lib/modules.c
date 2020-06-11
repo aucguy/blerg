@@ -5,6 +5,7 @@
 #include "main/execute.h"
 
 #include "main/std_lib/functools.h"
+#include "main/std_lib/operators.h"
 
 Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
     if(strcmp(filename, "std/builtin_test.blg") == 0) {
@@ -15,6 +16,8 @@ Thing* loadBuiltinModule(Runtime* runtime, const char* filename) {
         return module;
     } else if(strcmp(filename, "std/functools.blg") == 0) {
         return initFunctoolsModule(runtime);
+    } else if(strcmp(filename, "std/operators.blg") == 0) {
+        return initOperatorsModule(runtime);
     } else {
         return NULL;
     }

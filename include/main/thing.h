@@ -1,6 +1,7 @@
 #ifndef THING_H_
 #define THING_H_
 
+#include <stdlib.h>
 #include <stdint.h>
 
 #include "main/execute.h"
@@ -101,6 +102,7 @@ uint32_t SYM_OR;
 uint32_t SYM_NOT;
 uint32_t SYM_GET;
 uint32_t SYM_DOT;
+uint32_t SYM_CALL;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();

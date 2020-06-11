@@ -52,6 +52,7 @@ uint32_t getSymbolId(Thing* self);
 RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 //RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+RetVal objectCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal consCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal consDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
@@ -128,7 +129,7 @@ void initThing() {
 
         THING_TYPE_OBJECT = createThingType();
         setDestroyThingType(THING_TYPE_OBJECT, destroyObjectThing);
-        setCallThingType(THING_TYPE_OBJECT, errorCall);
+        setCallThingType(THING_TYPE_OBJECT, objectCall);
         setDispatchThingType(THING_TYPE_OBJECT, objectDispatch);
 
         THING_TYPE_CELL = createThingType();
@@ -151,6 +152,7 @@ void initThing() {
         SYM_NOT = newSymbolId();
         SYM_GET = newSymbolId();
         SYM_DOT = newSymbolId();
+        SYM_CALL = newSymbolId();
 
         initialized = 1;
     }
@@ -214,6 +216,7 @@ void deinitThing() {
         SYM_NOT = 0;
         SYM_GET = 0;
         SYM_DOT = 0;
+        SYM_CALL = 0;
 
         initialized = 0;
     }
@@ -535,7 +538,8 @@ uint32_t getSymbolId(Thing* self) {
 //not properly supported yet
 RetVal symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     uint8_t expected = ((SymbolThing*) self)->arity;
-    if(arity != expected) {
+    //TODO remove this check
+    if(arity != expected && arity != 0) {
         const char* format = "expected %i arguments, but got %i";
         return throwMsg(runtime, formatStr(format, expected, arity));
     }
@@ -852,18 +856,57 @@ Thing* createObjectThing(Runtime* runtime, Map* map) {
     return object;
 }
 
+RetVal objectCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    //these typechecks should pass, but they are here just in case
+    if(arity == 0) {
+        const char* fmt = "expected at least 1 args but got %i";
+        return throwMsg(runtime, formatStr(fmt, arity));
+    }
+
+    if(typeOfThing(self) != THING_TYPE_OBJECT) {
+        //TODO report the actual type
+        return throwMsg(runtime, "expected self to be an object");
+    }
+
+    ObjectThing* object = self;
+    Thing** value = getMapUint32(object->map, SYM_CALL);
+    if(value == NULL) {
+        const char* msg = "object is not callable (does not have call property)";
+        return throwMsg(runtime, newStr(msg));
+    } else {
+        return callFunction(runtime, value, arity, args);
+    }
+}
+
 RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
         uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_OBJECT);
-    if(isRetValError(ret)) {
-        return ret;
+
+    //these typechecks should pass, but they for here just in case
+    if(arity == 0) {
+        const char* fmt = "expected at least 1 args but got %i";
+        return throwMsg(runtime, formatStr(fmt, arity));
     }
+
+    if(typeOfThing(args[0]) != THING_TYPE_OBJECT) {
+        //TODO report the actual type
+        return throwMsg(runtime, "expected argument 1 to be an object");
+    }
+
     ObjectThing* object = args[0];
     Thing* value = getMapUint32(object->map, getSymbolId(self));
     if(value == NULL) {
         return throwMsg(runtime, newStr("object does not respond to that symbol"));
-    } else {
+    } else if(arity == 1) {
         return createRetVal(value, 0);
+    } else {
+        Thing** passedArgs = malloc(sizeof(Thing*) * (arity - 1));
+        for(uint8_t i = 1; i < arity; i++) {
+            passedArgs[i - 1] = args[i];
+        }
+
+        RetVal ret = callFunction(runtime, value, arity - 1, passedArgs);
+        free(passedArgs);
+        return ret;
     }
 }
 

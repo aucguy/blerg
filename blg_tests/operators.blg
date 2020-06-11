@@ -1,0 +1,15 @@
+operators = import 'std/operators.blg';
+
+main = def x do
+	obj = {
+		operators.add: def other do
+			return 1 + other;
+		end,
+		operators.call: def arg do
+			return 'hello ' + arg;
+		end
+	};
+	
+	assert (obj + 2 == 3);
+	assert (obj 'world' == 'hello world');
+end;
