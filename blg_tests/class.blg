@@ -1,0 +1,23 @@
+#inheritance = import 'std/inheritance.blg';
+
+#main = def x do
+#	myProperty = createSymbol 2;
+#	myMethod = createSymbol 3;
+
+#	my_class = inheritance.class {
+#		myProperty: def x y do
+#			return x + y;
+#		end,
+#		myMethod: def self x y do
+#			return x - y;
+#		end
+#	};
+	
+#	instance = my_class none;
+	
+#	assert (myProperty instance 2 1 == 3);
+#	assert (myMethod instance 2 1 == 1);
+#end;
+
+#temporary testcase
+main = def x do end;

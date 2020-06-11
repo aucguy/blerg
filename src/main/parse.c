@@ -587,7 +587,7 @@ const char* OP_DATA[OP_LEVELS][OP_AMOUNT] = {
 uint8_t factorAhead(ParseState* state) {
     char c = getChar(state);
     return c == '(' || c == '\'' || containsChar(INT_CHARS, c) != 0 ||
-            c == '[' ||
+            c == '[' || c== '{' ||
             (containsChar(IDENTIFIER_CHARS, c) != 0 &&
                     !lookAheadMulti(state, KEYWORDS));
 }

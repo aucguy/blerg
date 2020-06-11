@@ -43,31 +43,56 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ret;
 }
 
-RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    UNUSED(self);
+ThingType* THING_TYPE_VARARG = NULL;
 
-    if(arity < 2) {
+typedef struct {
+    Thing* func;
+} VarargThing;
+
+RetVal varargCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(arity < 1) {
         const char* fmt = "expected at least 1 args but got %i";
         return throwMsg(runtime, formatStr(fmt, arity));
     }
 
-    Thing* func = args[0];
-
     Thing* list = runtime->noneThing;
-    for(uint8_t i = arity - 1; i > 0; i--) {
-        list = createListThing(runtime, args[i], list);
+    for(uint8_t i = arity; i > 0; i--) {
+        list = createListThing(runtime, args[i - 1], list);
     }
 
     Thing* passedArgs[1] = {
             list
     };
 
+    Thing* func = ((VarargThing*) self)->func;
+
     return callFunction(runtime, func, 1, passedArgs);
+}
+
+Thing* createVarargThing(Runtime* runtime, Thing* func) {
+    VarargThing* vararg = createThing(runtime, THING_TYPE_VARARG,
+            sizeof(VarargThing));
+    vararg->func = func;
+    return vararg;
+}
+
+RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(arity != 1) {
+        throwMsg(runtime, formatStr("expected 1 arg but got %i", arity));
+    }
+
+    return createRetVal(createVarargThing(runtime, args[0]), 0);
 }
 
 
 Thing* initFunctoolsModule(Runtime* runtime) {
     Map* map = createMap();
+
+    THING_TYPE_VARARG = createThingType();
+    setDestroyThingType(THING_TYPE_VARARG, destroySimpleThing);
+    setCallThingType(THING_TYPE_VARARG, varargCall);
+    setDispatchThingType(THING_TYPE_VARARG, errorCall);
+
     putMapStr(map, "call", createNativeFuncThing(runtime, libCall));
     putMapStr(map, "varargs", createNativeFuncThing(runtime, libVarargs));
     Thing* module = createModuleThing(runtime, map);

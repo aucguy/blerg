@@ -5,7 +5,7 @@ main = def x do
 	assert (get tup 0 == 'first');
 	assert (get tup 1 == 'second');
 
-	tup = functools.varargs g 'hello' 'world';
+	tup = (functools.varargs g) 'hello' 'world';
 	assert (get tup 0 == 'hello');
 	assert (get tup 1 == 'world');
 end;

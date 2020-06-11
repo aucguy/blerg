@@ -718,7 +718,12 @@ List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
 Token* copyIfToken(Token* self, CopyVisitor visitor, void* data) {
     IfToken* ifToken = (IfToken*) self;
     List* branches = copyIfBranches(ifToken->branches, visitor, data);
-    Token* elseBranch = visitor((Token*) ifToken->elseBranch, data);
+    Token* elseBranch;
+    if(ifToken->elseBranch == NULL) {
+        elseBranch = NULL;
+    } else {
+        elseBranch = visitor((Token*) ifToken->elseBranch, data);
+    }
     return (Token*) createIfToken(self->location, branches,
             (BlockToken*) elseBranch);
 }
