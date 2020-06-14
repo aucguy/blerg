@@ -96,7 +96,7 @@ Thing* initFunctoolsModule(Runtime* runtime) {
     THING_TYPE_VARARG = createThingType();
     setDestroyThingType(THING_TYPE_VARARG, destroySimpleThing);
     setCallThingType(THING_TYPE_VARARG, varargCall);
-    setDispatchThingType(THING_TYPE_VARARG, errorCall);
+    setDispatchThingType(THING_TYPE_VARARG, symbolDispatch);
 
     putMapStr(map, "call", createNativeFuncThing(runtime, libCall));
     putMapStr(map, "varargs", createNativeFuncThing(runtime, libVarargs));

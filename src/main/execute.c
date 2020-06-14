@@ -90,7 +90,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
     putMapStr(ops, "<=", createSymbolThing(runtime, SYM_LESS_THAN_EQ, 2));
     putMapStr(ops, ">", createSymbolThing(runtime, SYM_GREATER_THAN, 2));
     putMapStr(ops, ">=", createSymbolThing(runtime, SYM_GREATER_THAN_EQ, 2));
-    putMapStr(ops, "and", createSymbolThing(runtime, SYM_ADD, 2));
+    putMapStr(ops, "and", createSymbolThing(runtime, SYM_AND, 2));
     putMapStr(ops, "or", createSymbolThing(runtime, SYM_OR, 2));
     putMapStr(ops, "not", createSymbolThing(runtime, SYM_NOT, 1));
     putMapStr(ops, "tuple", createNativeFuncThing(runtime, libTuple));
@@ -125,6 +125,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
     setScopeLocal(builtins, "setCell",
             createNativeFuncThing(runtime, libSetCell));
     setScopeLocal(builtins, "import", createNativeFuncThing(runtime, libImport));
+    setScopeLocal(builtins, "responds_to", createSymbolThing(runtime, SYM_RESPONDS_TO, 2));
 
     return runtime;
 }

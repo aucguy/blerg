@@ -97,12 +97,13 @@ uint32_t SYM_LESS_THAN;
 uint32_t SYM_LESS_THAN_EQ;
 uint32_t SYM_GREATER_THAN;
 uint32_t SYM_GREATER_THAN_EQ;
-uint32_t SYM_ADD;
+uint32_t SYM_AND;
 uint32_t SYM_OR;
 uint32_t SYM_NOT;
 uint32_t SYM_GET;
 uint32_t SYM_DOT;
 uint32_t SYM_CALL;
+uint32_t SYM_RESPONDS_TO;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();
@@ -146,5 +147,6 @@ void setDestroyThingType(ThingType* type, void (*destroy)(Thing*));
 void setCallThingType(ThingType* type, ExecFunc call);
 void setDispatchThingType(ThingType* type, ExecFunc dispatch);
 Thing* createThing(Runtime* runtime, ThingType* type, size_t size);
+RetVal symbolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 
 #endif /* THING_H_ */

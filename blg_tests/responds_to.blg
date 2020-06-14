@@ -1,0 +1,56 @@
+operators = import 'std/operators.blg';
+functools = import 'std/functools.blg';
+
+main = def x do
+	assert (responds_to 1 operators.add);
+	assert (not responds_to 1 operators.access);
+	
+	assert (responds_to 1.0 operators.add);
+	assert (not responds_to 1.0 operators.access);
+	
+	assert (responds_to 'some_str' operators.equal);
+	assert (not responds_to true operators.multiply);
+	
+	assert (responds_to true operators.op_not);
+	assert (not responds_to true operators.subtract);
+	
+	assert (responds_to operators.add responds_to);
+	assert (not responds_to operators.add operators.subtract);
+	
+	assert (responds_to operators operators.access);
+	assert (not responds_to operators operators.add);
+	
+	assert (responds_to f responds_to);
+	assert (not responds_to f operators.subtract);
+	
+	assert (responds_to functools.varargs responds_to);
+	assert (not responds_to functools.varargs operators.subtract);
+	
+	error = trycatch f id;
+	assert (responds_to error responds_to);
+	assert (not responds_to error operators.equal);
+	
+	assert (responds_to (1, 2) get);
+	assert (not responds_to (1, 2) operators.add);
+	
+	symbol = createSymbol 1;
+	obj = { symbol: 1 };
+	assert (responds_to obj symbol);
+	assert (not responds_to obj operators.add);
+	
+	cell = createCell none;
+	assert (responds_to cell responds_to);
+	assert (not responds_to cell operators.equal);
+	
+	vararg = functools.varargs f;
+	assert (responds_to vararg responds_to);
+	assert (not responds_to cell operators.equal);
+end;
+
+f = def x do
+	assert false;
+end;
+
+id = def x do
+	return x;
+end;
