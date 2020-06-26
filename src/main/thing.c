@@ -42,6 +42,7 @@ RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity) {
     return throwMsg(runtime, "cannot call this type");
 }
 
+//RetVal noneDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 RetVal intDispatch(Runtime*, Thing*, Thing**, uint8_t);
 RetVal floatDispatch(Runtime*, Thing*, Thing**, uint8_t);
 RetVal strDispatch(Runtime*, Thing*, Thing**, uint8_t);
@@ -272,6 +273,34 @@ Thing* createNoneThing(Runtime* runtime) {
     thing->dummy = 0;
     return thing;
 }
+
+/*RetVal noneDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
+        return throwMsg(runtime, newStr("expected self to be a symbol"));
+    }
+
+    uint32_t id = getSymbolId(self);
+
+    if(id != SYM_EQ && id != SYM_NOT_EQ) {
+        //TODO report the actual symbol
+        return throwMsg(runtime, newStr("expected symbol to be == or !="));
+    }
+
+    if(arity != 2) {
+        const char* fmt = "expected 2 arguments but got %i";
+        return throwMsg(runtime, formatStr(fmt, arity));
+    }
+
+    if(id == SYM_EQ) {
+        uint8_t ret = typeOfThing(args[1]) == THING_TYPE_NONE;
+        return createRetVal(createBoolThing(runtime, ret), 0);
+    } else if(id == SYM_NOT_EQ) {
+        uint8_t ret = typeOfThing(args[1]) != THING_TYPE_NONE;
+        return createRetVal(createBoolThing(runtime, ret), 0);
+    } else {
+        return throwMsg(runtime, newStr("internal error"));
+    }
+}*/
 
 /**
  * Represents integers found in the source code.

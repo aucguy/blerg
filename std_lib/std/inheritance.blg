@@ -2,16 +2,16 @@ operators = import 'std/operators.blg';
 internal = import 'std/internal/inheritance.blg';
 functools = import 'std/functools.blg';
 
-bind = createSymbol 1;
+bind = createSymbol 2;
 properties = internal.properties;
 object = internal.object;
 
 mixin = def args do
 	combined = none;
-	while args != none do
+	while not is_none args do
 		props = properties (head args);
 		
-		while props != none do
+		while not is_none props do
 			combined = (head props) :: combined;
 		
 			props = tail props;
@@ -27,9 +27,10 @@ method = def func do
 	return {
 		operators.call: func,
 		bind: def self do
-			return def args do
+			f = def args do
 				return functools.call func (getCell self :: args);
 			end;
+			return functools.varargs f;
 		end
 	};
 end;
@@ -41,14 +42,12 @@ class = def obj do
 		oldProps = properties obj;
 		newProps = none;
 		
-		while oldProps != none do
-			key = get oldProps 0;
-			value = get oldProps 1;
+		while not is_none oldProps do
+			key = get (head oldProps) 0;
+			value = get (head oldProps) 1;
 			
 			if responds_to value bind then
-				if bind value then
-					value = bind value self;
-				end
+				value = bind value self;
 			end
 			
 			newProps = (key, value) :: newProps;

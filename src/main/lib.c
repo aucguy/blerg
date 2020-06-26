@@ -318,3 +318,15 @@ RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     putMapStr(runtime->modules, filename, moduleThing);
     return createRetVal(moduleThing, 0);
 }
+
+RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+
+    if(arity != 1) {
+        return throwMsg(runtime, formatStr("expected 1 arg but got %i", arity));
+    }
+
+    uint8_t ret = typeOfThing(args[0]) == THING_TYPE_NONE;
+    return createRetVal(createBoolThing(runtime, ret), 0);
+}
+

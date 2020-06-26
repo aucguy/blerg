@@ -1,16 +1,16 @@
 inheritance = import 'std/inheritance.blg';
 
 main = def x do
-	myProperty = createSymbol 2;
+	myProperty = createSymbol 3;
 	myMethod = createSymbol 3;
 
 	my_class = inheritance.class {
 		myProperty: def x y do
 			return x + y;
 		end,
-		myMethod: def self x y do
+		myMethod: inheritance.method (def self x y do
 			return x - y;
-		end
+		end)
 	};
 	
 	instance = my_class none;

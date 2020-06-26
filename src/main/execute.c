@@ -126,6 +126,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
             createNativeFuncThing(runtime, libSetCell));
     setScopeLocal(builtins, "import", createNativeFuncThing(runtime, libImport));
     setScopeLocal(builtins, "responds_to", createSymbolThing(runtime, SYM_RESPONDS_TO, 2));
+    setScopeLocal(builtins, "is_none", createNativeFuncThing(runtime, libIsNone));
 
     return runtime;
 }
