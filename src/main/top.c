@@ -25,7 +25,7 @@ char* readFile(const char* filename) {
     return string;
 }
 
-Module* sourceToModule(const char* src, char** error) {
+Module* sourceToModule(const char* name, const char* src, char** error) {
     BlockToken* ast = parseModule(src, error);
     if(ast == NULL) {
         return NULL;
@@ -37,6 +37,7 @@ Module* sourceToModule(const char* src, char** error) {
     destroyToken((Token*) ast);
     Module* module = compileModule((Token*) transformed);
     destroyToken((Token*) transformed);
+    module->name = name;
     return module;
 }
 
@@ -46,7 +47,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     out.errorMsg = NULL;
     out.module = NULL;
 
-    out.module = sourceToModule(in.src, (char**) &out.errorMsg);
+    out.module = sourceToModule(in.filename, in.src, (char**) &out.errorMsg);
     if(out.module == NULL) {
         return out;
     }

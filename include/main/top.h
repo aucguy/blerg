@@ -14,6 +14,7 @@ typedef struct {
     const char* name;
     Thing** args;
     uint8_t arity;
+    const char* filename;
 } ExecFuncIn;
 
 typedef struct {
@@ -24,7 +25,7 @@ typedef struct {
 
 char* readFile(const char* filename);
 
-Module* sourceToModule(const char* src, char** error);
+Module* sourceToModule(const char* name, const char* src, char** error);
 
 ExecFuncOut execFunc(ExecFuncIn in);
 void cleanupExecFunc(ExecFuncIn in, ExecFuncOut out);

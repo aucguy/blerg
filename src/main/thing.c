@@ -762,9 +762,9 @@ RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
 }
 
 typedef struct {
-    //TODO add file path
     uint8_t native;
     SrcLoc location;
+    const char* filename;
 } ErrorFrame;
 
 typedef struct {
@@ -787,6 +787,7 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
 
         errorFrame->location.line = 0;
         errorFrame->location.column = 0;
+        errorFrame->filename = NULL;
 
         if(stackFrame->type == STACK_FRAME_DEF) {
             errorFrame->native = 0;
@@ -799,6 +800,8 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
                     break;
                 }
             }
+
+            errorFrame->filename = frameDef->module->name;
         } else {
             errorFrame->native = 1;
         }
@@ -835,7 +838,14 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
         if(frame->native) {
             line = newStr("[native code]");
         } else {
-            line = (char*) formatStr("at %i, %i",
+            const char* filename;
+            if(frame->filename == NULL) {
+                filename = "[native code]";
+            } else {
+                filename = frame->filename;
+            }
+
+            line = (char*) formatStr("%s at %i, %i", filename,
                 frame->location.line, frame->location.column);
         }
         length += strlen(line) + 2;

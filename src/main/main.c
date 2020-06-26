@@ -25,6 +25,7 @@ int main(int argc, const char* args[]) {
         in.arity = 1;
         in.args = malloc(sizeof(Thing*) * in.arity);
         in.args[0] = in.runtime->noneThing;
+        in.filename = args[1];
         ExecFuncOut out = execFunc(in);
         if(out.errorMsg != NULL) {
             printf("error: %s", out.errorMsg);

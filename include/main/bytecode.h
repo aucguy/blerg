@@ -101,6 +101,7 @@ typedef struct {
     const BytecodeSrcLoc* srcLoc;
 
     uint32_t entryIndex;
+    const char* name;
 } Module;
 
 #endif /* BYTECODE_H_ */

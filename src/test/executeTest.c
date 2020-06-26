@@ -49,7 +49,7 @@ const char* executeTestGlobalHasMainFunc() {
     initThing();
     Runtime* runtime = createRuntime();
     char* errorMsg;
-    Module* module = sourceToModule("main = def x do return 1; end;", &errorMsg);
+    Module* module = sourceToModule(NULL, "main = def x do return 1; end;", &errorMsg);
     assert(module != NULL, "error in source code");
 
     RetVal global = executeModule(runtime, module);
@@ -97,6 +97,7 @@ const char* executeTestAddSubFunction() {
     in.args[0] = createIntThing(in.runtime, 1);
     in.args[1] = createIntThing(in.runtime, 2);
     in.args[2] = createIntThing(in.runtime, 3);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -116,6 +117,7 @@ const char* executeTestMathExpr() {
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 100);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -135,6 +137,7 @@ const char* executeTestStrRet() {
    in.arity = 1;
    in.args = malloc(sizeof(Thing*) * in.arity);
    in.args[0] = in.runtime->noneThing;
+   in.filename = NULL;
 
    ExecFuncOut out = execFunc(in);
    assert(out.errorMsg == NULL, out.errorMsg);
@@ -154,6 +157,7 @@ const char* executeTestStrConcat() {
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "Bob", 1);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -174,6 +178,7 @@ const char* executeTestIntEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -194,6 +199,7 @@ const char* executeTestIntNotEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -214,6 +220,7 @@ const char* executeTestIntLessThan() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -234,6 +241,7 @@ const char* executeTestIntLessThanEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -253,6 +261,7 @@ const char* executeTestIntGreaterThan() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -272,6 +281,7 @@ const char* executeTestIntGreaterThanEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -292,6 +302,7 @@ const char* executeTestStrEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "hello", 1);
     in.args[1] = createStrThing(in.runtime, "world", 1);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -312,6 +323,7 @@ const char* executeTestStrNotEq() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "hello", 1);
     in.args[1] = createStrThing(in.runtime, "world", 1);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -332,6 +344,7 @@ const char* executeTestBoolAnd() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
     in.args[1] = createBoolThing(in.runtime, 0);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -352,6 +365,7 @@ const char* executeTestBoolOr() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
     in.args[1] = createBoolThing(in.runtime, 0);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -372,6 +386,7 @@ const char* executeTestBoolNot() {
     in.arity = 2;
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -392,6 +407,7 @@ const char* executeTestIfStmt() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 1);
     in.args[1] = createIntThing(in.runtime, 1);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -411,6 +427,7 @@ const char* executeTestAssignment() {
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = in.runtime->noneThing;
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -430,6 +447,7 @@ const char* executeTestWhileLoop() {
     in.arity = 1;
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 4);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);
@@ -468,6 +486,7 @@ const char* executeTestNativeFunc() {
     in.args = malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createNativeFuncThing(in.runtime, absFunc);
     in.args[1] = createIntThing(in.runtime, -4);
+    in.filename = NULL;
 
     ExecFuncOut out = execFunc(in);
     assert(out.errorMsg == NULL, out.errorMsg);

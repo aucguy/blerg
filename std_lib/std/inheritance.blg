@@ -28,7 +28,7 @@ method = def func do
 		operators.call: func,
 		bind: def self do
 			return def args do
-				return functools.call func (getCell self args);
+				return functools.call func (getCell self :: args);
 			end;
 		end
 	};
@@ -45,8 +45,8 @@ class = def obj do
 			key = get oldProps 0;
 			value = get oldProps 1;
 			
-			if responds_to value is_method then
-				if is_method value then
+			if responds_to value bind then
+				if bind value then
 					value = bind value self;
 				end
 			end

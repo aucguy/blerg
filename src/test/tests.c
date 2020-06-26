@@ -25,7 +25,7 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
     uint8_t status = 0;
     printf("running tests...\n");
 
-    runTest("testParseInt", testParseInt(), &status);
+    /*runTest("testParseInt", testParseInt(), &status);
     runTest("testParseLiteral", testParseLiteral(), &status);
     runTest("testParseIdentifier", testParseIdentifier(), &status);
     runTest("testParseExpression", testParseExpression(), &status);
@@ -74,13 +74,17 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
     runTest("executeTestAssignment", executeTestAssignment(), &status);
     runTest("executeTestWhileLoop", executeTestWhileLoop(), &status);
     runTest("executeTestNativeFunc", executeTestNativeFunc(), &status);
-    runTest("executeTestRecFunc", executeTestRecFunc(), &status);
+    runTest("executeTestRecFunc", executeTestRecFunc(), &status);*/
 
     struct dirent* file;
     DIR* dir = opendir("blg_tests");
     if(dir != NULL) {
         while((file = readdir(dir)) != NULL) {
             if(strcmp(file->d_name, "..") != 0 && strcmp(file->d_name, ".") != 0) {
+                if(strcmp(file->d_name, "class.blg") != 0) {
+                    continue;
+                }
+
                 size_t len = strlen("blg_tests/") + strlen(file->d_name) + 1;
                 char* filename = malloc(sizeof(char) * len);
                 strcpy(filename, "blg_tests/");
@@ -95,6 +99,7 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
                 in.arity = 1;
                 in.args = malloc(sizeof(Thing*) * in.arity);
                 in.args[0] = in.runtime->noneThing;
+                in.filename = filename;
                 ExecFuncOut out = execFunc(in);
                 if(out.errorMsg != NULL) {
                     status = 1;

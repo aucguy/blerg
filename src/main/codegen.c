@@ -299,6 +299,7 @@ Module* builderToModule(ModuleBuilder* builder, uint32_t entryLabel) {
     module->srcLoc = srcLoc;
     uint32_t* entryIndex = getMapUint32(builder->labelDefs, entryLabel);
     module->entryIndex = *entryIndex;
+    module->name = NULL;
     return module;
 }
 
