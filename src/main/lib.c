@@ -293,7 +293,7 @@ RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     const char* path = getModulePath(runtime, filename);
     if(path != NULL) {
         char* src = readFile(path);
-        //free((char*) path);
+        free((char*) path);
         char* errorMsg = NULL;
         Module* module = sourceToModule(path, src, &errorMsg);
         free(src);

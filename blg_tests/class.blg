@@ -18,6 +18,3 @@ main = def x do
 	assert (myProperty instance 2 1 == 3);
 	assert (myMethod instance 2 1 == 1);
 end;
-
-#temporary testcase
-#main = def x do end;
