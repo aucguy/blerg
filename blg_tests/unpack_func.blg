@@ -1,0 +1,17 @@
+operators = import 'std/operators.blg';
+
+x = createSymbol 1;
+y = createSymbol 1;
+
+point = {
+	operators.unpack: def obj do
+		return (x obj, y obj);
+	end
+};
+
+main = def ignore do
+	point pos_one pos_two = { x: 5, y: 8 };
+	
+	assert (pos_one == 5);
+	assert (pos_two == 8);
+end;

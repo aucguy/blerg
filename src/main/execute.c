@@ -119,6 +119,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
     putMapStr(ops, "unpack_cons", createNativeFuncThing(runtime, libUnpackCons));
     putMapStr(ops, "none", runtime->noneThing);
     putMapStr(ops, ".", createSymbolThing(runtime, SYM_DOT, 2));
+    putMapStr(ops, "unpack_call", createNativeFuncThing(runtime, libUnpackCall));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;

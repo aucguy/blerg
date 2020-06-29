@@ -330,3 +330,38 @@ RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return createRetVal(createBoolThing(runtime, ret), 0);
 }
 
+RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    if(arity != 3) {
+        return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+    }
+
+    if(typeOfThing(args[2]) != THING_TYPE_INT) {
+        return throwMsg(runtime, newStr("expected argument 2 to be an int"));
+    }
+
+    Thing* passedArgs[2] = {
+            args[0],
+            args[1]
+    };
+
+    Thing* sym = createSymbolThing(runtime, SYM_UNPACK, 2);
+    RetVal ret = callFunction(runtime, sym, 2, passedArgs);
+
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    Thing* tup = getRetVal(ret);
+
+    if(typeOfThing(tup) != THING_TYPE_TUPLE) {
+        const char* str = "expected destructured value to be a tuple";
+        return throwMsg(runtime, newStr(str));
+    }
+
+    if(getTupleSize(tup) != thingAsInt(args[2])) {
+        return throwMsg(runtime, newStr("tuple is not the correct size"));
+    }
+
+    return createRetVal(tup, 0);
+}
+

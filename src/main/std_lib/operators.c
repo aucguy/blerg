@@ -21,6 +21,7 @@ Thing* initOperatorsModule(Runtime* runtime) {
     putMapStr(map, "cons", getMapStr(runtime->operators, "::"));
     putMapStr(map, "access", getMapStr(runtime->operators, "."));
     putMapStr(map, "call", createSymbolThing(runtime, SYM_CALL, 0));
+    putMapStr(map, "unpack", createSymbolThing(runtime, SYM_UNPACK, 2));
 
     Thing* module = createModuleThing(runtime, map);
     destroyMap(map, nothing, nothing);

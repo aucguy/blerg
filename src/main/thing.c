@@ -156,6 +156,7 @@ void initThing() {
         SYM_DOT = newSymbolId();
         SYM_CALL = newSymbolId();
         SYM_RESPONDS_TO = newSymbolId();
+        SYM_UNPACK = newSymbolId();
 
         initialized = 1;
     }

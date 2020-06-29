@@ -540,6 +540,40 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
+    } else if(lvalue->type == TOKEN_CALL) {
+        CallToken* call = lvalue;
+        uint8_t arity = lengthList(call->children) - 1;
+        List* stmts = NULL;
+
+        stmts = consList(createDupToken(loc), stmts);
+        stmts = consList(createPushBuiltinToken(loc, newStr("unpack_call")), stmts);
+        stmts = consList(createSwapToken(loc), stmts);
+        Token* func = copyToken(call->children->head, destructureVisitor, NULL);
+        stmts = consList(createPushToken(loc, func), stmts);
+        stmts = consList(createSwapToken(loc), stmts);
+        stmts = consList(createPushIntToken(loc, arity), stmts);
+        stmts = consList(createCallOpToken(loc, 3), stmts);
+
+        List* args = call->children->tail;
+        uint8_t argNo = 0;
+        while(args != NULL) {
+            if(args->tail != NULL) {
+                stmts = consList(createDupToken(loc), stmts);
+            }
+
+            stmts = consList(createPushBuiltinToken(loc, newStr("get")), stmts);
+            stmts = consList(createSwapToken(loc), stmts);
+            stmts = consList(createPushIntToken(loc, argNo), stmts);
+            stmts = consList(createCallOpToken(loc, 2), stmts);
+            stmts = consList(destructureLValue(args->head), stmts);
+
+            args = args->tail;
+            argNo++;
+        }
+
+        Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
+        destroyShallowList(stmts);
+        return ret;
     } else {
         //not implemented yet
         return NULL;
