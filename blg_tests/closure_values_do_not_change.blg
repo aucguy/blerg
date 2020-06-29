@@ -1,0 +1,11 @@
+main = def x do
+	value = 1;
+	
+	f = def x do
+		return value;
+	end;
+	
+	value = 2;
+	
+	assert (f none == 1);
+end;

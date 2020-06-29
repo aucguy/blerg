@@ -38,6 +38,25 @@ void setScopeLocal(Scope* scope, const char* name, Thing* value) {
     putMapStr(scope->locals, name, value);
 }
 
+Scope* copyScope(Runtime* runtime, Scope* oldScope) {
+    Scope* newScope = createScope(runtime, oldScope);
+
+    while(oldScope != NULL) {
+        Entry* locals = oldScope->locals->entry;
+
+        while(locals != NULL) {
+            if(getMapStr(newScope->locals, locals->key) == NULL) {
+                setScopeLocal(newScope, locals->key, locals->value);
+            }
+            locals = locals->tail;
+        }
+
+        oldScope = oldScope->parent;
+    }
+
+    return newScope;
+}
+
 /**
  * Creates a StackFrame for the invocation of the function.
  */
@@ -331,7 +350,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         } else if(opcode == OP_CREATE_FUNC) {
             uint32_t entry = readU32Module(module, index);
             index += 4;
-            Scope* scope = currentFrame->def.scope;
+            Scope* scope = copyScope(runtime, currentFrame->def.scope);
             Thing* toPush = createFuncThing(runtime, entry, module, scope);
             pushStack(runtime, toPush);
         } else if(opcode == OP_LOAD) {
