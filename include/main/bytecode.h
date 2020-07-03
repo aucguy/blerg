@@ -58,6 +58,7 @@ enum INSTRUCTIONS {
     OP_DUP,
     OP_ROT3,
     OP_SWAP,
+    OP_POP,
     OP_CHECK_NONE,
     //This opcode performs no operations, but denotes the beginning of a
     //function. It is used to tell the runtime function object the function's

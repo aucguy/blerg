@@ -40,6 +40,7 @@ typedef enum {
     TOKEN_PUSH,
     TOKEN_ROT3,
     TOKEN_SWAP,
+    TOKEN_POP,
     TOKEN_BUILTIN,
     TOKEN_CHECK_NONE,
     TOKEN_NEW_FUNC
@@ -222,6 +223,10 @@ typedef struct {
 
 typedef struct {
     Token token;
+} PopToken;
+
+typedef struct {
+    Token token;
     const char* name;
 } BuiltinToken;
 
@@ -281,6 +286,7 @@ DupToken* createDupToken(SrcLoc);
 PushToken* createPushToken(SrcLoc, Token*);
 Rot3Token* createRot3Token(SrcLoc);
 SwapToken* createSwapToken(SrcLoc);
+PopToken* createPopToken(SrcLoc);
 BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name);
 CheckNoneToken* createCheckNoneToken(SrcLoc loc);
 NewFuncToken* createNewFuncToken(SrcLoc loc, const char* name);

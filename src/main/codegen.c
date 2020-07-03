@@ -207,6 +207,10 @@ void emitSwap(ModuleBuilder* builder) {
     emitByte(builder, OP_SWAP);
 }
 
+void emitPop(ModuleBuilder* builder) {
+    emitByte(builder, OP_POP);
+}
+
 void emitCheckNone(ModuleBuilder* builder) {
     emitByte(builder, OP_CHECK_NONE);
 }
@@ -416,6 +420,9 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
     } else if(token->type == TOKEN_SWAP) {
         emitSrcLoc(builder, token->location);
         emitSwap(builder);
+    } else if(token->type == TOKEN_POP) {
+        emitSrcLoc(builder, token->location);
+        emitPop(builder);
     } else if(token->type == TOKEN_BUILTIN) {
         emitSrcLoc(builder, token->location);
         emitPushBuiltin(builder, ((BuiltinToken*) token)->name);

@@ -116,6 +116,8 @@ void printModule(Module* module) {
             printf("ROT3");
         } else if(opcode == OP_SWAP) {
             printf("SWAP");
+        } else if(opcode == OP_POP) {
+            printf("POP");
         } else if(opcode == OP_CHECK_NONE) {
             printf("CHECK_NONE");
         } else {

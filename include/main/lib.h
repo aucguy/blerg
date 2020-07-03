@@ -42,4 +42,6 @@ RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
 RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 
+RetVal libAssertEqual(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
+
 #endif /* LIB_H_ */

@@ -1370,6 +1370,44 @@ SwapToken* createSwapToken(SrcLoc loc) {
     return swap;
 }
 
+void destroyPopToken(Token* self) {
+    UNUSED(self);
+}
+
+void printPopToken(Token* self, uint8_t indent) {
+    UNUSED(self);
+    UNUSED(indent);
+    printf("pop\n");
+}
+
+uint8_t equalsPopToken(Token* self, Token* other) {
+    UNUSED(self);
+    UNUSED(other);
+    return 1;
+}
+
+Token* copyPopToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    return (Token*) createPopToken(self->location);
+}
+
+Token POP_TYPE = {
+        TOKEN_POP,
+        destroyPopToken,
+        printPopToken,
+        equalsPopToken,
+        copyPopToken,
+        tokenInstanceFields
+};
+
+PopToken* createPopToken(SrcLoc loc) {
+    PopToken* pop = malloc(sizeof(PopToken));
+    pop->token = POP_TYPE;
+    pop->token.location = loc;
+    return pop;
+}
+
 void destroyCheckNoneToken(Token* self) {
     UNUSED(self);
 }

@@ -331,6 +331,7 @@ RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
     if(arity != 3) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
@@ -365,3 +366,28 @@ RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
     return createRetVal(tup, 0);
 }
 
+RetVal libAssertEqual(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+    UNUSED(self);
+    if(arity != 2) {
+        return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+    }
+
+    Thing* symbol = getMapStr(runtime->operators, "==");
+    RetVal ret = callFunction(runtime, symbol, 2, args);
+
+    if(isRetValError(ret)) {
+        return ret;
+    }
+
+    Thing* val = getRetVal(ret);
+
+    if(typeOfThing(val) != THING_TYPE_BOOL) {
+        return throwMsg(runtime, newStr("result of == is not a bool"));
+    }
+
+    if(!thingAsBool(val)) {
+        return throwMsg(runtime, newStr("assertion failed"));
+    }
+
+    return createRetVal(runtime->noneThing, 0);
+}

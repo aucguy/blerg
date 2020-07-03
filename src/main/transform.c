@@ -227,6 +227,7 @@ Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
     case TOKEN_PUSH:
     case TOKEN_ROT3:
     case TOKEN_SWAP:
+    case TOKEN_POP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
     case TOKEN_NEW_FUNC:
@@ -303,6 +304,7 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_PUSH:
      case TOKEN_ROT3:
      case TOKEN_SWAP:
+     case TOKEN_POP:
      case TOKEN_BUILTIN:
      case TOKEN_CHECK_NONE:
      case TOKEN_NEW_FUNC:
@@ -370,6 +372,7 @@ Token* listToConsVisitor(Token* token, void* data) {
     case TOKEN_PUSH:
     case TOKEN_ROT3:
     case TOKEN_SWAP:
+    case TOKEN_POP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
     case TOKEN_NEW_FUNC:
@@ -436,6 +439,7 @@ Token* objectDesugarVisitor(Token* token, void* data) {
     case TOKEN_PUSH:
     case TOKEN_ROT3:
     case TOKEN_SWAP:
+    case TOKEN_POP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
     case TOKEN_NEW_FUNC:
@@ -541,7 +545,7 @@ Token* destructureLValue(Token* lvalue) {
         destroyShallowList(stmts);
         return ret;
     } else if(lvalue->type == TOKEN_CALL) {
-        CallToken* call = lvalue;
+        CallToken* call = (CallToken*) lvalue;
         uint8_t arity = lengthList(call->children) - 1;
         List* stmts = NULL;
 
@@ -570,6 +574,20 @@ Token* destructureLValue(Token* lvalue) {
             args = args->tail;
             argNo++;
         }
+
+        Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
+        destroyShallowList(stmts);
+        return ret;
+    } else if(lvalue->type == TOKEN_INT || lvalue->type == TOKEN_LITERAL) {
+        Token* copy = copyToken(lvalue, destructureVisitor, NULL);
+        List* stmts = NULL;
+
+        stmts = consList(createPushBuiltinToken(loc, newStr("assert_equal")),
+                stmts);
+        stmts = consList(createSwapToken(loc), stmts);
+        stmts = consList(createPushToken(loc, copy), stmts);
+        stmts = consList(createCallOpToken(loc, 2), stmts);
+        stmts = consList(createPopToken(loc), stmts);
 
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
@@ -620,6 +638,7 @@ Token* destructureVisitor(Token* token, void* data) {
     case TOKEN_PUSH:
     case TOKEN_ROT3:
     case TOKEN_SWAP:
+    case TOKEN_POP:
     case TOKEN_BUILTIN:
     case TOKEN_CHECK_NONE:
     case TOKEN_NEW_FUNC:
@@ -721,6 +740,7 @@ Token* closureVisitor(Token* token, ClosureData* data) {
         case TOKEN_PUSH:
         case TOKEN_ROT3:
         case TOKEN_SWAP:
+        case TOKEN_POP:
         case TOKEN_BUILTIN:
         case TOKEN_CHECK_NONE:
         case TOKEN_NEW_FUNC:

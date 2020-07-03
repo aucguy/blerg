@@ -120,6 +120,8 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
     putMapStr(ops, "none", runtime->noneThing);
     putMapStr(ops, ".", createSymbolThing(runtime, SYM_DOT, 2));
     putMapStr(ops, "unpack_call", createNativeFuncThing(runtime, libUnpackCall));
+    putMapStr(ops, "assert_equal", createNativeFuncThing(runtime,
+            libAssertEqual));
 
     Scope* builtins = createScope(runtime, NULL);
     runtime->builtins = builtins;
@@ -187,9 +189,20 @@ uint32_t stackFrameSize(Runtime* runtime) {
     return lengthList(runtime->stackFrame);
 }
 
-void unwindStackFrame(Runtime* runtime, uint32_t initStackFrameSize) {
+uint32_t stackSize(Runtime* runtime) {
+    return lengthList(runtime->stack);
+}
+
+Thing* popStack(Runtime* runtime);
+
+void unwindStackFrame(Runtime* runtime, uint32_t initStackFrameSize,
+        uint32_t initStackSize) {
     while(stackFrameSize(runtime) > initStackFrameSize) {
         popStackFrame(runtime);
+    }
+
+    while(stackSize(runtime) > initStackSize) {
+        popStack(runtime);
     }
 }
 
@@ -296,6 +309,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
     //TODO have index increments in the readXModule functions
     //TODO check if stack is empty
     uint32_t initStackFrameSize = stackFrameSize(runtime);
+    uint32_t initStackSize = stackSize(runtime);
 
     pushStackFrame(runtime, frame);
 
@@ -332,7 +346,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             if(value == NULL) {
                 const char* format = "internal error: builtin '%s' not found";
                 RetVal error = throwMsg(runtime, formatStr(format, constant));
-                unwindStackFrame(runtime, initStackFrameSize);
+                unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                 return error;
             }
             pushStack(runtime, value);
@@ -361,7 +375,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             if(value == NULL) {
                 const char* msg = formatStr("'%s' is undefined", constant);
                 RetVal error = throwMsg(runtime, msg);
-                unwindStackFrame(runtime, initStackFrameSize);
+                unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                 return error;
             }
             pushStack(runtime, value);
@@ -390,7 +404,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                     const char* msg = "error creating stack frame for "
                             "function call";
                     RetVal error = throwMsg(runtime, newStr(msg));
-                    unwindStackFrame(runtime, initStackFrameSize);
+                    unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                     return error;
                 }
                 pushStackFrame(runtime, frame);
@@ -401,7 +415,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 popStackFrame(runtime);
 
                 if(isRetValError(ret)) {
-                    unwindStackFrame(runtime, initStackFrameSize);
+                    unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                     free(args);
                     return ret;
                 }
@@ -418,7 +432,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 const char* msg =" boolean needed for branches, but a boolean "
                         "was not found";
                 RetVal error = throwMsg(runtime, newStr(msg));
-                unwindStackFrame(runtime, initStackFrameSize);
+                unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                 return error;
             }
 
@@ -441,17 +455,19 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             Thing* value2 = popStack(runtime);
             pushStack(runtime, value1);
             pushStack(runtime, value2);
+        } else if(opcode == OP_POP) {
+            popStack(runtime);
         } else if(opcode == OP_CHECK_NONE) {
             Thing* value = popStack(runtime);
             if(value != runtime->noneThing) {
                 RetVal error = throwMsg(runtime, newStr("value is not none"));
-                unwindStackFrame(runtime, initStackFrameSize);
+                unwindStackFrame(runtime, initStackFrameSize, initStackSize);
                 return error;
             }
         } else {
             const char* msg = "internal error: unknown bytecode";
             RetVal error = throwMsg(runtime, newStr(msg));
-            unwindStackFrame(runtime, initStackFrameSize);
+            unwindStackFrame(runtime, initStackFrameSize, initStackSize);
             return error;
         }
 

@@ -1,0 +1,22 @@
+main = def x do
+	(5, val) = (5, 3);
+	assert (val == 3);
+	
+	(val, 'hello') = (8, 'hello');
+	assert (val == 8);
+	
+	assert ((trycatch f failed) == 'failed');
+	assert ((trycatch g failed) == 'failed');
+end;
+
+failed = def error do
+	return 'failed';
+end;
+
+f = def x do
+	(6, val) = (5, 3);
+end;
+
+g = def x do
+	('str', val) = ('nope', 9);
+end;
