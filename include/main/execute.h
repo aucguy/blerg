@@ -5,7 +5,7 @@
 
 #include "main/codegen.h"
 #include "main/util.h"
-#include "runtime.hpp"
+#include "main/runtime.h"
 
 /**
  * Every 'object' in the language is internally referred to as a 'thing.'

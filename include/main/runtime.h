@@ -60,23 +60,44 @@ typedef struct {
 typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
 
 class ThingClass {
+public:
     virtual void destroy() = 0;
     virtual RetVal call(Runtime* runtime, Thing** args, uint8_t arity) = 0;
     virtual RetVal dispatch(Runtime* runtime, Thing** args, uint8_t arity) = 0;
     virtual ~ThingClass();
 };
 
+class ThingType {
+public:
+    virtual ~ThingType() = 0;
+    virtual void destroy(Thing*) = 0;
+    virtual RetVal call(Runtime*, Thing*, Thing**, uint8_t) = 0;
+    virtual RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t) = 0;
+};
+
+class LegacyThingType : public ThingType {
+public:
+    void (*destroyFunc)(Thing*);
+    ExecFunc callFunc;
+    ExecFunc dispatchFunc;
+    LegacyThingType();
+    ~LegacyThingType();
+    void destroy(Thing*);
+    RetVal call(Runtime*, Thing*, Thing**, uint8_t);
+    RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t);
+};
+
 /**
  * Each Thing has a type which describes how it behaves and its custom data
  * format.
  */
-typedef struct {
+/*typedef struct {
     //destroys the thing. Should not destroy any references this thing has to
     //other things.
     void (*destroy)(Thing*);
     ExecFunc call;
     ExecFunc dispatch;
-} ThingType;
+} ThingType;*/
 
 RetVal throwMsg(Runtime* runtime, const char* msg);
 Thing* createErrorThing(Runtime* runtime, const char* msg);

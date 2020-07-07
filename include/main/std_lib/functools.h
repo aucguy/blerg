@@ -1,8 +1,8 @@
 #ifndef STD_LIB_FUNCTOOLS_H_
 #define STD_LIB_FUNCTOOLS_H_
 
-#include "../runtime.hpp"
-#include "../thing.h"
+#include "main/runtime.h"
+#include "main/thing.h"
 
 Thing* initFunctoolsModule(Runtime* runtime);
 void destroyFunctoolsModule();

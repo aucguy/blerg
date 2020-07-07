@@ -45,7 +45,7 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ret;
 }
 
-ThingType* THING_TYPE_VARARG = NULL;
+LegacyThingType* THING_TYPE_VARARG = NULL;
 
 typedef struct {
     Thing* func;
@@ -109,7 +109,7 @@ void destroyFunctoolsModule() {
     if(initialized) {
         initialized = 0;
 
-        free(THING_TYPE_VARARG);
+        delete THING_TYPE_VARARG;
         THING_TYPE_VARARG = NULL;
     }
 }

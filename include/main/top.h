@@ -5,8 +5,8 @@
 
 #include "main/flags.h"
 #include "main/execute.h"
-#include "runtime.hpp"
-#include "thing.h"
+#include "main/runtime.h"
+#include "main/thing.h"
 
 typedef struct {
     Runtime* runtime;

@@ -1,25 +1,26 @@
-#include <main/thing.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
 
 #include "main/execute.h"
+#include "main/runtime.h"
+#include "main/thing.h"
 
-ThingType* THING_TYPE_NONE = NULL;
-ThingType* THING_TYPE_INT = NULL;
-ThingType* THING_TYPE_FLOAT = NULL;
-ThingType* THING_TYPE_STR = NULL;
-ThingType* THING_TYPE_BOOL = NULL;
-ThingType* THING_TYPE_SYMBOL = NULL;
-ThingType* THING_TYPE_MODULE = NULL;
-ThingType* THING_TYPE_FUNC = NULL;
-ThingType* THING_TYPE_NATIVE_FUNC = NULL;
-ThingType* THING_TYPE_ERROR = NULL;
-ThingType* THING_TYPE_TUPLE = NULL;
-ThingType* THING_TYPE_LIST = NULL;
-ThingType* THING_TYPE_OBJECT = NULL;
-ThingType* THING_TYPE_CELL = NULL;
+LegacyThingType* THING_TYPE_NONE = NULL;
+LegacyThingType* THING_TYPE_INT = NULL;
+LegacyThingType* THING_TYPE_FLOAT = NULL;
+LegacyThingType* THING_TYPE_STR = NULL;
+LegacyThingType* THING_TYPE_BOOL = NULL;
+LegacyThingType* THING_TYPE_SYMBOL = NULL;
+LegacyThingType* THING_TYPE_MODULE = NULL;
+LegacyThingType* THING_TYPE_FUNC = NULL;
+LegacyThingType* THING_TYPE_NATIVE_FUNC = NULL;
+LegacyThingType* THING_TYPE_ERROR = NULL;
+LegacyThingType* THING_TYPE_TUPLE = NULL;
+LegacyThingType* THING_TYPE_LIST = NULL;
+LegacyThingType* THING_TYPE_OBJECT = NULL;
+LegacyThingType* THING_TYPE_CELL = NULL;
 
 uint32_t SYM_ADD = 0;
 uint32_t SYM_SUB = 0;
@@ -45,22 +46,23 @@ uint32_t SYM_UNPACK = 0;
 //TODO check if symbol is supported for a dispatch before typechecking
 //for better error messages
 
-ThingType* createThingType() {
-    ThingType* type = (ThingType*) malloc(sizeof(ThingType));
-    type->destroy = NULL;
-    return type;
+LegacyThingType* createThingType() {
+    //ThingType* type = (ThingType*) malloc(sizeof(ThingType));
+    //type->destroy = NULL;
+    //return type;
+    return new LegacyThingType();
 }
 
-void setDestroyThingType(ThingType* type, void (*destroy)(Thing*)) {
-    type->destroy = destroy;
+void setDestroyThingType(LegacyThingType* type, void (*destroy)(Thing*)) {
+    type->destroyFunc = destroy;
 }
 
-void setCallThingType(ThingType* type, ExecFunc call) {
-    type->call = call;
+void setCallThingType(LegacyThingType* type, ExecFunc call) {
+    type->callFunc = call;
 }
 
-void setDispatchThingType(ThingType* type, ExecFunc dispatch) {
-    type->dispatch = dispatch;
+void setDispatchThingType(LegacyThingType* type, ExecFunc dispatch) {
+    type->dispatchFunc = dispatch;
 }
 
 void destroySimpleThing(Thing* thing) {
@@ -198,46 +200,46 @@ void initThing() {
 
 void deinitThing() {
     if(initialized) {
-        free(THING_TYPE_NONE);
+        delete THING_TYPE_NONE;
         THING_TYPE_NONE = NULL;
 
-        free(THING_TYPE_INT);
+        delete THING_TYPE_INT;
         THING_TYPE_INT = NULL;
 
-        free(THING_TYPE_FLOAT);
+        delete THING_TYPE_FLOAT;
         THING_TYPE_FLOAT = NULL;
 
-        free(THING_TYPE_STR);
+        delete THING_TYPE_STR;
         THING_TYPE_STR = NULL;
 
-        free(THING_TYPE_BOOL);
+        delete THING_TYPE_BOOL;
         THING_TYPE_BOOL = NULL;
 
-        free(THING_TYPE_SYMBOL);
+        delete THING_TYPE_SYMBOL;
         THING_TYPE_SYMBOL = NULL;
 
-        free(THING_TYPE_MODULE);
+        delete THING_TYPE_MODULE;
         THING_TYPE_MODULE = NULL;
 
-        free(THING_TYPE_FUNC);
+        delete THING_TYPE_FUNC;
         THING_TYPE_FUNC = NULL;
 
-        free(THING_TYPE_NATIVE_FUNC);
+        delete THING_TYPE_NATIVE_FUNC;
         THING_TYPE_NATIVE_FUNC = NULL;
 
-        free(THING_TYPE_ERROR);
+        delete THING_TYPE_ERROR;
         THING_TYPE_ERROR = NULL;
 
-        free(THING_TYPE_TUPLE);
+        delete THING_TYPE_TUPLE;
         THING_TYPE_TUPLE = NULL;
 
-        free(THING_TYPE_LIST);
+        delete THING_TYPE_LIST;
         THING_TYPE_LIST = NULL;
 
-        free(THING_TYPE_OBJECT);
+        delete THING_TYPE_OBJECT;
         THING_TYPE_OBJECT = NULL;
 
-        free(THING_TYPE_CELL);
+        delete THING_TYPE_CELL;
         THING_TYPE_CELL = NULL;
 
         SYM_ADD = 0;

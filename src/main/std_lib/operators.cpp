@@ -1,5 +1,5 @@
-#include <main/runtime.hpp>
-#include <main/thing.h>
+#include "main/runtime.h"
+#include "main/thing.h"
 #include "main/util.h"
 
 Thing* initOperatorsModule(Runtime* runtime) {
