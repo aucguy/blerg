@@ -1,5 +1,5 @@
-#ifndef RUNTIME_H_
-#define RUNTIME_H_
+#ifndef RUNTIME_HPP_
+#define RUNTIME_HPP_
 
 #include "main/util.h"
 #include "main/bytecode.h"
@@ -59,6 +59,13 @@ typedef struct {
 
 typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
 
+class ThingClass {
+    virtual void destroy() = 0;
+    virtual RetVal call(Runtime* runtime, Thing** args, uint8_t arity) = 0;
+    virtual RetVal dispatch(Runtime* runtime, Thing** args, uint8_t arity) = 0;
+    virtual ~ThingClass();
+};
+
 /**
  * Each Thing has a type which describes how it behaves and its custom data
  * format.
@@ -109,4 +116,4 @@ typedef struct {
     };
 } StackFrame;
 
-#endif /* RUNTIME_H_ */
+#endif /* RUNTIME_HPP_ */

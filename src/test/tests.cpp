@@ -11,6 +11,9 @@
 #include "test/codegenTest.h"
 #include "test/executeTest.h"
 
+uint8_t cmdArgc = 0;
+const char** cmdArgs = nullptr;
+
 void runTest(const char* name, const char* msg, uint8_t* status) {
     if(msg != NULL) {
         printf("test '%s' failed: %s\n", name, msg);
@@ -82,7 +85,7 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
         while((file = readdir(dir)) != NULL) {
             if(strcmp(file->d_name, "..") != 0 && strcmp(file->d_name, ".") != 0) {
                 size_t len = strlen("blg_tests/") + strlen(file->d_name) + 1;
-                char* filename = malloc(sizeof(char) * len);
+                char* filename = (char*) malloc(sizeof(char) * len);
                 strcpy(filename, "blg_tests/");
                 strcat(filename, file->d_name);
                 char* src = readFile(filename);
@@ -93,7 +96,7 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
                 in.src = src;
                 in.name = "main";
                 in.arity = 1;
-                in.args = malloc(sizeof(Thing*) * in.arity);
+                in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
                 in.args[0] = in.runtime->noneThing;
                 in.filename = filename;
                 ExecFuncOut out = execFunc(in);
@@ -115,4 +118,4 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
     return status;
 }
 
-SrcLoc nowhere = { 0, 0 };
+//SrcLoc nowhere = { 0, 0 };

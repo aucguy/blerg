@@ -1077,7 +1077,7 @@ BlockToken* parseModule(const char* src, char** error) {
 
     if(errorMsg != NULL) {
         //TODO size correctly
-        *error = malloc(sizeof(char) * 100);
+        *error = (char*) malloc(sizeof(char) * 100);
         sprintf(*error, "%s at (%i, %i)", errorMsg, location.line, location.column);
         return NULL;
     } else {

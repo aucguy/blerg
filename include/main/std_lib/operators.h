@@ -1,8 +1,8 @@
 #ifndef STD_LIB_OPERATORS_H_
 #define STD_LIB_OPERATORS_H_
 
-#include "main/thing.h"
-#include "main/runtime.h"
+#include "../runtime.hpp"
+#include "../thing.h"
 
 Thing* initOperatorsModule(Runtime* runtime);
 

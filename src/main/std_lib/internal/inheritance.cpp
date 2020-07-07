@@ -1,5 +1,5 @@
-#include "main/thing.h"
-#include "main/runtime.h"
+#include <main/runtime.hpp>
+#include <main/thing.h>
 
 RetVal libProperties(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_OBJECT);
@@ -11,8 +11,8 @@ RetVal libProperties(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
     Entry* entry = getObjectMap(args[0])->entry;
 
     while(entry != NULL) {
-        Thing** elements = malloc(sizeof(Thing*) * 2);
-        uint32_t* key = entry->key;
+        Thing** elements = (Thing**) malloc(sizeof(Thing*) * 2);
+        uint32_t* key = (uint32_t*) entry->key;
         elements[0] = createSymbolThing(runtime, *key, 0);
         elements[1] = entry->value;
         Thing* head = createTupleThing(runtime, 2, elements);

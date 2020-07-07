@@ -1,10 +1,10 @@
+#include <main/thing.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#include "main/thing.h"
 #include "main/execute.h"
 #include "main/top.h"
 #include "main/std_lib/modules.h"
@@ -29,7 +29,7 @@ RetVal libInput(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(args);
     UNUSED(arity);
 
-    char* str = malloc(sizeof(char) * 100);
+    char* str = (char*) malloc(sizeof(char) * 100);
     fgets(str, 100, stdin);
     //remove newline
     str[strlen(str) - 1] = 0;
@@ -61,7 +61,7 @@ RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     }
 
     //TODO don't make fixed size
-    char* str = malloc(sizeof(char) * 100);
+    char* str = (char*) malloc(sizeof(char) * 100);
     sprintf(str, "%i", thingAsInt(args[0]));
     return createRetVal(createStrThing(runtime, str, 0), 0);
 }
@@ -87,7 +87,7 @@ RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     Thing* block1 = args[0];
     Thing* block2 = args[1];
 
-    Thing** passedArgs = malloc(sizeof(Thing*) * 1);
+    Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * 1);
     passedArgs[0] = runtime->noneThing;
 
     RetVal result = callFunction(runtime, block1, 1, passedArgs);
@@ -106,7 +106,7 @@ RetVal libTryCatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 RetVal libTuple(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
     //a copy must be made since args is freed after the function
-    Thing** copy = malloc(sizeof(Thing*) * arity);
+    Thing** copy = (Thing**) malloc(sizeof(Thing*) * arity);
 
     for(uint8_t i = 0 ; i < arity; i++) {
         copy[i] = args[i];
@@ -179,7 +179,7 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     Map* map = createMap();
 
-    ListThing* elements = args[0];
+    ListThing* elements = (ListThing*) args[0];
     while(typeOfThing(elements) == THING_TYPE_LIST) {
         if(typeOfThing(elements->head) != THING_TYPE_TUPLE) {
             const char* msg = "internal error: expected pair to be a tuple";
@@ -201,7 +201,7 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         Thing* value = getTupleElem(pair, 1);
         putMapUint32(map, getSymbolId(key), value);
 
-        elements = elements->tail;
+        elements = (ListThing*) elements->tail;
     }
 
     return createRetVal(createObjectThing(runtime, map), 0);
@@ -216,7 +216,7 @@ RetVal libUnpackCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
     }
 
     ListThing* list = (ListThing*) args[0];
-    Thing** elements = malloc(2 * sizeof(Thing*));
+    Thing** elements = (Thing**) malloc(2 * sizeof(Thing*));
     elements[0] = list->head;
     elements[1] = list->tail;
     return createRetVal(createTupleThing(runtime, 2, elements), 0);

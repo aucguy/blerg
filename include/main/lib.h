@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "main/execute.h"
-#include "main/thing.h"
+#include "thing.h"
 
 RetVal libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
 

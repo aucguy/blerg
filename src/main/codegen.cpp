@@ -284,7 +284,7 @@ Module* builderToModule(ModuleBuilder* builder, uint32_t entryLabel) {
     //patch the labels
     for(Entry* i = builder->labelRefs->entry; i != NULL; i = i->tail) {
         //TODO change ot getMapUint32_t
-        uint32_t* definition = getMapStr(builder->labelDefs, (char*) i->key);
+        uint32_t* definition = (uint32_t*) getMapStr(builder->labelDefs, (char*) i->key);
         for(List* k = (List*) i->value; k != NULL; k = k->tail) {
             uint32_t reference = *((uint32_t*) k->head);
             bytecode[reference] = (*definition & 0xFF000000) >> 24;
@@ -301,7 +301,7 @@ Module* builderToModule(ModuleBuilder* builder, uint32_t entryLabel) {
     module->bytecode = bytecode;
     module->srcLocLength = builder->srcLocLength;
     module->srcLoc = srcLoc;
-    uint32_t* entryIndex = getMapUint32(builder->labelDefs, entryLabel);
+    uint32_t* entryIndex = (uint32_t*) getMapUint32(builder->labelDefs, entryLabel);
     module->entryIndex = *entryIndex;
     module->name = NULL;
     return module;
@@ -353,7 +353,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         uint8_t count = 0;
 
         while(elements != NULL) {
-            compileToken(builder, globalFuncs, labels, elements->head);
+            compileToken(builder, globalFuncs, labels, (Token*) elements->head);
             elements = elements->tail;
             count++;
         }
@@ -365,7 +365,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         List* children = call->children;
         uint32_t count = 0;
         while(children != NULL) {
-            compileToken(builder, globalFuncs, labels, children->head);
+            compileToken(builder, globalFuncs, labels, (Token*) children->head);
             children = children->tail;
             count++;
         }
@@ -431,7 +431,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitCheckNone(builder);
     } else if(token->type == TOKEN_NEW_FUNC) {
         emitSrcLoc(builder, token->location);
-        uint32_t* label = getMapStr(globalFuncs, ((NewFuncToken*) token)->name);
+        uint32_t* label = (uint32_t*) getMapStr(globalFuncs, ((NewFuncToken*) token)->name);
         emitCreateFunc(builder, *label);
     } else {
         printf("warning: unknown token type\n");
@@ -522,7 +522,7 @@ Module* compileModule(Token* ast) {
         }
     }
 
-    uint32_t* labelEntry = getMapStr(globalFuncs, "$init");
+    uint32_t* labelEntry = (uint32_t*) getMapStr(globalFuncs, "$init");
     Module* module = builderToModule(builder, *labelEntry);
     destroyModuleBuilder(builder);
     destroyMap(globalFuncs, free, free);

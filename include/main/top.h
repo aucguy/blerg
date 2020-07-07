@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 #include "main/flags.h"
-#include "main/runtime.h"
 #include "main/execute.h"
-#include "main/thing.h"
+#include "runtime.hpp"
+#include "thing.h"
 
 typedef struct {
     Runtime* runtime;

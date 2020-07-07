@@ -5,8 +5,8 @@
 
 #include "main/util.h"
 
-uint8_t cmdArgc;
-const char** cmdArgs;
+extern uint8_t cmdArgc;
+extern const char** cmdArgs;
 
 /**
  * Runs all the tests and reports any errors.
@@ -18,6 +18,6 @@ uint8_t runTests(uint8_t argc, const char* args[]);
  */
 #define assert(cond, msg) if(!(cond)) { return msg; }
 
-SrcLoc nowhere;
+static SrcLoc nowhere = { 0, 0 };
 
 #endif /* TESTS_H_ */

@@ -1,10 +1,44 @@
+#include <main/thing.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
 
 #include "main/execute.h"
-#include "main/thing.h"
+
+ThingType* THING_TYPE_NONE = NULL;
+ThingType* THING_TYPE_INT = NULL;
+ThingType* THING_TYPE_FLOAT = NULL;
+ThingType* THING_TYPE_STR = NULL;
+ThingType* THING_TYPE_BOOL = NULL;
+ThingType* THING_TYPE_SYMBOL = NULL;
+ThingType* THING_TYPE_MODULE = NULL;
+ThingType* THING_TYPE_FUNC = NULL;
+ThingType* THING_TYPE_NATIVE_FUNC = NULL;
+ThingType* THING_TYPE_ERROR = NULL;
+ThingType* THING_TYPE_TUPLE = NULL;
+ThingType* THING_TYPE_LIST = NULL;
+ThingType* THING_TYPE_OBJECT = NULL;
+ThingType* THING_TYPE_CELL = NULL;
+
+uint32_t SYM_ADD = 0;
+uint32_t SYM_SUB = 0;
+uint32_t SYM_MUL = 0;
+uint32_t SYM_DIV = 0;
+uint32_t SYM_EQ = 0;
+uint32_t SYM_NOT_EQ = 0;
+uint32_t SYM_LESS_THAN = 0;
+uint32_t SYM_LESS_THAN_EQ = 0;
+uint32_t SYM_GREATER_THAN = 0;
+uint32_t SYM_GREATER_THAN_EQ = 0;
+uint32_t SYM_AND = 0;
+uint32_t SYM_OR = 0;
+uint32_t SYM_NOT = 0;
+uint32_t SYM_GET = 0;
+uint32_t SYM_DOT = 0;
+uint32_t SYM_CALL = 0;
+uint32_t SYM_RESPONDS_TO = 0;
+uint32_t SYM_UNPACK = 0;
 
 #define UNUSED(x) (void)(x)
 
@@ -12,7 +46,7 @@
 //for better error messages
 
 ThingType* createThingType() {
-    ThingType* type = malloc(sizeof(ThingType));
+    ThingType* type = (ThingType*) malloc(sizeof(ThingType));
     type->destroy = NULL;
     return type;
 }
@@ -244,7 +278,7 @@ ThingHeader* customDataToThingHeader(Thing* thing) {
  *      after the Thing struct.
  */
 Thing* createThing(Runtime* runtime, ThingType* type, size_t size) {
-    ThingHeader* header = malloc(sizeof(ThingHeader) + size);
+    ThingHeader* header = (ThingHeader*) malloc(sizeof(ThingHeader) + size);
     header->type = type;
     Thing* thing = thingHeaderToCustomData(header);
     runtime->allocatedThings = consList(thing, runtime->allocatedThings);
@@ -270,7 +304,7 @@ typedef struct {
 } NoneThing;
 
 Thing* createNoneThing(Runtime* runtime) {
-    NoneThing* thing = createThing(runtime, THING_TYPE_NONE, sizeof(NoneThing));
+    NoneThing* thing = (NoneThing*) createThing(runtime, THING_TYPE_NONE, sizeof(NoneThing));
     thing->dummy = 0;
     return thing;
 }
@@ -311,7 +345,7 @@ typedef struct {
 } IntThing;
 
 Thing* createIntThing(Runtime* runtime, int32_t value) {
-    IntThing* thing = createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
+    IntThing* thing = (IntThing*) createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
     thing->value = value;
     return thing;
 }
@@ -404,7 +438,7 @@ typedef struct {
 } FloatThing;
 
 Thing* createFloatThing(Runtime* runtime, float value) {
-    FloatThing* thing = createThing(runtime, THING_TYPE_FLOAT, sizeof(FloatThing));
+    FloatThing* thing = (FloatThing*) createThing(runtime, THING_TYPE_FLOAT, sizeof(FloatThing));
     thing->value = value;
     return thing;
 }
@@ -491,7 +525,7 @@ typedef struct {
 } StrThing;
 
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal) {
-    StrThing* thing = createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
+    StrThing* thing = (StrThing*) createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
     thing->value = value;
     thing->literal = literal != 0; // !=0 makes the value a one or a zero
     return thing;
@@ -541,7 +575,7 @@ RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
         if(id == SYM_ADD) {
             uint32_t len = strlen(valueA) + strlen(valueB);
-            char* out = malloc(sizeof(char) * (len + 1));
+            char* out = (char*) malloc(sizeof(char) * (len + 1));
             out[0] = 0;
             strcat(out, valueA);
             strcat(out, valueB);
@@ -572,7 +606,7 @@ typedef struct {
 } BoolThing;
 
 Thing* createBoolThing(Runtime* runtime, uint8_t value) {
-    BoolThing* thing = createThing(runtime, THING_TYPE_BOOL, sizeof(BoolThing));
+    BoolThing* thing = (BoolThing*) createThing(runtime, THING_TYPE_BOOL, sizeof(BoolThing));
     thing->value = value != 0; //ensure the value is 0 or 1
     return thing;
 }
@@ -661,7 +695,7 @@ typedef struct {
 } SymbolThing;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
-    SymbolThing* thing = createThing(runtime, THING_TYPE_SYMBOL,
+    SymbolThing* thing = (SymbolThing*) createThing(runtime, THING_TYPE_SYMBOL,
             sizeof(SymbolThing));
     thing->id = id;
     thing->arity = arity;
@@ -714,7 +748,7 @@ typedef struct {
 } ModuleThing;
 
 Thing* createModuleThing(Runtime* runtime, Map* map) {
-    ModuleThing* thing = createThing(runtime, THING_TYPE_MODULE,
+    ModuleThing* thing = (ModuleThing*) createThing(runtime, THING_TYPE_MODULE,
             sizeof(ModuleThing));
     thing->properties = copyMap(map);
     return thing;
@@ -768,7 +802,7 @@ RetVal moduleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope) {
-    FuncThing* thing = createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
+    FuncThing* thing = (FuncThing*) createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
     thing->entry = entry;
     thing->module = module;
     thing->parentScope = parentScope;
@@ -780,7 +814,7 @@ typedef struct {
 } NativeFuncThing;
 
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
-    NativeFuncThing* thing = createThing(runtime, THING_TYPE_NATIVE_FUNC,
+    NativeFuncThing* thing = (NativeFuncThing*) createThing(runtime, THING_TYPE_NATIVE_FUNC,
             sizeof(NativeFuncThing));
     thing->func = func;
     return thing;
@@ -803,7 +837,7 @@ typedef struct {
 } ErrorThing;
 
 Thing* createErrorThing(Runtime* runtime, const char* msg) {
-    ErrorThing* self = createThing(runtime, THING_TYPE_ERROR,
+    ErrorThing* self = (ErrorThing*) createThing(runtime, THING_TYPE_ERROR,
             sizeof(ErrorThing));
     self->msg = msg;
     self->stackFrame = NULL;
@@ -812,8 +846,8 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
     List* listOriginal = list;
 
     while(list != NULL) {
-        StackFrame* stackFrame = list->head;
-        ErrorFrame* errorFrame = malloc(sizeof(ErrorFrame));
+        StackFrame* stackFrame = (StackFrame*) list->head;
+        ErrorFrame* errorFrame = (ErrorFrame*) malloc(sizeof(ErrorFrame));
 
         errorFrame->location.line = 0;
         errorFrame->location.column = 0;
@@ -862,7 +896,7 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
     List* list = error->stackFrame;
 
     while(list != NULL) {
-        ErrorFrame* frame = list->head;
+        ErrorFrame* frame = (ErrorFrame*) list->head;
 
         char* line;
         if(frame->native) {
@@ -887,13 +921,13 @@ const char* errorStackTrace(Runtime* runtime, Thing* self) {
     parts  = consList(newStr(header), parts);
     length += strlen(header) + 2;
 
-    char* joined = malloc(length + 1);
+    char* joined = (char*) malloc(length + 1);
     joined[0] = 0;
     List* partsOriginal = parts;
 
     while(parts != NULL) {
         strcat(joined, "\t");
-        strcat(joined, parts->head);
+        strcat(joined, (const char*) parts->head);
         strcat(joined, "\n");
         parts = parts->tail;
     }
@@ -935,7 +969,7 @@ typedef struct {
 } TupleThing;
 
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
-    TupleThing* self = createThing(runtime, THING_TYPE_TUPLE, sizeof(TupleThing));
+    TupleThing* self = (TupleThing*) createThing(runtime, THING_TYPE_TUPLE, sizeof(TupleThing));
     self->size = size;
     self->elements = elements;
     return self;
@@ -990,7 +1024,7 @@ RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 
         Thing* eqSym = getMapStr(runtime->operators, "==");
 
-        Thing** elems = malloc(sizeof(Thing*) * 2);
+        Thing** elems = (Thing**) malloc(sizeof(Thing*) * 2);
 
         for(uint8_t i = 0; i < valueA->size; i++) {
             elems[0] = valueA->elements[i];
@@ -1046,7 +1080,7 @@ void destroyTupleThing(Thing* thing) {
 }
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
-    ListThing* list = createThing(runtime, THING_TYPE_LIST, sizeof(ListThing));
+    ListThing* list = (ListThing*) createThing(runtime, THING_TYPE_LIST, sizeof(ListThing));
     list->head = head;
     list->tail = tail;
     return list;
@@ -1060,7 +1094,7 @@ RetVal objectRespondsTo(Runtime* runtime, Thing* self, Thing** args,
         uint8_t arity);
 
 Thing* createObjectThing(Runtime* runtime, Map* map) {
-    ObjectThing* object = createThing(runtime, THING_TYPE_OBJECT,
+    ObjectThing* object = (ObjectThing*) createThing(runtime, THING_TYPE_OBJECT,
             sizeof(ObjectThing));
 
     object->map = map;
@@ -1079,8 +1113,8 @@ RetVal objectCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, "expected self to be an object");
     }
 
-    ObjectThing* object = self;
-    Thing** value = getMapUint32(object->map, SYM_CALL);
+    ObjectThing* object = (ObjectThing*) self;
+    Thing** value = (Thing**) getMapUint32(object->map, SYM_CALL);
     if(value == NULL) {
         const char* msg = "object is not callable (does not have call property)";
         return throwMsg(runtime, newStr(msg));
@@ -1103,7 +1137,7 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
         return throwMsg(runtime, "expected argument 1 to be an object");
     }
 
-    ObjectThing* object = args[0];
+    ObjectThing* object = (ObjectThing*) args[0];
     Thing* value = getMapUint32(object->map, getSymbolId(self));
     if(value == NULL) {
         if(getSymbolId(self) == SYM_RESPONDS_TO) {
@@ -1128,7 +1162,7 @@ RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
     } else if(arity == 1) {
         return createRetVal(value, 0);
     } else {
-        Thing** passedArgs = malloc(sizeof(Thing*) * (arity - 1));
+        Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * (arity - 1));
         for(uint8_t i = 1; i < arity; i++) {
             passedArgs[i - 1] = args[i];
         }
@@ -1153,7 +1187,7 @@ typedef struct {
 } CellThing;
 
 Thing* createCellThing(Runtime* runtime, Thing* value) {
-    CellThing* cell = createThing(runtime, THING_TYPE_CELL, sizeof(CellThing));
+    CellThing* cell = (CellThing*) createThing(runtime, THING_TYPE_CELL, sizeof(CellThing));
     cell->value = value;
     return cell;
 }

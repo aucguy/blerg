@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #include "main/codegen.h"
-#include "main/runtime.h"
 #include "main/util.h"
+#include "runtime.hpp"
 
 /**
  * Every 'object' in the language is internally referred to as a 'thing.'

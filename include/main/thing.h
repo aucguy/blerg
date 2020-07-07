@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "main/execute.h"
-#include "main/runtime.h"
+#include "runtime.hpp"
 
 /**
  * Initialize this module. Must be called before any other functions in this
@@ -21,20 +21,20 @@ void initThing();
 void deinitThing();
 
 //different builtin types. Initialized in initThing.
-ThingType* THING_TYPE_NONE;
-ThingType* THING_TYPE_INT;
-ThingType* THING_TYPE_FLOAT;
-ThingType* THING_TYPE_STR;
-ThingType* THING_TYPE_BOOL;
-ThingType* THING_TYPE_SYMBOL;
-ThingType* THING_TYPE_MODULE;
-ThingType* THING_TYPE_FUNC;
-ThingType* THING_TYPE_NATIVE_FUNC;
-ThingType* THING_TYPE_ERROR;
-ThingType* THING_TYPE_TUPLE;
-ThingType* THING_TYPE_LIST;
-ThingType* THING_TYPE_OBJECT;
-ThingType* THING_TYPE_CELL;
+extern ThingType* THING_TYPE_NONE;
+extern ThingType* THING_TYPE_INT;
+extern ThingType* THING_TYPE_FLOAT;
+extern ThingType* THING_TYPE_STR;
+extern ThingType* THING_TYPE_BOOL;
+extern ThingType* THING_TYPE_SYMBOL;
+extern ThingType* THING_TYPE_MODULE;
+extern ThingType* THING_TYPE_FUNC;
+extern ThingType* THING_TYPE_NATIVE_FUNC;
+extern ThingType* THING_TYPE_ERROR;
+extern ThingType* THING_TYPE_TUPLE;
+extern ThingType* THING_TYPE_LIST;
+extern ThingType* THING_TYPE_OBJECT;
+extern ThingType* THING_TYPE_CELL;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -87,24 +87,24 @@ typedef struct {
 
 Thing* createNoneThing(Runtime* runtime);
 
-uint32_t SYM_ADD;
-uint32_t SYM_SUB;
-uint32_t SYM_MUL;
-uint32_t SYM_DIV;
-uint32_t SYM_EQ;
-uint32_t SYM_NOT_EQ;
-uint32_t SYM_LESS_THAN;
-uint32_t SYM_LESS_THAN_EQ;
-uint32_t SYM_GREATER_THAN;
-uint32_t SYM_GREATER_THAN_EQ;
-uint32_t SYM_AND;
-uint32_t SYM_OR;
-uint32_t SYM_NOT;
-uint32_t SYM_GET;
-uint32_t SYM_DOT;
-uint32_t SYM_CALL;
-uint32_t SYM_RESPONDS_TO;
-uint32_t SYM_UNPACK;
+extern uint32_t SYM_ADD;
+extern uint32_t SYM_SUB;
+extern uint32_t SYM_MUL;
+extern uint32_t SYM_DIV;
+extern uint32_t SYM_EQ;
+extern uint32_t SYM_NOT_EQ;
+extern uint32_t SYM_LESS_THAN;
+extern uint32_t SYM_LESS_THAN_EQ;
+extern uint32_t SYM_GREATER_THAN;
+extern uint32_t SYM_GREATER_THAN_EQ;
+extern uint32_t SYM_AND;
+extern uint32_t SYM_OR;
+extern uint32_t SYM_NOT;
+extern uint32_t SYM_GET;
+extern uint32_t SYM_DOT;
+extern uint32_t SYM_CALL;
+extern uint32_t SYM_RESPONDS_TO;
+extern uint32_t SYM_UNPACK;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity);
 uint32_t newSymbolId();

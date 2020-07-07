@@ -257,7 +257,7 @@ List* flatList(BlockToken* token) {
     List* flattened = NULL;
 
     while(list != NULL) {
-        Token* stmt = list->head;
+        Token* stmt = (Token*) list->head;
         if(stmt->type == TOKEN_BLOCK) {
             List* output = flatList((BlockToken*) stmt);
             flattened = prependReverseList(output, flattened);
@@ -332,7 +332,7 @@ Token* listToConsListHelper(List* elements) {
         return (Token*) createBuiltinToken(location, newStr("none"));
     } else {
         const char* op = newStr("::");
-        Token* left = listToConsVisitor(elements->head, NULL);
+        Token* left = listToConsVisitor((Token*) elements->head, NULL);
         Token* right = listToConsListHelper(elements->tail);
         return (Token*) createBinaryOpToken(left->location, op, left, right);
     }
@@ -396,7 +396,7 @@ Token* objectDesugarObject(Token* token) {
     SrcLoc loc = token->location;
 
     while(elements != NULL) {
-        ObjectPair* pair = elements->head;
+        ObjectPair* pair = (ObjectPair*) elements->head;
         Token* key = objectDesugarVisitor(pair->key, NULL);
         Token* value = objectDesugarVisitor(pair->value, NULL);
         List* tupleElems = consList(key, consList(value, NULL));
@@ -482,7 +482,7 @@ Token* destructureLValue(Token* lvalue) {
             stmts = consList(createPushIntToken(loc, i), stmts);
             stmts = consList(createRot3Token(loc), stmts);
             stmts = consList(createCallOpToken(loc, 2), stmts);
-            stmts = consList(destructureLValue(elements->head), stmts);
+            stmts = consList(destructureLValue((Token*) elements->head), stmts);
             i++;
             elements = elements->tail;
         }
@@ -525,7 +525,7 @@ Token* destructureLValue(Token* lvalue) {
         List* pairs = object->elements;
 
         while(pairs != NULL) {
-            ObjectPair* pair = pairs->head;
+            ObjectPair* pair = (ObjectPair*) pairs->head;
 
             if(pairs->tail != NULL) {
                 stmts = consList(createDupToken(loc), stmts);
@@ -552,7 +552,7 @@ Token* destructureLValue(Token* lvalue) {
         stmts = consList(createDupToken(loc), stmts);
         stmts = consList(createPushBuiltinToken(loc, newStr("unpack_call")), stmts);
         stmts = consList(createSwapToken(loc), stmts);
-        Token* func = copyToken(call->children->head, destructureVisitor, NULL);
+        Token* func = copyToken((Token*) call->children->head, destructureVisitor, NULL);
         stmts = consList(createPushToken(loc, func), stmts);
         stmts = consList(createSwapToken(loc), stmts);
         stmts = consList(createPushIntToken(loc, arity), stmts);
@@ -569,7 +569,7 @@ Token* destructureLValue(Token* lvalue) {
             stmts = consList(createSwapToken(loc), stmts);
             stmts = consList(createPushIntToken(loc, argNo), stmts);
             stmts = consList(createCallOpToken(loc, 2), stmts);
-            stmts = consList(destructureLValue(args->head), stmts);
+            stmts = consList(destructureLValue((Token*) args->head), stmts);
 
             args = args->tail;
             argNo++;
@@ -665,7 +665,7 @@ Token* transformFuncAssignToName(Token* module) {
     List* oldStmts = block->children;
 
     while(oldStmts != NULL) {
-        Token* stmt = oldStmts->head;
+        Token* stmt = (Token*) oldStmts->head;
         Token* copy;
         if(stmt->type == TOKEN_ASSIGNMENT) {
             AssignmentToken* assignment = (AssignmentToken*) stmt;
@@ -770,7 +770,7 @@ Token* transformInitFunc(Token* module) {
     List* other = NULL;
 
     while(stmts != NULL) {
-        Token* stmt = copyToken(stmts->head, copyVisitor, NULL);
+        Token* stmt = copyToken((Token*) stmts->head, copyVisitor, NULL);
 
         if(stmt->type == TOKEN_FUNC) {
             funcs = consList(stmt, funcs);

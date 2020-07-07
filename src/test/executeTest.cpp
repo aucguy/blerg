@@ -1,3 +1,4 @@
+#include <main/thing.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,7 +8,6 @@
 #include "main/bytecode.h"
 #include "main/codegen.h"
 #include "main/execute.h"
-#include "main/thing.h"
 #include "main/top.h"
 
 #include "test/tests.h"
@@ -74,7 +74,7 @@ const char* executeTestMainFuncReturns1() {
     in.src = "main = def x do return 1; end;";
     in.name = "main";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = in.runtime->noneThing;
 
     ExecFuncOut out = execFunc(in);
@@ -93,7 +93,7 @@ const char* executeTestAddSubFunction() {
     in.src = "add_sub = def x y z do return x + y - z; end;";
     in.name = "add_sub";
     in.arity = 3;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 1);
     in.args[1] = createIntThing(in.runtime, 2);
     in.args[2] = createIntThing(in.runtime, 3);
@@ -115,7 +115,7 @@ const char* executeTestMathExpr() {
     in.src = "math = def x do return (x*2 - 5) / 7; end;";
     in.name = "math";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 100);
     in.filename = NULL;
 
@@ -135,7 +135,7 @@ const char* executeTestStrRet() {
    in.src = "main = def x do return 'hello world'; end;";
    in.name = "main";
    in.arity = 1;
-   in.args = malloc(sizeof(Thing*) * in.arity);
+   in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
    in.args[0] = in.runtime->noneThing;
    in.filename = NULL;
 
@@ -155,7 +155,7 @@ const char* executeTestStrConcat() {
     in.src = "greet = def name do return 'hello ' + name + '!'; end;";
     in.name = "greet";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "Bob", 1);
     in.filename = NULL;
 
@@ -175,7 +175,7 @@ const char* executeTestIntEq() {
     in.src = "equal = def x y do return x == y; end;";
     in.name = "equal";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -196,7 +196,7 @@ const char* executeTestIntNotEq() {
     in.src = "not_equal = def x y do return x != y; end;";
     in.name = "not_equal";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -217,7 +217,7 @@ const char* executeTestIntLessThan() {
     in.src = "less_than = def x y do return x < y; end;";
     in.name = "less_than";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -238,7 +238,7 @@ const char* executeTestIntLessThanEq() {
     in.src = "less_than_eq = def x y do return x <= y; end;";
     in.name = "less_than_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -258,7 +258,7 @@ const char* executeTestIntGreaterThan() {
     in.src = "greater_than = def x y do return x > y; end;";
     in.name = "greater_than";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -278,7 +278,7 @@ const char* executeTestIntGreaterThanEq() {
     in.src = "greater_than_eq = def x y do return x >= y; end;";
     in.name = "greater_than_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 3);
     in.args[1] = createIntThing(in.runtime, 5);
     in.filename = NULL;
@@ -299,7 +299,7 @@ const char* executeTestStrEq() {
     in.src = "str_eq = def x y do return x == y; end;";
     in.name = "str_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "hello", 1);
     in.args[1] = createStrThing(in.runtime, "world", 1);
     in.filename = NULL;
@@ -320,7 +320,7 @@ const char* executeTestStrNotEq() {
     in.src = "str_not_eq = def x y do return x != y; end;";
     in.name = "str_not_eq";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createStrThing(in.runtime, "hello", 1);
     in.args[1] = createStrThing(in.runtime, "world", 1);
     in.filename = NULL;
@@ -341,7 +341,7 @@ const char* executeTestBoolAnd() {
     in.src = "bool_and = def x y do return x and y; end;";
     in.name = "bool_and";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
     in.args[1] = createBoolThing(in.runtime, 0);
     in.filename = NULL;
@@ -362,7 +362,7 @@ const char* executeTestBoolOr() {
     in.src = "bool_and = def x y do return x or y; end;";
     in.name = "bool_and";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
     in.args[1] = createBoolThing(in.runtime, 0);
     in.filename = NULL;
@@ -384,7 +384,7 @@ const char* executeTestBoolNot() {
     in.src = "bool_and = def x y do return not x; end;";
     in.name = "bool_and";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createBoolThing(in.runtime, 1);
     in.filename = NULL;
 
@@ -404,7 +404,7 @@ const char* executeTestIfStmt() {
     in.src = "if_stmt = def x y do if x == y then a = 'equal'; else b ='not_equal'; end return a; end;";
     in.name = "if_stmt";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 1);
     in.args[1] = createIntThing(in.runtime, 1);
     in.filename = NULL;
@@ -425,7 +425,7 @@ const char* executeTestAssignment() {
     in.src = "assign = def x do y = 1; return y; end;";
     in.name = "assign";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = in.runtime->noneThing;
     in.filename = NULL;
 
@@ -445,7 +445,7 @@ const char* executeTestWhileLoop() {
     in.src = "fact = def x do y = 1; while x > 1 do y = y * x; x = x - 1; end return y; end;";
     in.name = "fact";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 4);
     in.filename = NULL;
 
@@ -483,7 +483,7 @@ const char* executeTestNativeFunc() {
     in.src = "apply = def f x do return f x; end;";
     in.name = "apply";
     in.arity = 2;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createNativeFuncThing(in.runtime, absFunc);
     in.args[1] = createIntThing(in.runtime, -4);
     in.filename = NULL;
@@ -504,7 +504,7 @@ const char* executeTestRecFunc() {
     in.src = "fact = def x do if x == 1 then return 1; else return x * fact (x - 1); end end;";
     in.name = "fact";
     in.arity = 1;
-    in.args = malloc(sizeof(Thing*) * in.arity);
+    in.args = (Thing**) malloc(sizeof(Thing*) * in.arity);
     in.args[0] = createIntThing(in.runtime, 5);
 
     ExecFuncOut out = execFunc(in);

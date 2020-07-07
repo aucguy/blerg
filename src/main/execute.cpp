@@ -1,17 +1,17 @@
+#include <main/thing.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 #include "main/bytecode.h"
 #include "main/execute.h"
-#include "main/thing.h"
 #include "main/lib.h"
 #include "main/std_lib/modules.h"
 
 #define UNUSED(x) (void)(x)
 
 Scope* createScope(Runtime* runtime, Scope* parent) {
-    Scope* scope = malloc(sizeof(Scope));
+    Scope* scope = (Scope*) malloc(sizeof(Scope));
     scope->parent = parent;
     scope->locals = createMap();
     runtime->allocatedScopes = consList(scope, runtime->allocatedScopes);
@@ -45,8 +45,8 @@ Scope* copyScope(Runtime* runtime, Scope* oldScope) {
         Entry* locals = oldScope->locals->entry;
 
         while(locals != NULL) {
-            if(getMapStr(newScope->locals, locals->key) == NULL) {
-                setScopeLocal(newScope, locals->key, locals->value);
+            if(getMapStr(newScope->locals, (const char*) locals->key) == NULL) {
+                setScopeLocal(newScope, (const char*) locals->key, locals->value);
             }
             locals = locals->tail;
         }
@@ -61,7 +61,7 @@ Scope* copyScope(Runtime* runtime, Scope* oldScope) {
  * Creates a StackFrame for the invocation of the function.
  */
 StackFrame* createStackFrameDef(Module* module, uint32_t index, Scope* scope) {
-    StackFrame* frame = malloc(sizeof(StackFrame));
+    StackFrame* frame = (StackFrame*) malloc(sizeof(StackFrame));
     frame->type = STACK_FRAME_DEF;
     frame->def.module = module;
     frame->def.index = index;
@@ -70,7 +70,7 @@ StackFrame* createStackFrameDef(Module* module, uint32_t index, Scope* scope) {
 }
 
 StackFrame* createStackFrameNative() {
-    StackFrame* frame = malloc(sizeof(StackFrame));
+    StackFrame* frame = (StackFrame*) malloc(sizeof(StackFrame));
     frame->type = STACK_FRAME_NATIVE;
     return frame;
 }
@@ -78,7 +78,7 @@ StackFrame* createStackFrameNative() {
 Runtime* createRuntime(uint8_t argc, const char* args[]) {
     UNUSED(argc);
 
-    Runtime* runtime = malloc(sizeof(Runtime));
+    Runtime* runtime = (Runtime*) malloc(sizeof(Runtime));
     runtime->stackFrame = NULL;
     runtime->stack = NULL;
     runtime->allocatedThings = NULL;
@@ -154,7 +154,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
 }
 
 void destroyModuleVoid(void* module) {
-    destroyModule(module);
+    destroyModule((Module*) module);
 }
 
 void destroyRuntime(Runtime* runtime) {
@@ -171,7 +171,7 @@ void destroyRuntime(Runtime* runtime) {
 }
 
 StackFrame* currentStackFrame(Runtime* runtime) {
-    return runtime->stackFrame->head;
+    return (StackFrame*) runtime->stackFrame->head;
 }
 
 void pushStackFrame(Runtime* runtime, StackFrame* frame) {
@@ -388,8 +388,8 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             //TODO fix conversion
             uint8_t arity = (unsigned int) readU32Module(module, index);
             index += 4;
-            FuncThing* func = peekStackIndex(runtime, arity);
-            Thing** args = malloc(arity * sizeof(Thing*));
+            FuncThing* func = (FuncThing*) peekStackIndex(runtime, arity);
+            Thing** args = (Thing**) malloc(arity * sizeof(Thing*));
             for(uint8_t i = 0; i < arity; i++) {
                 args[arity - i - 1] = popStack(runtime);
             }
@@ -495,7 +495,7 @@ RetVal executeModule(Runtime* runtime, Module* module) {
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {
     if(typeOfThing(func) == THING_TYPE_FUNC) {
         uint8_t error = 0;
-        StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
+        StackFrame* frame = createFrameCall(runtime, (FuncThing*) func, argNo, args, &error);
         if(error) {
             return throwMsg(runtime, "error creating function stack frame");
         }

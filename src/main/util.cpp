@@ -49,7 +49,7 @@ const char* formatStr(const char* format, ...) {
 
     va_end(args);
 
-    char* str = malloc(sizeof(char) * length);
+    char* str = (char*) malloc(sizeof(char) * length);
     va_start(args, format);
     vsprintf(str, format, args);
     va_end(args);

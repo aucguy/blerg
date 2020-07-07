@@ -125,7 +125,7 @@ def build(debugging=False):
     """
     builds the executable
     """
-    files = list(obj_tuple(with_extension(get_files('src'), '.c'), debugging))
+    files = list(obj_tuple(with_extension(get_files('src'), '.cpp'), debugging))
 
     failed = False
     for status, (src, obj) in changed_sources(files, debugging):

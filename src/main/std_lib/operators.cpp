@@ -1,6 +1,6 @@
+#include <main/runtime.hpp>
+#include <main/thing.h>
 #include "main/util.h"
-#include "main/thing.h"
-#include "main/runtime.h"
 
 Thing* initOperatorsModule(Runtime* runtime) {
     Map* map = createMap();

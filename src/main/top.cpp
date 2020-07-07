@@ -1,3 +1,4 @@
+#include <main/thing.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -7,7 +8,6 @@
 #include "main/transform.h"
 #include "main/codegen.h"
 #include "main/execute.h"
-#include "main/thing.h"
 #include "main/top.h"
 
 //from https://stackoverflow.com/questions/14002954/c-programming-how-to-read-the-whole-file-contents-into-a-buffer
@@ -17,7 +17,7 @@ char* readFile(const char* filename) {
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    char *string = malloc(fsize + 1);
+    char* string = (char*) malloc(fsize + 1);
     fread(string, 1, fsize, f);
     fclose(f);
 

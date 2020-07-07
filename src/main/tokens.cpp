@@ -22,7 +22,7 @@ List* copyTokenList(List* old, CopyVisitor visitor, void* data) {
     if(old == NULL) {
         return NULL;
     } else {
-        Token* head = visitor(old->head, data);
+        Token* head = visitor((Token*) old->head, data);
         List* tail = copyTokenList(old->tail, visitor, data);
         return consList(head, tail);
     }
@@ -211,7 +211,7 @@ void printTupleToken(Token* self, uint8_t indent) {
     while(elements != NULL) {
         printIndent(indent + 1);
         printf("%i:\n", i);
-        printTokenWithIndent(elements->head, indent + 2);
+        printTokenWithIndent((Token*) elements->head, indent + 2);
         elements = elements->tail;
         i++;
     }
@@ -260,7 +260,7 @@ void printListToken(Token* self, uint8_t indent) {
         //TODO remove this line to fix formating
         printIndent(indent + 1);
         printf("%i:\n", i);
-        printTokenWithIndent(elements->head, indent + 2);
+        printTokenWithIndent((Token*) elements->head, indent + 2);
         elements = elements->tail;
         i++;
     }
@@ -296,7 +296,7 @@ ListToken* createListToken(SrcLoc location, List* elements) {
 }
 
 ObjectPair* createObjectPair(Token* key, Token* value) {
-    ObjectPair* pair = malloc(sizeof(ObjectPair));
+    ObjectPair* pair = (ObjectPair*) malloc(sizeof(ObjectPair));
     pair->key = key;
     pair->value = value;
     return pair;
@@ -307,7 +307,7 @@ void destroyObjectToken(Token* self) {
     List* elements = object->elements;
 
     while(elements != NULL) {
-        ObjectPair* pair = elements->head;
+        ObjectPair* pair = (ObjectPair*) elements->head;
         destroyToken(pair->key);
         destroyToken(pair->value);
         free(pair);
@@ -349,8 +349,8 @@ uint8_t equalsObjectToken(Token* self, Token* other) {
     List* elements2 = object2->elements;
 
     while(elements1 != NULL && elements2 != NULL) {
-        ObjectPair* pair1 = elements1->head;
-        ObjectPair* pair2 = elements2->head;
+        ObjectPair* pair1 = (ObjectPair*) elements1->head;
+        ObjectPair* pair2 = (ObjectPair*) elements2->head;
         if(!tokensEqual(pair1->key, pair2->key) ||
                 !tokensEqual(pair1->value, pair2->value)) {
             return 0;
@@ -391,7 +391,7 @@ Token OBJECT_TYPE = {
 };
 
 ObjectToken* createObjectToken(SrcLoc location, List* elements) {
-    ObjectToken* object = malloc(sizeof(ObjectToken));
+    ObjectToken* object = (ObjectToken*) malloc(sizeof(ObjectToken));
     object->token.location = location;
     object->token = OBJECT_TYPE;
     object->elements = elements;
@@ -401,7 +401,7 @@ ObjectToken* createObjectToken(SrcLoc location, List* elements) {
 void destroyCallToken(Token* self) {
     List* children = ((CallToken*) self)->children;
     while(children != NULL) {
-        destroyToken(children->head);
+        destroyToken((Token*) children->head);
         children = children->tail;
     }
     destroyShallowList(((CallToken*) self)->children);
@@ -411,7 +411,7 @@ void printCallToken(Token* self, uint8_t indent) {
     printf("call:\n");
     List* children = ((CallToken*) self)->children;
     while(children != NULL) {
-        printTokenWithIndent(children->head, indent + 1);
+        printTokenWithIndent((Token*) children->head, indent + 1);
         children = children->tail;
     }
 }
@@ -420,7 +420,7 @@ uint8_t equalsCallToken(Token* self, Token* other) {
     List* childrenB = ((CallToken*) other)->children;
 
     while(childrenA != NULL && childrenB != NULL) {
-        if(!tokensEqual(childrenA->head, childrenB->head)) {
+        if(!tokensEqual((Token*) childrenA->head, (Token*) childrenB->head)) {
             return 0;
         }
         childrenA = childrenA->tail;
@@ -706,7 +706,7 @@ List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
     if(branches == NULL) {
         return NULL;
     } else {
-        IfBranch* branch = branches->head;
+        IfBranch* branch = (IfBranch*) branches->head;
         Token* condition = visitor(branch->condition, data);
         BlockToken* block = (BlockToken*) visitor((Token*) branch->block, data);
         IfBranch* head = createIfBranch(condition, block);
@@ -1048,7 +1048,7 @@ Token PUSH_BUILTIN_TYPE = {
 };
 
 PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
-    PushBuiltinToken* builtin = malloc(sizeof(PushBuiltinToken));
+    PushBuiltinToken* builtin = (PushBuiltinToken*) malloc(sizeof(PushBuiltinToken));
     builtin->token = PUSH_BUILTIN_TYPE;
     builtin->token.location = loc;
     builtin->name = name;
@@ -1088,7 +1088,7 @@ Token PUSH_INT_TYPE = {
 };
 
 PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
-    PushIntToken* push = malloc(sizeof(PushIntToken));
+    PushIntToken* push = (PushIntToken*) malloc(sizeof(PushIntToken));
     push->token = PUSH_INT_TYPE;
     push->token.location = loc;
     push->value = value;
@@ -1128,7 +1128,7 @@ Token CALL_OP_TYPE = {
 };
 
 CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
-    CallOpToken* call = malloc(sizeof(CallOpToken));
+    CallOpToken* call = (CallOpToken*) malloc(sizeof(CallOpToken));
     call->token = CALL_OP_TYPE;
     call->token.location = loc;
     call->arity = arity;
@@ -1169,7 +1169,7 @@ Token STORE_TYPE = {
 };
 
 StoreToken* createStoreToken(SrcLoc loc, const char* name) {
-    StoreToken* store = malloc(sizeof(StoreToken));
+    StoreToken* store = (StoreToken*) malloc(sizeof(StoreToken));
     store->token = STORE_TYPE;
     store->token.location = loc;
     store->name = name;
@@ -1208,7 +1208,7 @@ Token DUP_TYPE = {
 };
 
 DupToken* createDupToken(SrcLoc loc) {
-    DupToken* dup = malloc(sizeof(DupToken));
+    DupToken* dup = (DupToken*) malloc(sizeof(DupToken));
     dup->token = DUP_TYPE;
     dup->token.location = loc;
     return dup;
@@ -1246,7 +1246,7 @@ Token PUSH_TYPE = {
 };
 
 PushToken* createPushToken(SrcLoc loc, Token* value) {
-    PushToken* push = malloc(sizeof(PushToken));
+    PushToken* push = (PushToken*) malloc(sizeof(PushToken));
     push->token = PUSH_TYPE;
     push->token.location = loc;
     push->value = value;
@@ -1285,7 +1285,7 @@ Token ROT3_TYPE = {
 };
 
 Rot3Token* createRot3Token(SrcLoc location) {
-    Rot3Token* rot = malloc(sizeof(Rot3Token));
+    Rot3Token* rot = (Rot3Token*) malloc(sizeof(Rot3Token));
     rot->token = ROT3_TYPE;
     rot->token.location = location;
     return rot;
@@ -1325,7 +1325,7 @@ Token BUILTIN_TYPE = {
 };
 
 BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
-    BuiltinToken* builtin = malloc(sizeof(BuiltinToken));
+    BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
     builtin->token = BUILTIN_TYPE;
     builtin->token.location = loc;
     builtin->name = name;
@@ -1364,7 +1364,7 @@ Token SWAP_TYPE = {
 };
 
 SwapToken* createSwapToken(SrcLoc loc) {
-    SwapToken* swap = malloc(sizeof(SwapToken));
+    SwapToken* swap = (SwapToken*) malloc(sizeof(SwapToken));
     swap->token = SWAP_TYPE;
     swap->token.location = loc;
     return swap;
@@ -1402,7 +1402,7 @@ Token POP_TYPE = {
 };
 
 PopToken* createPopToken(SrcLoc loc) {
-    PopToken* pop = malloc(sizeof(PopToken));
+    PopToken* pop = (PopToken*) malloc(sizeof(PopToken));
     pop->token = POP_TYPE;
     pop->token.location = loc;
     return pop;
@@ -1440,7 +1440,7 @@ Token CHECK_NONE_TYPE = {
 };
 
 CheckNoneToken* createCheckNoneToken(SrcLoc location) {
-    CheckNoneToken* check = malloc(sizeof(CheckNoneToken));
+    CheckNoneToken* check = (CheckNoneToken*) malloc(sizeof(CheckNoneToken));
     check->token = CHECK_NONE_TYPE;
     check->token.location = location;
     return check;
@@ -1480,7 +1480,7 @@ Token NEW_FUNC_TYPE = {
 };
 
 NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
-    NewFuncToken* func = malloc(sizeof(NewFuncToken));
+    NewFuncToken* func = (NewFuncToken*) malloc(sizeof(NewFuncToken));
     func->token = NEW_FUNC_TYPE;
     func->token.location = location;
     func->name = name;

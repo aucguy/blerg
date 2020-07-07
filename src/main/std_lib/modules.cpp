@@ -1,7 +1,7 @@
+#include <main/thing.h>
 #include <string.h>
 
 #include "main/util.h"
-#include "main/thing.h"
 #include "main/execute.h"
 
 #include "main/std_lib/functools.h"

@@ -21,23 +21,23 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     //TODO extract to its own function once length for lists has been written
     uint8_t count = 0;
-    ListThing* list = args[1];
+    ListThing* list = (ListThing*) args[1];
     while(typeOfThing(list) != THING_TYPE_NONE) {
         count++;
-        list = list->tail;
+        list = (ListThing*) list->tail;
     }
 
     if(count == 0) {
         return throwMsg(runtime, newStr("cannot call function with no arguments"));
     }
 
-    Thing** passedArgs = malloc(sizeof(Thing*) * count);
-    list = args[1];
+    Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * count);
+    list = (ListThing*) args[1];
     count = 0;
     while(typeOfThing(list) != THING_TYPE_NONE) {
         passedArgs[count] = list->head;
         count++;
-        list = list->tail;
+        list = (ListThing*) list->tail;
     }
 
     RetVal ret = callFunction(runtime, args[0], count, passedArgs);
@@ -72,7 +72,7 @@ RetVal varargCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 Thing* createVarargThing(Runtime* runtime, Thing* func) {
-    VarargThing* vararg = createThing(runtime, THING_TYPE_VARARG,
+    VarargThing* vararg = (VarargThing*) createThing(runtime, THING_TYPE_VARARG,
             sizeof(VarargThing));
     vararg->func = func;
     return vararg;

@@ -1,4 +1,4 @@
-#include "main/runtime.h"
+#include <main/runtime.hpp>
 
 RetVal createRetVal(Thing* value, uint8_t error) {
     RetVal retVal;
