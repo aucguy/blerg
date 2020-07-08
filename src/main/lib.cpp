@@ -14,7 +14,7 @@
 RetVal libPrint(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
-    RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_STR);
+    RetVal retVal = typeCheck(runtime, self, args, arity, 1, TYPE_STR);
     if(isRetValError(retVal)) {
         return retVal;
     }
@@ -40,7 +40,7 @@ RetVal libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
     UNUSED(arity);
 
-    RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_BOOL);
+    RetVal retVal = typeCheck(runtime, self, args, arity, 1, TYPE_BOOL);
     if(isRetValError(retVal)) {
         return retVal;
     }
@@ -55,7 +55,7 @@ RetVal libAssert(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
-    RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_INT);
+    RetVal retVal = typeCheck(runtime, self, args, arity, 1, TYPE_INT);
     if(isRetValError(retVal)) {
         return retVal;
     }
@@ -69,7 +69,7 @@ RetVal libToStr(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 RetVal libToInt(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
 
-    RetVal retVal = typeCheck(runtime, self, args, arity, 1, THING_TYPE_STR);
+    RetVal retVal = typeCheck(runtime, self, args, arity, 1, TYPE_STR);
     if(isRetValError(retVal)) {
         return retVal;
     }
@@ -121,9 +121,9 @@ RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    ThingType* type = typeOfThing(args[1]);
+    ThingTypes type = typeOfThing2(args[1]);
 
-    if(type != THING_TYPE_NONE && type != THING_TYPE_LIST) {
+    if(type != TYPE_NONE && type != TYPE_LIST) {
         const char* msg = formatStr("expected argument 2 to be none or a list");
         return throwMsg(runtime, msg);
     }
@@ -132,7 +132,7 @@ RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_LIST);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -141,7 +141,7 @@ RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 }
 
 RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_LIST);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -151,7 +151,7 @@ RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
 RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args,
         uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_INT);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_INT);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -172,7 +172,7 @@ RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args,
 
 RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     //TODO allow empty objects
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_LIST);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -180,8 +180,8 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     Map* map = createMap();
 
     ListThing* elements = (ListThing*) args[0];
-    while(typeOfThing(elements) == THING_TYPE_LIST) {
-        if(typeOfThing(elements->head) != THING_TYPE_TUPLE) {
+    while(typeOfThing2(elements) == TYPE_LIST) {
+        if(typeOfThing2(elements->head) != TYPE_TUPLE) {
             const char* msg = "internal error: expected pair to be a tuple";
             return throwMsg(runtime, newStr(msg));
         }
@@ -193,7 +193,7 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         }
 
         Thing* key = getTupleElem(pair, 0);
-        if(typeOfThing(key) != THING_TYPE_SYMBOL) {
+        if(typeOfThing2(key) != TYPE_SYMBOL) {
             const char* msg = "key is not a symbol";
             return throwMsg(runtime, newStr(msg));
         }
@@ -210,7 +210,7 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 RetVal libUnpackCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     //even though none is a list, it can't be unpacked, so we only check for lists
     //TODO give a better error message when one attempts to unpack a none
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_LIST);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_LIST);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -234,7 +234,7 @@ RetVal libCreateCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 
 RetVal libGetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     UNUSED(self);
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_CELL);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_CELL);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -249,7 +249,7 @@ RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, msg);
     }
 
-    if(typeOfThing(args[0]) != THING_TYPE_CELL) {
+    if(typeOfThing2(args[0]) != TYPE_CELL) {
         return throwMsg(runtime, newStr("expected argument 1 to be a cell"));
     }
 
@@ -278,7 +278,7 @@ const char* getModulePath(Runtime* runtime, const char* name) {
 
 //TODO make this work on non-posix systems
 RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_STR);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_STR);
     if(isRetValError(ret)) {
         return ret;
     }
@@ -326,7 +326,7 @@ RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 1 arg but got %i", arity));
     }
 
-    uint8_t ret = typeOfThing(args[0]) == THING_TYPE_NONE;
+    uint8_t ret = typeOfThing2(args[0]) == TYPE_NONE;
     return createRetVal(createBoolThing(runtime, ret), 0);
 }
 
@@ -336,7 +336,7 @@ RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    if(typeOfThing(args[2]) != THING_TYPE_INT) {
+    if(typeOfThing2(args[2]) != TYPE_INT) {
         return throwMsg(runtime, newStr("expected argument 2 to be an int"));
     }
 
@@ -381,7 +381,7 @@ RetVal libAssertEqual(Runtime* runtime, Thing* self, Thing** args, uint8_t arity
 
     Thing* val = getRetVal(ret);
 
-    if(typeOfThing(val) != THING_TYPE_BOOL) {
+    if(typeOfThing2(val) != TYPE_BOOL) {
         return throwMsg(runtime, newStr("result of == is not a bool"));
     }
 

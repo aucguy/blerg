@@ -2,7 +2,7 @@
 #include "main/thing.h"
 
 RetVal libProperties(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    RetVal ret = typeCheck(runtime, self, args, arity, 1, THING_TYPE_OBJECT);
+    RetVal ret = typeCheck(runtime, self, args, arity, 1, TYPE_OBJECT);
     if(isRetValError(ret)) {
         return ret;
     }

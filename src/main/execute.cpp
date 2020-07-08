@@ -261,7 +261,7 @@ const char* readConstantModule(Module* module, uint32_t index) {
 StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
         Thing** args, uint8_t* error) {
     //currently, native code can only call blerg code
-    if(typeOfThing(func) != THING_TYPE_FUNC) {
+    if(typeOfThing2(func) != TYPE_FUNC) {
         *error = 1;
         return NULL;
     }
@@ -394,7 +394,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 args[arity - i - 1] = popStack(runtime);
             }
             popStack(runtime); //pop the function
-            if(typeOfThing(func) == THING_TYPE_FUNC) {
+            if(typeOfThing2(func) == TYPE_FUNC) {
                 uint8_t error = 0;
                 StackFrame* frame = createFrameCall(runtime, func, arity, args,
                         &error);
@@ -427,7 +427,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             uint32_t target = readU32Module(module, index);
             index += 4;
 
-            if(typeOfThing(condition) != THING_TYPE_BOOL) {
+            if(typeOfThing2(condition) != TYPE_BOOL) {
                 //TODO report what type was found
                 const char* msg =" boolean needed for branches, but a boolean "
                         "was not found";
@@ -493,7 +493,7 @@ RetVal executeModule(Runtime* runtime, Module* module) {
 }
 
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {
-    if(typeOfThing(func) == THING_TYPE_FUNC) {
+    if(typeOfThing2(func) == TYPE_FUNC) {
         uint8_t error = 0;
         StackFrame* frame = createFrameCall(runtime, (FuncThing*) func, argNo, args, &error);
         if(error) {

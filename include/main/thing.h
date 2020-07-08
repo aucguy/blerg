@@ -26,7 +26,7 @@ extern ThingType* THING_TYPE_INT;
 extern ThingType* THING_TYPE_FLOAT;
 extern ThingType* THING_TYPE_STR;
 extern ThingType* THING_TYPE_BOOL;
-extern ThingType* THING_TYPE_SYMBOL;
+//extern ThingType* THING_TYPE_SYMBOL;
 extern ThingType* THING_TYPE_MODULE;
 extern ThingType* THING_TYPE_FUNC;
 extern ThingType* THING_TYPE_NATIVE_FUNC;
@@ -75,6 +75,8 @@ Thing* getModuleProperty(Thing* thing, const char* name);
  * passing it to functions which require a certain type.
  */
 ThingType* typeOfThing(Thing* thing);
+
+ThingTypes typeOfThing2(Thing* thing);
 
 typedef struct {
     //location of first bytecode of the function

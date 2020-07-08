@@ -13,8 +13,8 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    ThingType* type = typeOfThing(args[1]);
-    if(type != THING_TYPE_LIST && type != THING_TYPE_NONE) {
+    ThingTypes type = typeOfThing2(args[1]);
+    if(type != TYPE_LIST && type != TYPE_NONE) {
         //TODO report the actual type
         return throwMsg(runtime, formatStr("expected argument 2 to be a list"));
     }
@@ -22,7 +22,7 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     //TODO extract to its own function once length for lists has been written
     uint8_t count = 0;
     ListThing* list = (ListThing*) args[1];
-    while(typeOfThing(list) != THING_TYPE_NONE) {
+    while(typeOfThing2(list) != TYPE_NONE) {
         count++;
         list = (ListThing*) list->tail;
     }
@@ -34,7 +34,7 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * count);
     list = (ListThing*) args[1];
     count = 0;
-    while(typeOfThing(list) != THING_TYPE_NONE) {
+    while(typeOfThing2(list) != TYPE_NONE) {
         passedArgs[count] = list->head;
         count++;
         list = (ListThing*) list->tail;
@@ -79,6 +79,10 @@ public:
 
     RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return symbolDispatch(runtime, self, args, arity);
+    }
+
+    ThingTypes type() {
+        return TYPE_VARARG;
     }
 };
 
