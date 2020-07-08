@@ -7,20 +7,759 @@
 #include "main/runtime.h"
 #include "main/thing.h"
 
-LegacyThingType* THING_TYPE_NONE = NULL;
-LegacyThingType* THING_TYPE_INT = NULL;
-LegacyThingType* THING_TYPE_FLOAT = NULL;
-LegacyThingType* THING_TYPE_STR = NULL;
-LegacyThingType* THING_TYPE_BOOL = NULL;
-LegacyThingType* THING_TYPE_SYMBOL = NULL;
-LegacyThingType* THING_TYPE_MODULE = NULL;
-LegacyThingType* THING_TYPE_FUNC = NULL;
-LegacyThingType* THING_TYPE_NATIVE_FUNC = NULL;
-LegacyThingType* THING_TYPE_ERROR = NULL;
-LegacyThingType* THING_TYPE_TUPLE = NULL;
-LegacyThingType* THING_TYPE_LIST = NULL;
-LegacyThingType* THING_TYPE_OBJECT = NULL;
-LegacyThingType* THING_TYPE_CELL = NULL;
+RetVal callFail(Runtime* runtime) {
+    return throwMsg(runtime, "cannot call this type");
+}
+
+class NoneThingType : public ThingType {
+public:
+    NoneThingType() {}
+    ~NoneThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+};
+
+typedef struct {
+    uint32_t id;
+    uint8_t arity;
+} SymbolThing;
+
+//TODO rename function
+RetVal symbolDispatch(Runtime* runtime, Thing* self, Thing** args,
+        uint8_t arity) {
+    if(getSymbolId(self) == SYM_RESPONDS_TO) {
+        if(arity != 2) {
+            const char* fmt = "expected 2 args but got %i";
+            return throwMsg(runtime, formatStr(fmt, arity));
+        }
+
+        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+            //TODO report the actual type
+            const char* msg = "expected argument 2 to be a symbol";
+            return throwMsg(runtime, newStr(msg));
+        }
+
+        uint8_t respondsTo = getSymbolId(args[1]) == SYM_RESPONDS_TO;
+
+        return createRetVal(createBoolThing(runtime, respondsTo), 0);
+    } else {
+        //TODO report the actual symbol
+        return throwMsg(runtime, newStr("symbols to not respond to that symbol"));
+    }
+}
+
+class SymbolThingType : public ThingType {
+public:
+    SymbolThingType() {}
+    ~SymbolThingType() {}
+    void destroy(Thing* self) {}
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        uint8_t expected = ((SymbolThing*) self)->arity;
+        //TODO remove this check
+        if(arity != expected && arity != 0) {
+            const char* format = "expected %i arguments, but got %i";
+            return throwMsg(runtime, formatStr(format, expected, arity));
+        }
+        return typeOfThing(args[0])->dispatch(runtime, self, args, arity);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
+
+class IntThingType : public ThingType {
+public:
+    IntThingType() {}
+    ~IntThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        uint32_t id = getSymbolId(self);
+
+        if(id == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the type
+                throwMsg(runtime, formatStr("expected argument 2 to be a symbol"));
+            }
+
+            uint32_t checking = getSymbolId(args[1]);
+
+            uint32_t respondsTo =
+                    checking == SYM_RESPONDS_TO ||
+                    checking == SYM_ADD ||
+                    checking == SYM_SUB ||
+                    checking == SYM_MUL ||
+                    checking == SYM_DIV ||
+                    checking == SYM_EQ ||
+                    checking == SYM_NOT_EQ ||
+                    checking == SYM_LESS_THAN ||
+                    checking == SYM_LESS_THAN_EQ ||
+                    checking == SYM_GREATER_THAN ||
+                    checking == SYM_GREATER_THAN_EQ;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else {
+            RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_INT,
+                    THING_TYPE_INT);
+            if(isRetValError(retVal)) {
+                return retVal;
+            }
+
+            int32_t valueA = thingAsInt(args[0]);
+            int32_t valueB = thingAsInt(args[1]);
+
+            Thing* thing = NULL;
+            const char* error = NULL;
+
+            if(id == SYM_ADD) {
+                thing = createIntThing(runtime, valueA + valueB);
+            } else if(id == SYM_SUB) {
+                thing = createIntThing(runtime, valueA - valueB);
+            } else if(id == SYM_MUL) {
+                thing = createIntThing(runtime, valueA * valueB);
+            } else if(id == SYM_DIV) {
+                thing = createIntThing(runtime, valueA / valueB);
+            } else if(id == SYM_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
+            } else if(id == SYM_NOT_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
+            } else if(id == SYM_LESS_THAN) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
+            } else if(id == SYM_LESS_THAN_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
+            } else if(id == SYM_GREATER_THAN) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
+            } else if(id == SYM_GREATER_THAN_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
+            } else {
+                //TODO report the symbol
+                //this case shouldn't happen
+                error = "ints do not respond to that symbol";
+            }
+
+            if(error != NULL) {
+                return throwMsg(runtime, error);
+            } else {
+                return createRetVal(thing, 0);
+            }
+        }
+    }
+};
+
+class FloatThingType : public ThingType {
+public:
+    FloatThingType() {}
+    ~FloatThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        uint32_t id = getSymbolId(self);
+        if(id == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                const char* fmt = "expected 2 args but got %i";
+                return throwMsg(runtime, formatStr(fmt, arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the actual type
+                const char* msg = "expected argument 2 to be a symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+
+            uint32_t checking = getSymbolId(args[1]);
+            uint8_t respondsTo =
+                    checking == SYM_ADD ||
+                    checking == SYM_SUB ||
+                    checking == SYM_MUL ||
+                    checking == SYM_DIV ||
+                    checking == SYM_EQ ||
+                    checking == SYM_NOT_EQ ||
+                    checking == SYM_LESS_THAN ||
+                    checking == SYM_LESS_THAN_EQ ||
+                    checking == SYM_GREATER_THAN ||
+                    checking == SYM_GREATER_THAN_EQ;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else {
+            RetVal retVal = typeCheck(runtime, self, args, arity, 2,
+                    THING_TYPE_FLOAT, THING_TYPE_FLOAT);
+            if(isRetValError(retVal)) {
+                return retVal;
+            }
+
+            float valueA = thingAsInt(args[0]);
+            float valueB = thingAsInt(args[1]);
+
+            Thing* thing = NULL;
+            const char* error = NULL;
+
+            if(id == SYM_ADD) {
+                thing = createFloatThing(runtime, valueA + valueB);
+            } else if(id == SYM_SUB) {
+                thing = createFloatThing(runtime, valueA - valueB);
+            } else if(id == SYM_MUL) {
+                thing = createFloatThing(runtime, valueA * valueB);
+            } else if(id == SYM_DIV) {
+                thing = createFloatThing(runtime, valueA / valueB);
+            } else if(id == SYM_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
+            } else if(id == SYM_NOT_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
+            } else if(id == SYM_LESS_THAN) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
+            } else if(id == SYM_LESS_THAN_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
+            } else if(id == SYM_GREATER_THAN) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
+            } else if(id == SYM_GREATER_THAN_EQ) {
+                thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
+            } else {
+                //TODO report the symbol
+                error = "floats do not respond to that symbol";
+            }
+
+            if(error != NULL) {
+                return throwMsg(runtime, error);
+            } else {
+                return createRetVal(thing, 0);
+            }
+        }
+    }
+};
+
+typedef struct {
+    const char* value;
+    uint8_t literal;
+} StrThing;
+
+class StrThingType : public ThingType {
+public:
+    StrThingType() {}
+    ~StrThingType() {}
+
+    void destroy(Thing* self) {
+        StrThing* str = (StrThing*) self;
+        if(!str->literal) {
+            free((char*) str->value);
+        }
+    }
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        uint32_t id = getSymbolId(self);
+
+        if(id == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                const char* fmt = "expected 2 args but got %i";
+                return throwMsg(runtime, formatStr(fmt, arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the actual type
+                const char* msg = "expected argument 2 to be a symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+
+            uint32_t checking = getSymbolId(args[1]);
+            uint8_t respondsTo =
+                    checking == SYM_ADD ||
+                    checking == SYM_EQ ||
+                    checking == SYM_NOT_EQ;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else {
+            RetVal retVal = typeCheck(runtime, self, args, arity, 2,THING_TYPE_STR,
+                    THING_TYPE_STR);
+            if(isRetValError(retVal)) {
+                return retVal;
+            }
+
+            const char* valueA = thingAsStr(args[0]);
+            const char* valueB = thingAsStr(args[1]);
+
+            Thing* thing;
+            const char* error = 0;
+
+            if(id == SYM_ADD) {
+                uint32_t len = strlen(valueA) + strlen(valueB);
+                char* out = (char*) malloc(sizeof(char) * (len + 1));
+                out[0] = 0;
+                strcat(out, valueA);
+                strcat(out, valueB);
+                thing = createStrThing(runtime, out, 0);
+            } else if(id == SYM_EQ) {
+                thing = createBoolThing(runtime, strcmp(valueA, valueB) == 0);
+            } else if(id == SYM_NOT_EQ) {
+                thing = createBoolThing(runtime, strcmp(valueA, valueB) != 0);
+            } else {
+                //TODO report the symbol
+                error = "strs do not respond to that symbol";
+            }
+
+            if(error != NULL) {
+                return throwMsg(runtime, error);
+            } else {
+                return createRetVal(thing, 0);
+            }
+        }
+    }
+};
+
+class BoolThingType : public ThingType {
+public:
+    BoolThingType() {}
+    ~BoolThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        if(typeOfThing(self) != THING_TYPE_SYMBOL) {\
+            const char* msg = "internal error: self should be a symbol";
+            return throwMsg(runtime, newStr(msg));
+        }
+
+        uint32_t id = getSymbolId(self);
+
+        if(id == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                const char* fmt = "expected 2 args but got %i";
+                return throwMsg(runtime, formatStr(fmt, arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the actual type
+                const char* msg = "expected argument 2 to be a symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+
+            uint32_t checking = getSymbolId(args[1]);
+            uint8_t respondsTo =
+                    checking == SYM_NOT ||
+                    checking == SYM_ADD ||
+                    checking == SYM_NOT;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else {
+            Thing* thing;
+            const char* error = NULL;
+
+            if(id == SYM_NOT) {
+                RetVal retVal = typeCheck(runtime, self, args, arity, 1,
+                        THING_TYPE_BOOL);
+                if(isRetValError(retVal)) {
+                    return retVal;
+                }
+
+                thing = createBoolThing(runtime, !thingAsBool(args[0]));
+            } else {
+                RetVal retVal = typeCheck(runtime, self, args, arity, 2,
+                        THING_TYPE_BOOL, THING_TYPE_BOOL);
+                if(isRetValError(retVal)) {
+                    return retVal;
+                }
+
+                uint8_t valueA = thingAsBool(args[0]);
+                uint8_t valueB = thingAsBool(args[1]);
+
+                if(id == SYM_AND) {
+                    thing = createBoolThing(runtime, valueA && valueB);
+                } else if(id == SYM_OR) {
+                    thing = createBoolThing(runtime, valueA || valueB);
+                } else {
+                    //TODO report the symbol
+                    error = newStr("bools do not respond to that symbol");
+                }
+            }
+
+            if(error != NULL) {
+                return throwMsg(runtime, error);
+            } else {
+                return createRetVal(thing, 0);
+            }
+        }
+    }
+};
+
+typedef struct {
+    Map* properties;
+} ModuleThing;
+
+class ModuleThingType : public ThingType {
+public:
+    ModuleThingType() {}
+    ~ModuleThingType() {}
+
+    void destroy(Thing* self) {
+        destroyMap(((ModuleThing*) self)->properties, nothing, nothing);
+    }
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        if(getSymbolId(self) == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the actual type
+                const char* msg = "expected argument 2 to be a symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+
+            uint8_t respondsTo = getSymbolId(args[1]) == SYM_DOT;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else {
+            RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_MODULE,
+                    THING_TYPE_STR);
+            if(isRetValError(ret)) {
+                return ret;
+            }
+
+            if(getSymbolId(self) != SYM_DOT) {
+                //TODO report the actual symbol
+                const char* msg = newStr("modules do not respond to that symbol");
+                return throwMsg(runtime, msg);
+            }
+
+            const char* name = thingAsStr(args[1]);
+            Thing* property = getModuleProperty(args[0], name);
+            if(property == NULL) {
+                return throwMsg(runtime, formatStr("export '%s' not found", name));
+            }
+
+            return createRetVal(property, 0);
+        }
+    }
+};
+
+class FuncThingType : public ThingType {
+public:
+    FuncThingType() {}
+    ~FuncThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
+
+typedef struct {
+    ExecFunc func;
+} NativeFuncThing;
+
+class NativeFuncThingType : public ThingType {
+public:
+    NativeFuncThingType() {}
+    ~NativeFuncThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return ((NativeFuncThing*) self)->func(runtime, self, args, arity);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
+
+typedef struct {
+    uint8_t native;
+    SrcLoc location;
+    const char* filename;
+} ErrorFrame;
+
+typedef struct {
+    const char* msg;
+    List* stackFrame;
+} ErrorThing;
+
+class ErrorThingType : public ThingType {
+public:
+    ErrorThingType() {}
+    ~ErrorThingType() {}
+
+    void destroy(Thing* thing) {
+        ErrorThing* self = (ErrorThing*) thing;
+        free((char*) self->msg);
+        destroyList(self->stackFrame, free);
+    }
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
+
+typedef struct {
+    uint8_t size;
+    Thing** elements;
+} TupleThing;
+
+class TupleThingType : public ThingType {
+public:
+    TupleThingType() {}
+    ~TupleThingType() {}
+
+    void destroy(Thing* self) {
+        free(((TupleThing*) self)->elements);
+    }
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        //TODO check self is really a symbol first
+        uint32_t id = getSymbolId(self);
+
+        if(id == SYM_RESPONDS_TO) {
+            if(arity != 2) {
+                return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
+            }
+
+            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                //TODO report the actual type
+                const char* msg = "expected argument 2 to be a symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+
+            uint32_t checking = getSymbolId(args[1]);
+            uint8_t respondsTo =
+                    checking == SYM_RESPONDS_TO ||
+                    checking == SYM_EQ ||
+                    checking == SYM_NOT_EQ ||
+                    checking == SYM_GET;
+
+            return createRetVal(createBoolThing(runtime, respondsTo), 0);
+        } else if(id == SYM_EQ || id == SYM_NOT_EQ) {
+            RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_TUPLE,
+                    THING_TYPE_TUPLE);
+
+            if(isRetValError(ret)) {
+                return ret;
+            }
+            uint8_t all = getSymbolId(self) == SYM_EQ;
+
+            TupleThing* valueA = (TupleThing*) args[0];
+            TupleThing* valueB = (TupleThing*) args[1];
+
+            if(valueA->size != valueB->size) {
+                return createRetVal(createBoolThing(runtime, 0), 0);
+            }
+
+            Thing* eqSym = getMapStr(runtime->operators, "==");
+
+            Thing** elems = (Thing**) malloc(sizeof(Thing*) * 2);
+
+            for(uint8_t i = 0; i < valueA->size; i++) {
+                elems[0] = valueA->elements[i];
+                elems[1] = valueB->elements[i];
+
+                ret = callFunction(runtime, eqSym, 2, elems);
+                if(isRetValError(ret)) {
+                    free(elems);
+                    return ret;
+                }
+
+                Thing* value = getRetVal(ret);
+
+                if(typeOfThing(value) != THING_TYPE_BOOL) {
+                    free(elems);
+                    const char* msg = newStr("internal error: == did not return a bool");
+                    return throwMsg(runtime, msg);
+                }
+
+                if(thingAsBool(value) != all) {
+                    free(elems);
+                    return ret;
+                }
+            }
+
+            free(elems);
+            return createRetVal(createBoolThing(runtime, all), 0);
+        } else if(id == SYM_GET) {
+            RetVal ret = typeCheck(runtime, self, args, arity, 2,
+                    THING_TYPE_TUPLE, THING_TYPE_INT);
+
+            if(isRetValError(ret)) {
+                return ret;
+            }
+
+            TupleThing* tuple = (TupleThing*) args[0];
+            int32_t index = thingAsInt(args[1]);
+
+            if(index >= tuple->size) {
+                const char* format = "tuple access out of bounds: "
+                        "accessed at %i but the size is %i";
+                return throwMsg(runtime, formatStr(format, index, tuple->size));
+            }
+
+            return createRetVal(tuple->elements[index], 0);
+        } else {
+            return throwMsg(runtime, newStr("tuples do not respond to that symbol"));
+        }
+    }
+};
+
+class ListThingType : public ThingType {
+public:
+    ListThingType() {}
+    ~ListThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+};
+
+typedef struct {
+    Map* map;
+} ObjectThing;
+
+class ObjectThingType : public ThingType {
+public:
+    ObjectThingType() {}
+    ~ObjectThingType() {}
+
+    void destroy(Thing* self) {
+        ObjectThing* object = (ObjectThing*) self;
+        destroyMap(object->map, free, nothing);
+    }
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        //these typechecks should pass, but they are here just in case
+        if(arity == 0) {
+            const char* fmt = "expected at least 1 args but got %i";
+            return throwMsg(runtime, formatStr(fmt, arity));
+        }
+
+        if(typeOfThing(self) != THING_TYPE_OBJECT) {
+            //TODO report the actual type
+            return throwMsg(runtime, "expected self to be an object");
+        }
+
+        ObjectThing* object = (ObjectThing*) self;
+        Thing** value = (Thing**) getMapUint32(object->map, SYM_CALL);
+        if(value == NULL) {
+            const char* msg = "object is not callable (does not have call property)";
+            return throwMsg(runtime, newStr(msg));
+        } else {
+            return callFunction(runtime, value, arity, args);
+        }
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        //these typechecks should pass, but they for here just in case
+        if(arity == 0) {
+            const char* fmt = "expected at least 1 args but got %i";
+            return throwMsg(runtime, formatStr(fmt, arity));
+        }
+
+        if(typeOfThing(args[0]) != THING_TYPE_OBJECT) {
+            //TODO report the actual type
+            return throwMsg(runtime, "expected argument 1 to be an object");
+        }
+
+        ObjectThing* object = (ObjectThing*) args[0];
+        Thing* value = getMapUint32(object->map, getSymbolId(self));
+        if(value == NULL) {
+            if(getSymbolId(self) == SYM_RESPONDS_TO) {
+                if(arity != 2) {
+                    const char* fmt = "expected 2 arg but got %i";
+                    return throwMsg(runtime, formatStr(fmt, arity));
+                }
+
+                if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
+                    //TODO report the actual type
+                    const char* msg = "expected argument 2 to be a symbol";
+                    return throwMsg(runtime, newStr(msg));
+                }
+
+                uint32_t checking = getSymbolId(args[1]);
+                uint32_t responds = getMapUint32(object->map, checking) != NULL;
+                return createRetVal(createBoolThing(runtime, responds), 0);
+            } else {
+                const char* msg = "object does not respond to that symbol";
+                return throwMsg(runtime, newStr(msg));
+            }
+        } else if(arity == 1) {
+            return createRetVal(value, 0);
+        } else {
+            Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * (arity - 1));
+            for(uint8_t i = 1; i < arity; i++) {
+                passedArgs[i - 1] = args[i];
+            }
+
+            RetVal ret = callFunction(runtime, value, arity - 1, passedArgs);
+            free(passedArgs);
+            return ret;
+        }
+    }
+};
+
+class CellThingType : public ThingType {
+public:
+    CellThingType() {}
+    ~CellThingType() {}
+    void destroy(Thing* self) {}
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return callFail(runtime);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
+
+ThingType* THING_TYPE_NONE = NULL;
+ThingType* THING_TYPE_INT = NULL;
+ThingType* THING_TYPE_FLOAT = NULL;
+ThingType* THING_TYPE_STR = NULL;
+ThingType* THING_TYPE_BOOL = NULL;
+ThingType* THING_TYPE_SYMBOL = NULL;
+ThingType* THING_TYPE_MODULE = NULL;
+ThingType* THING_TYPE_FUNC = NULL;
+ThingType* THING_TYPE_NATIVE_FUNC = NULL;
+ThingType* THING_TYPE_ERROR = NULL;
+ThingType* THING_TYPE_TUPLE = NULL;
+ThingType* THING_TYPE_LIST = NULL;
+ThingType* THING_TYPE_OBJECT = NULL;
+ThingType* THING_TYPE_CELL = NULL;
 
 uint32_t SYM_ADD = 0;
 uint32_t SYM_SUB = 0;
@@ -43,28 +782,6 @@ uint32_t SYM_UNPACK = 0;
 
 #define UNUSED(x) (void)(x)
 
-//TODO check if symbol is supported for a dispatch before typechecking
-//for better error messages
-
-LegacyThingType* createThingType() {
-    //ThingType* type = (ThingType*) malloc(sizeof(ThingType));
-    //type->destroy = NULL;
-    //return type;
-    return new LegacyThingType();
-}
-
-void setDestroyThingType(LegacyThingType* type, void (*destroy)(Thing*)) {
-    type->destroyFunc = destroy;
-}
-
-void setCallThingType(LegacyThingType* type, ExecFunc call) {
-    type->callFunc = call;
-}
-
-void setDispatchThingType(LegacyThingType* type, ExecFunc dispatch) {
-    type->dispatchFunc = dispatch;
-}
-
 void destroySimpleThing(Thing* thing) {
     UNUSED(thing);
 }
@@ -78,102 +795,24 @@ RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity) {
     return throwMsg(runtime, "cannot call this type");
 }
 
-//RetVal noneDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal intDispatch(Runtime*, Thing*, Thing**, uint8_t);
-RetVal floatDispatch(Runtime*, Thing*, Thing**, uint8_t);
-RetVal strDispatch(Runtime*, Thing*, Thing**, uint8_t);
-void destroyStrThing(Thing*);
-RetVal boolDispatch(Runtime*, Thing*, Thing**, uint8_t);
-RetVal symbolCall(Runtime*, Thing*, Thing**, uint8_t);
-RetVal symbolDispatch(Runtime*, Thing*, Thing**, uint8_t);
-uint32_t getSymbolId(Thing* self);
-RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-//RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal objectCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal consCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal consDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-RetVal moduleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity);
-
-void destroyModuleThing(Thing* thing);
-void destroyErrorThing(Thing* thing);
-void destroyTupleThing(Thing* thing);
-void destroyObjectThing(Thing* thing);
-
 static uint8_t initialized = 0;
 
 void initThing() {
     if(!initialized) {
-        THING_TYPE_NONE = createThingType();
-        setDestroyThingType(THING_TYPE_NONE, destroySimpleThing);
-        setCallThingType(THING_TYPE_NONE, errorCall);
-        setDispatchThingType(THING_TYPE_NONE, errorCall);
-
-        THING_TYPE_SYMBOL = createThingType();
-        setDestroyThingType(THING_TYPE_SYMBOL, destroySimpleThing);
-        setCallThingType(THING_TYPE_SYMBOL, symbolCall);
-        setDispatchThingType(THING_TYPE_SYMBOL, symbolDispatch);
-
-        THING_TYPE_INT = createThingType();
-        setDestroyThingType(THING_TYPE_INT, destroySimpleThing);
-        setCallThingType(THING_TYPE_INT, errorCall);
-        setDispatchThingType(THING_TYPE_INT, intDispatch);
-
-        THING_TYPE_FLOAT = createThingType();
-        setDestroyThingType(THING_TYPE_FLOAT, destroySimpleThing);
-        setCallThingType(THING_TYPE_FLOAT, errorCall);
-        setDispatchThingType(THING_TYPE_FLOAT, floatDispatch);
-
-        THING_TYPE_STR = createThingType();
-        setDestroyThingType(THING_TYPE_STR, destroyStrThing);
-        setCallThingType(THING_TYPE_STR, errorCall);
-        setDispatchThingType(THING_TYPE_STR, strDispatch);
-
-        THING_TYPE_BOOL = createThingType();
-        setDestroyThingType(THING_TYPE_BOOL, destroySimpleThing);
-        setCallThingType(THING_TYPE_BOOL, errorCall);
-        setDispatchThingType(THING_TYPE_BOOL, boolDispatch);
-
-        THING_TYPE_MODULE = createThingType();
-        setDestroyThingType(THING_TYPE_MODULE, destroyModuleThing);
-        setCallThingType(THING_TYPE_MODULE, errorCall);
-        setDispatchThingType(THING_TYPE_MODULE, moduleDispatch);
-
-        THING_TYPE_FUNC = createThingType();
-        setDestroyThingType(THING_TYPE_FUNC, destroySimpleThing);
-        setCallThingType(THING_TYPE_FUNC, errorCall);
-        setDispatchThingType(THING_TYPE_FUNC, symbolDispatch);
-
-        THING_TYPE_NATIVE_FUNC = createThingType();
-        setDestroyThingType(THING_TYPE_NATIVE_FUNC, destroySimpleThing);
-        setCallThingType(THING_TYPE_NATIVE_FUNC, nativeFuncCall);
-        setDispatchThingType(THING_TYPE_NATIVE_FUNC, symbolDispatch);
-
-        THING_TYPE_ERROR = createThingType();
-        setDestroyThingType(THING_TYPE_ERROR, destroyErrorThing);
-        setCallThingType(THING_TYPE_ERROR, errorCall);
-        setDispatchThingType(THING_TYPE_ERROR, symbolDispatch);
-
-        THING_TYPE_TUPLE = createThingType();
-        setDestroyThingType(THING_TYPE_TUPLE, destroyTupleThing);
-        setCallThingType(THING_TYPE_TUPLE, errorCall);
-        setDispatchThingType(THING_TYPE_TUPLE, tupleDispatch);
-
-        THING_TYPE_LIST = createThingType();
-        setDestroyThingType(THING_TYPE_LIST, destroySimpleThing);
-        setCallThingType(THING_TYPE_LIST, errorCall);
-        setDispatchThingType(THING_TYPE_LIST, errorCall);
-
-        THING_TYPE_OBJECT = createThingType();
-        setDestroyThingType(THING_TYPE_OBJECT, destroyObjectThing);
-        setCallThingType(THING_TYPE_OBJECT, objectCall);
-        setDispatchThingType(THING_TYPE_OBJECT, objectDispatch);
-
-        THING_TYPE_CELL = createThingType();
-        setDestroyThingType(THING_TYPE_CELL, destroySimpleThing);
-        setCallThingType(THING_TYPE_CELL, errorCall);
-        setDispatchThingType(THING_TYPE_CELL, symbolDispatch);
+        THING_TYPE_NONE = new NoneThingType();
+        THING_TYPE_SYMBOL = new SymbolThingType();
+        THING_TYPE_INT = new IntThingType();
+        THING_TYPE_FLOAT = new FloatThingType();
+        THING_TYPE_STR = new StrThingType();
+        THING_TYPE_BOOL = new BoolThingType();
+        THING_TYPE_MODULE = new ModuleThingType();
+        THING_TYPE_FUNC = new FuncThingType();
+        THING_TYPE_NATIVE_FUNC = new NativeFuncThingType();
+        THING_TYPE_ERROR = new ErrorThingType();
+        THING_TYPE_TUPLE = new TupleThingType();
+        THING_TYPE_LIST = new ListThingType();
+        THING_TYPE_OBJECT = new ObjectThingType();
+        THING_TYPE_CELL = new CellThingType();
 
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
@@ -311,34 +950,6 @@ Thing* createNoneThing(Runtime* runtime) {
     return thing;
 }
 
-/*RetVal noneDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        return throwMsg(runtime, newStr("expected self to be a symbol"));
-    }
-
-    uint32_t id = getSymbolId(self);
-
-    if(id != SYM_EQ && id != SYM_NOT_EQ) {
-        //TODO report the actual symbol
-        return throwMsg(runtime, newStr("expected symbol to be == or !="));
-    }
-
-    if(arity != 2) {
-        const char* fmt = "expected 2 arguments but got %i";
-        return throwMsg(runtime, formatStr(fmt, arity));
-    }
-
-    if(id == SYM_EQ) {
-        uint8_t ret = typeOfThing(args[1]) == THING_TYPE_NONE;
-        return createRetVal(createBoolThing(runtime, ret), 0);
-    } else if(id == SYM_NOT_EQ) {
-        uint8_t ret = typeOfThing(args[1]) != THING_TYPE_NONE;
-        return createRetVal(createBoolThing(runtime, ret), 0);
-    } else {
-        return throwMsg(runtime, newStr("internal error"));
-    }
-}*/
-
 /**
  * Represents integers found in the source code.
  */
@@ -350,85 +961,6 @@ Thing* createIntThing(Runtime* runtime, int32_t value) {
     IntThing* thing = (IntThing*) createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
     thing->value = value;
     return thing;
-}
-
-//TODO report if the symbol is incorrect before checking second argument type
-RetVal intDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    UNUSED(self);
-
-    uint32_t id = getSymbolId(self);
-
-    if(id == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the type
-            throwMsg(runtime, formatStr("expected argument 2 to be a symbol"));
-        }
-
-        uint32_t checking = getSymbolId(args[1]);
-
-        uint32_t respondsTo =
-                checking == SYM_RESPONDS_TO ||
-                checking == SYM_ADD ||
-                checking == SYM_SUB ||
-                checking == SYM_MUL ||
-                checking == SYM_DIV ||
-                checking == SYM_EQ ||
-                checking == SYM_NOT_EQ ||
-                checking == SYM_LESS_THAN ||
-                checking == SYM_LESS_THAN_EQ ||
-                checking == SYM_GREATER_THAN ||
-                checking == SYM_GREATER_THAN_EQ;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        RetVal retVal = typeCheck(runtime, self, args, arity, 2, THING_TYPE_INT,
-                THING_TYPE_INT);
-        if(isRetValError(retVal)) {
-            return retVal;
-        }
-
-        int32_t valueA = thingAsInt(args[0]);
-        int32_t valueB = thingAsInt(args[1]);
-
-        Thing* thing = NULL;
-        const char* error = NULL;
-
-        if(id == SYM_ADD) {
-            thing = createIntThing(runtime, valueA + valueB);
-        } else if(id == SYM_SUB) {
-            thing = createIntThing(runtime, valueA - valueB);
-        } else if(id == SYM_MUL) {
-            thing = createIntThing(runtime, valueA * valueB);
-        } else if(id == SYM_DIV) {
-            thing = createIntThing(runtime, valueA / valueB);
-        } else if(id == SYM_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
-        } else if(id == SYM_NOT_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
-        } else if(id == SYM_LESS_THAN) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
-        } else if(id == SYM_LESS_THAN_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
-        } else if(id == SYM_GREATER_THAN) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
-        } else if(id == SYM_GREATER_THAN_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
-        } else {
-            //TODO report the symbol
-            //this case shouldn't happen
-            error = "ints do not respond to that symbol";
-        }
-
-        if(error != NULL) {
-            return throwMsg(runtime, error);
-        } else {
-            return createRetVal(thing, 0);
-        }
-    }
 }
 
 int32_t thingAsInt(Thing* thing) {
@@ -445,87 +977,6 @@ Thing* createFloatThing(Runtime* runtime, float value) {
     return thing;
 }
 
-RetVal floatDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    UNUSED(self);
-
-    uint32_t id = getSymbolId(self);
-    if(id == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            const char* fmt = "expected 2 args but got %i";
-            return throwMsg(runtime, formatStr(fmt, arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint32_t checking = getSymbolId(args[1]);
-        uint8_t respondsTo =
-                checking == SYM_ADD ||
-                checking == SYM_SUB ||
-                checking == SYM_MUL ||
-                checking == SYM_DIV ||
-                checking == SYM_EQ ||
-                checking == SYM_NOT_EQ ||
-                checking == SYM_LESS_THAN ||
-                checking == SYM_LESS_THAN_EQ ||
-                checking == SYM_GREATER_THAN ||
-                checking == SYM_GREATER_THAN_EQ;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        RetVal retVal = typeCheck(runtime, self, args, arity, 2,
-                THING_TYPE_FLOAT, THING_TYPE_FLOAT);
-        if(isRetValError(retVal)) {
-            return retVal;
-        }
-
-        float valueA = thingAsInt(args[0]);
-        float valueB = thingAsInt(args[1]);
-
-        Thing* thing = NULL;
-        const char* error = NULL;
-
-        if(id == SYM_ADD) {
-            thing = createFloatThing(runtime, valueA + valueB);
-        } else if(id == SYM_SUB) {
-            thing = createFloatThing(runtime, valueA - valueB);
-        } else if(id == SYM_MUL) {
-            thing = createFloatThing(runtime, valueA * valueB);
-        } else if(id == SYM_DIV) {
-            thing = createFloatThing(runtime, valueA / valueB);
-        } else if(id == SYM_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA == valueB));
-        } else if(id == SYM_NOT_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA != valueB));
-        } else if(id == SYM_LESS_THAN) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA < valueB));
-        } else if(id == SYM_LESS_THAN_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA <= valueB));
-        } else if(id == SYM_GREATER_THAN) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA > valueB));
-        } else if(id == SYM_GREATER_THAN_EQ) {
-            thing = createBoolThing(runtime, (uint8_t) (valueA >= valueB));
-        } else {
-            //TODO report the symbol
-            error = "floats do not respond to that symbol";
-        }
-
-        if(error != NULL) {
-            return throwMsg(runtime, error);
-        } else {
-            return createRetVal(thing, 0);
-        }
-    }
-}
-
-typedef struct {
-    const char* value;
-    uint8_t literal;
-} StrThing;
-
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal) {
     StrThing* thing = (StrThing*) createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
     thing->value = value;
@@ -537,65 +988,6 @@ void destroyStrThing(Thing* self) {
     StrThing* str = (StrThing*) self;
     if(!str->literal) {
         free((char*) str->value);
-    }
-}
-
-RetVal strDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    uint32_t id = getSymbolId(self);
-
-    if(id == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            const char* fmt = "expected 2 args but got %i";
-            return throwMsg(runtime, formatStr(fmt, arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint32_t checking = getSymbolId(args[1]);
-        uint8_t respondsTo =
-                checking == SYM_ADD ||
-                checking == SYM_EQ ||
-                checking == SYM_NOT_EQ;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        RetVal retVal = typeCheck(runtime, self, args, arity, 2,THING_TYPE_STR,
-                THING_TYPE_STR);
-        if(isRetValError(retVal)) {
-            return retVal;
-        }
-
-        const char* valueA = thingAsStr(args[0]);
-        const char* valueB = thingAsStr(args[1]);
-
-        Thing* thing;
-        const char* error = 0;
-
-        if(id == SYM_ADD) {
-            uint32_t len = strlen(valueA) + strlen(valueB);
-            char* out = (char*) malloc(sizeof(char) * (len + 1));
-            out[0] = 0;
-            strcat(out, valueA);
-            strcat(out, valueB);
-            thing = createStrThing(runtime, out, 0);
-        } else if(id == SYM_EQ) {
-            thing = createBoolThing(runtime, strcmp(valueA, valueB) == 0);
-        } else if(id == SYM_NOT_EQ) {
-            thing = createBoolThing(runtime, strcmp(valueA, valueB) != 0);
-        } else {
-            //TODO report the symbol
-            error = "strs do not respond to that symbol";
-        }
-
-        if(error != NULL) {
-            return throwMsg(runtime, error);
-        } else {
-            return createRetVal(thing, 0);
-        }
     }
 }
 
@@ -613,74 +1005,6 @@ Thing* createBoolThing(Runtime* runtime, uint8_t value) {
     return thing;
 }
 
-//TODO make bools respond to == and !=
-RetVal boolDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    if(typeOfThing(self) != THING_TYPE_SYMBOL) {\
-        const char* msg = "internal error: self should be a symbol";
-        return throwMsg(runtime, newStr(msg));
-    }
-
-    uint32_t id = getSymbolId(self);
-
-    if(id == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            const char* fmt = "expected 2 args but got %i";
-            return throwMsg(runtime, formatStr(fmt, arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint32_t checking = getSymbolId(args[1]);
-        uint8_t respondsTo =
-                checking == SYM_NOT ||
-                checking == SYM_ADD ||
-                checking == SYM_NOT;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        Thing* thing;
-        const char* error = NULL;
-
-        if(id == SYM_NOT) {
-            RetVal retVal = typeCheck(runtime, self, args, arity, 1,
-                    THING_TYPE_BOOL);
-            if(isRetValError(retVal)) {
-                return retVal;
-            }
-
-            thing = createBoolThing(runtime, !thingAsBool(args[0]));
-        } else {
-            RetVal retVal = typeCheck(runtime, self, args, arity, 2,
-                    THING_TYPE_BOOL, THING_TYPE_BOOL);
-            if(isRetValError(retVal)) {
-                return retVal;
-            }
-
-            uint8_t valueA = thingAsBool(args[0]);
-            uint8_t valueB = thingAsBool(args[1]);
-
-            if(id == SYM_AND) {
-                thing = createBoolThing(runtime, valueA && valueB);
-            } else if(id == SYM_OR) {
-                thing = createBoolThing(runtime, valueA || valueB);
-            } else {
-                //TODO report the symbol
-                error = newStr("bools do not respond to that symbol");
-            }
-        }
-
-        if(error != NULL) {
-            return throwMsg(runtime, error);
-        } else {
-            return createRetVal(thing, 0);
-        }
-    }
-}
-
 uint8_t thingAsBool(Thing* thing) {
     return ((BoolThing*) thing)->value;
 }
@@ -690,11 +1014,6 @@ uint32_t symbolId = 0;
 uint32_t newSymbolId() {
     return symbolId++;
 }
-
-typedef struct {
-    uint32_t id;
-    uint8_t arity;
-} SymbolThing;
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
     SymbolThing* thing = (SymbolThing*) createThing(runtime, THING_TYPE_SYMBOL,
@@ -708,47 +1027,9 @@ uint32_t getSymbolId(Thing* self) {
     return ((SymbolThing*) self)->id;
 }
 
-//not properly supported yet
-RetVal symbolCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    uint8_t expected = ((SymbolThing*) self)->arity;
-    //TODO remove this check
-    if(arity != expected && arity != 0) {
-        const char* format = "expected %i arguments, but got %i";
-        return throwMsg(runtime, formatStr(format, expected, arity));
-    }
-    return typeOfThing(args[0])->dispatch(runtime, self, args, arity);
-}
-
-RetVal symbolDispatch(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity) {
-    if(getSymbolId(self) == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            const char* fmt = "expected 2 args but got %i";
-            return throwMsg(runtime, formatStr(fmt, arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint8_t respondsTo = getSymbolId(args[1]) == SYM_RESPONDS_TO;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        //TODO report the actual symbol
-        return throwMsg(runtime, newStr("symbols to not respond to that symbol"));
-    }
-}
-
 /**
  * Used for module objects and object literals. Associates strings with things.
  */
-typedef struct {
-    Map* properties;
-} ModuleThing;
-
 Thing* createModuleThing(Runtime* runtime, Map* map) {
     ModuleThing* thing = (ModuleThing*) createThing(runtime, THING_TYPE_MODULE,
             sizeof(ModuleThing));
@@ -764,44 +1045,6 @@ Thing* getModuleProperty(Thing* thing, const char* name) {
     return getMapStr(((ModuleThing*) thing)->properties, name);
 }
 
-RetVal moduleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    if(getSymbolId(self) == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint8_t respondsTo = getSymbolId(args[1]) == SYM_DOT;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else {
-        RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_MODULE,
-                THING_TYPE_STR);
-        if(isRetValError(ret)) {
-            return ret;
-        }
-
-        if(getSymbolId(self) != SYM_DOT) {
-            //TODO report the actual symbol
-            const char* msg = newStr("modules do not respond to that symbol");
-            return throwMsg(runtime, msg);
-        }
-
-        const char* name = thingAsStr(args[1]);
-        Thing* property = getModuleProperty(args[0], name);
-        if(property == NULL) {
-            return throwMsg(runtime, formatStr("export '%s' not found", name));
-        }
-
-        return createRetVal(property, 0);
-    }
-}
-
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope) {
     FuncThing* thing = (FuncThing*) createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
@@ -811,32 +1054,12 @@ Thing* createFuncThing(Runtime* runtime, uint32_t entry,
     return thing;
 }
 
-typedef struct {
-    ExecFunc func;
-} NativeFuncThing;
-
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
     NativeFuncThing* thing = (NativeFuncThing*) createThing(runtime, THING_TYPE_NATIVE_FUNC,
             sizeof(NativeFuncThing));
     thing->func = func;
     return thing;
 }
-
-RetVal nativeFuncCall(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity) {
-    return ((NativeFuncThing*) self)->func(runtime, self, args, arity);
-}
-
-typedef struct {
-    uint8_t native;
-    SrcLoc location;
-    const char* filename;
-} ErrorFrame;
-
-typedef struct {
-    const char* msg;
-    List* stackFrame;
-} ErrorThing;
 
 Thing* createErrorThing(Runtime* runtime, const char* msg) {
     ErrorThing* self = (ErrorThing*) createThing(runtime, THING_TYPE_ERROR,
@@ -965,11 +1188,6 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
     return createRetVal(NULL, 0);
 }
 
-typedef struct {
-    uint8_t size;
-    Thing** elements;
-} TupleThing;
-
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
     TupleThing* self = (TupleThing*) createThing(runtime, THING_TYPE_TUPLE, sizeof(TupleThing));
     self->size = size;
@@ -985,102 +1203,6 @@ Thing* getTupleElem(Thing* tuple, uint8_t index) {
     return ((TupleThing*) tuple)->elements[index];
 }
 
-RetVal tupleDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    //TODO check self is really a symbol first
-    uint32_t id = getSymbolId(self);
-
-    if(id == SYM_RESPONDS_TO) {
-        if(arity != 2) {
-            return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
-        }
-
-        if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-            //TODO report the actual type
-            const char* msg = "expected argument 2 to be a symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-
-        uint32_t checking = getSymbolId(args[1]);
-        uint8_t respondsTo =
-                checking == SYM_RESPONDS_TO ||
-                checking == SYM_EQ ||
-                checking == SYM_NOT_EQ ||
-                checking == SYM_GET;
-
-        return createRetVal(createBoolThing(runtime, respondsTo), 0);
-    } else if(id == SYM_EQ || id == SYM_NOT_EQ) {
-        RetVal ret = typeCheck(runtime, self, args, arity, 2, THING_TYPE_TUPLE,
-                THING_TYPE_TUPLE);
-
-        if(isRetValError(ret)) {
-            return ret;
-        }
-        uint8_t all = getSymbolId(self) == SYM_EQ;
-
-        TupleThing* valueA = (TupleThing*) args[0];
-        TupleThing* valueB = (TupleThing*) args[1];
-
-        if(valueA->size != valueB->size) {
-            return createRetVal(createBoolThing(runtime, 0), 0);
-        }
-
-        Thing* eqSym = getMapStr(runtime->operators, "==");
-
-        Thing** elems = (Thing**) malloc(sizeof(Thing*) * 2);
-
-        for(uint8_t i = 0; i < valueA->size; i++) {
-            elems[0] = valueA->elements[i];
-            elems[1] = valueB->elements[i];
-
-            ret = callFunction(runtime, eqSym, 2, elems);
-            if(isRetValError(ret)) {
-                free(elems);
-                return ret;
-            }
-
-            Thing* value = getRetVal(ret);
-
-            if(typeOfThing(value) != THING_TYPE_BOOL) {
-                free(elems);
-                const char* msg = newStr("internal error: == did not return a bool");
-                return throwMsg(runtime, msg);
-            }
-
-            if(thingAsBool(value) != all) {
-                free(elems);
-                return ret;
-            }
-        }
-
-        free(elems);
-        return createRetVal(createBoolThing(runtime, all), 0);
-    } else if(id == SYM_GET) {
-        RetVal ret = typeCheck(runtime, self, args, arity, 2,
-                THING_TYPE_TUPLE, THING_TYPE_INT);
-
-        if(isRetValError(ret)) {
-            return ret;
-        }
-
-        TupleThing* tuple = (TupleThing*) args[0];
-        int32_t index = thingAsInt(args[1]);
-
-        if(index >= tuple->size) {
-            const char* format = "tuple access out of bounds: "
-                    "accessed at %i but the size is %i";
-            return throwMsg(runtime, formatStr(format, index, tuple->size));
-        }
-
-        return createRetVal(tuple->elements[index], 0);
-    } else {
-        return throwMsg(runtime, newStr("tuples do not respond to that symbol"));
-    }
-}
-
-void destroyTupleThing(Thing* thing) {
-    free(((TupleThing*) thing)->elements);
-}
-
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
     ListThing* list = (ListThing*) createThing(runtime, THING_TYPE_LIST, sizeof(ListThing));
     list->head = head;
@@ -1088,91 +1210,12 @@ Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
     return list;
 }
 
-typedef struct {
-    Map* map;
-} ObjectThing;
-
-RetVal objectRespondsTo(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity);
-
 Thing* createObjectThing(Runtime* runtime, Map* map) {
     ObjectThing* object = (ObjectThing*) createThing(runtime, THING_TYPE_OBJECT,
             sizeof(ObjectThing));
 
     object->map = map;
     return object;
-}
-
-RetVal objectCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    //these typechecks should pass, but they are here just in case
-    if(arity == 0) {
-        const char* fmt = "expected at least 1 args but got %i";
-        return throwMsg(runtime, formatStr(fmt, arity));
-    }
-
-    if(typeOfThing(self) != THING_TYPE_OBJECT) {
-        //TODO report the actual type
-        return throwMsg(runtime, "expected self to be an object");
-    }
-
-    ObjectThing* object = (ObjectThing*) self;
-    Thing** value = (Thing**) getMapUint32(object->map, SYM_CALL);
-    if(value == NULL) {
-        const char* msg = "object is not callable (does not have call property)";
-        return throwMsg(runtime, newStr(msg));
-    } else {
-        return callFunction(runtime, value, arity, args);
-    }
-}
-
-RetVal objectDispatch(Runtime* runtime, Thing* self, Thing** args,
-        uint8_t arity) {
-
-    //these typechecks should pass, but they for here just in case
-    if(arity == 0) {
-        const char* fmt = "expected at least 1 args but got %i";
-        return throwMsg(runtime, formatStr(fmt, arity));
-    }
-
-    if(typeOfThing(args[0]) != THING_TYPE_OBJECT) {
-        //TODO report the actual type
-        return throwMsg(runtime, "expected argument 1 to be an object");
-    }
-
-    ObjectThing* object = (ObjectThing*) args[0];
-    Thing* value = getMapUint32(object->map, getSymbolId(self));
-    if(value == NULL) {
-        if(getSymbolId(self) == SYM_RESPONDS_TO) {
-            if(arity != 2) {
-                const char* fmt = "expected 2 arg but got %i";
-                return throwMsg(runtime, formatStr(fmt, arity));
-            }
-
-            if(typeOfThing(args[1]) != THING_TYPE_SYMBOL) {
-                //TODO report the actual type
-                const char* msg = "expected argument 2 to be a symbol";
-                return throwMsg(runtime, newStr(msg));
-            }
-
-            uint32_t checking = getSymbolId(args[1]);
-            uint32_t responds = getMapUint32(object->map, checking) != NULL;
-            return createRetVal(createBoolThing(runtime, responds), 0);
-        } else {
-            const char* msg = "object does not respond to that symbol";
-            return throwMsg(runtime, newStr(msg));
-        }
-    } else if(arity == 1) {
-        return createRetVal(value, 0);
-    } else {
-        Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * (arity - 1));
-        for(uint8_t i = 1; i < arity; i++) {
-            passedArgs[i - 1] = args[i];
-        }
-
-        RetVal ret = callFunction(runtime, value, arity - 1, passedArgs);
-        free(passedArgs);
-        return ret;
-    }
 }
 
 Map* getObjectMap(Thing* object) {
@@ -1201,94 +1244,3 @@ Thing* getCellValue(Thing* cell) {
 void setCellValue(Thing* cell, Thing* value) {
     ((CellThing*) cell)->value = value;
 }
-
-/*RetVal listDispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-    if(typeOfThing(self) != THING_TYPE_SYMBOL) {
-        throwMsg(runtime, newStr("internal error: self is not a symbol"));
-    }
-
-    uint8_t id = getSymbolId(self);
-
-    if(id != SYM_EQ && id != SYM_NOT_EQ) {
-        throwMsg(runtime, newStr("lists only respond to == and !="));
-    }
-
-    if(arity != 2) {
-        throwMsg(runtime, formatStr("expected 2 arguments but got %i", arity));
-    }
-
-    ThingType* type1 = typeOfThing(args[0]);
-    if(type1 != THING_TYPE_LIST && type1 != THING_TYPE_NONE) {
-        //TODO report the actual type
-        throwMsg(runtime, newStr("expected argument 1 to be none or a list"));
-    }
-
-    ThingType* type2 = typeOfThing(args[1]);
-    if(type2 != THING_TYPE_LIST && type2 != THING_TYPE_NONE) {
-        //TODO report the actual type
-        throwMsg(runtime, newStr("expected arguments 1 to be none or a list"));
-    }
-
-    if(type1 != type2) {
-        return createRetVal(createBoolThing(runtime, 0), 0);
-    } else if(type1 == THING_TYPE_NONE) {
-        return createRetVal(createBoolThing(runtime, 1), 0);
-    } else {
-        const char* opName;
-        uint8_t all;
-        if(id == SYM_EQ) {
-            opName = "==";
-            all = 1;
-        } else {
-            opName = "!=";
-            all = 0;
-        }
-
-        Thing* operator = getMapStr(runtime->operators, opName);
-
-        ListThing* list1 = (ListThing*) args[0];
-        ListThing* list2 = (ListThing*) args[1];
-
-        Thing** passed = malloc(sizeof(Thing*) * 2);
-        passed[0] = list1->head;
-        passed[1] = list2->head;
-
-        RetVal ret = callFunction(runtime, operator, 2, passed);
-        if(isRetValError(ret)) {
-            free(passed);
-            return ret;
-        }
-
-        Thing* value = getRetVal(ret);
-
-        if(typeOfThing(value) != THING_TYPE_BOOL) {
-            free(passed);
-            //TODO report which symbol
-            throwMsg(runtime, newStr("symbol did not return a bool"));
-        }
-
-        if(thingAsBool(value) != all) {
-            free(passed);
-            return createRetVal(createBoolThing(runtime, 0), 0);
-        }
-
-        passed[0] = list1->tail;
-        passed[1] = list2->tail;
-
-        ret = callFunction(runtime, operator, 2, passed);
-        if(isRetValError(ret)) {
-            free(passed);
-            return ret;
-        }
-
-        value = getRetVal(ret);
-        if(typeOfThing(value) != THING_TYPE_BOOL) {
-            free(passed);
-            //TODO report which symbol
-            throwMsg(runtime, newStr("symbol did not return a bool"));
-        }
-
-        free(passed);
-        return createRetVal(createBoolThing(runtime, thingAsBool(value) == all), 0);
-    }
-}*/

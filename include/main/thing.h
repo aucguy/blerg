@@ -21,20 +21,20 @@ void initThing();
 void deinitThing();
 
 //different builtin types. Initialized in initThing.
-extern LegacyThingType* THING_TYPE_NONE;
-extern LegacyThingType* THING_TYPE_INT;
-extern LegacyThingType* THING_TYPE_FLOAT;
-extern LegacyThingType* THING_TYPE_STR;
-extern LegacyThingType* THING_TYPE_BOOL;
-extern LegacyThingType* THING_TYPE_SYMBOL;
-extern LegacyThingType* THING_TYPE_MODULE;
-extern LegacyThingType* THING_TYPE_FUNC;
-extern LegacyThingType* THING_TYPE_NATIVE_FUNC;
-extern LegacyThingType* THING_TYPE_ERROR;
-extern LegacyThingType* THING_TYPE_TUPLE;
-extern LegacyThingType* THING_TYPE_LIST;
-extern LegacyThingType* THING_TYPE_OBJECT;
-extern LegacyThingType* THING_TYPE_CELL;
+extern ThingType* THING_TYPE_NONE;
+extern ThingType* THING_TYPE_INT;
+extern ThingType* THING_TYPE_FLOAT;
+extern ThingType* THING_TYPE_STR;
+extern ThingType* THING_TYPE_BOOL;
+extern ThingType* THING_TYPE_SYMBOL;
+extern ThingType* THING_TYPE_MODULE;
+extern ThingType* THING_TYPE_FUNC;
+extern ThingType* THING_TYPE_NATIVE_FUNC;
+extern ThingType* THING_TYPE_ERROR;
+extern ThingType* THING_TYPE_TUPLE;
+extern ThingType* THING_TYPE_LIST;
+extern ThingType* THING_TYPE_OBJECT;
+extern ThingType* THING_TYPE_CELL;
 
 /**
  * Describes an 'object' within the blerg program.
@@ -143,10 +143,6 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 void destroySimpleThing(Thing* thing);
 RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity);
-LegacyThingType* createThingType();
-void setDestroyThingType(LegacyThingType* type, void (*destroy)(Thing*));
-void setCallThingType(LegacyThingType* type, ExecFunc call);
-void setDispatchThingType(LegacyThingType* type, ExecFunc dispatch);
 Thing* createThing(Runtime* runtime, ThingType* type, size_t size);
 RetVal symbolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 

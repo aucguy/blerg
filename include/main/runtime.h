@@ -75,30 +75,6 @@ public:
     virtual RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t) = 0;
 };
 
-class LegacyThingType : public ThingType {
-public:
-    void (*destroyFunc)(Thing*);
-    ExecFunc callFunc;
-    ExecFunc dispatchFunc;
-    LegacyThingType();
-    ~LegacyThingType();
-    void destroy(Thing*);
-    RetVal call(Runtime*, Thing*, Thing**, uint8_t);
-    RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t);
-};
-
-/**
- * Each Thing has a type which describes how it behaves and its custom data
- * format.
- */
-/*typedef struct {
-    //destroys the thing. Should not destroy any references this thing has to
-    //other things.
-    void (*destroy)(Thing*);
-    ExecFunc call;
-    ExecFunc dispatch;
-} ThingType;*/
-
 RetVal throwMsg(Runtime* runtime, const char* msg);
 Thing* createErrorThing(Runtime* runtime, const char* msg);
 

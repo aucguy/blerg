@@ -45,11 +45,42 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ret;
 }
 
-LegacyThingType* THING_TYPE_VARARG = NULL;
+ThingType* THING_TYPE_VARARG = NULL;
 
 typedef struct {
     Thing* func;
 } VarargThing;
+
+class VarargThingType : public ThingType {
+public:
+    VarargThingType() {}
+    ~VarargThingType() {}
+    void destroy(Thing* self) {}
+
+    RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        if(arity < 1) {
+            const char* fmt = "expected at least 1 args but got %i";
+            return throwMsg(runtime, formatStr(fmt, arity));
+        }
+
+        Thing* list = runtime->noneThing;
+        for(uint8_t i = arity; i > 0; i--) {
+            list = createListThing(runtime, args[i - 1], list);
+        }
+
+        Thing* passedArgs[1] = {
+                list
+        };
+
+        Thing* func = ((VarargThing*) self)->func;
+
+        return callFunction(runtime, func, 1, passedArgs);
+    }
+
+    RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
+        return symbolDispatch(runtime, self, args, arity);
+    }
+};
 
 RetVal varargCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     if(arity < 1) {
@@ -93,10 +124,7 @@ Thing* initFunctoolsModule(Runtime* runtime) {
     initialized = 1;
     Map* map = createMap();
 
-    THING_TYPE_VARARG = createThingType();
-    setDestroyThingType(THING_TYPE_VARARG, destroySimpleThing);
-    setCallThingType(THING_TYPE_VARARG, varargCall);
-    setDispatchThingType(THING_TYPE_VARARG, symbolDispatch);
+    THING_TYPE_VARARG = new VarargThingType();
 
     putMapStr(map, "call", createNativeFuncThing(runtime, libCall));
     putMapStr(map, "varargs", createNativeFuncThing(runtime, libVarargs));
