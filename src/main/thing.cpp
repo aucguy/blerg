@@ -40,7 +40,7 @@ RetVal symbolDispatch(Runtime* runtime, Thing* self, Thing** args,
             return throwMsg(runtime, formatStr(fmt, arity));
         }
 
-        if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+        if(typeOfThing(args[1]) != TYPE_SYMBOL) {
             //TODO report the actual type
             const char* msg = "expected argument 2 to be a symbol";
             return throwMsg(runtime, newStr(msg));
@@ -102,7 +102,7 @@ public:
                 throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the type
                 throwMsg(runtime, formatStr("expected argument 2 to be a symbol"));
             }
@@ -196,7 +196,7 @@ public:
                 return throwMsg(runtime, formatStr(fmt, arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the actual type
                 const char* msg = "expected argument 2 to be a symbol";
                 return throwMsg(runtime, newStr(msg));
@@ -294,7 +294,7 @@ public:
                 return throwMsg(runtime, formatStr(fmt, arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the actual type
                 const char* msg = "expected argument 2 to be a symbol";
                 return throwMsg(runtime, newStr(msg));
@@ -363,7 +363,7 @@ public:
     }
 
     RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-        if(typeOfThing2(self) != TYPE_SYMBOL) {\
+        if(typeOfThing(self) != TYPE_SYMBOL) {\
             const char* msg = "internal error: self should be a symbol";
             return throwMsg(runtime, newStr(msg));
         }
@@ -376,7 +376,7 @@ public:
                 return throwMsg(runtime, formatStr(fmt, arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the actual type
                 const char* msg = "expected argument 2 to be a symbol";
                 return throwMsg(runtime, newStr(msg));
@@ -455,7 +455,7 @@ public:
                 return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the actual type
                 const char* msg = "expected argument 2 to be a symbol";
                 return throwMsg(runtime, newStr(msg));
@@ -609,7 +609,7 @@ public:
                 return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
             }
 
-            if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+            if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                 //TODO report the actual type
                 const char* msg = "expected argument 2 to be a symbol";
                 return throwMsg(runtime, newStr(msg));
@@ -655,7 +655,7 @@ public:
 
                 Thing* value = getRetVal(ret);
 
-                if(typeOfThing2(value) != TYPE_BOOL) {
+                if(typeOfThing(value) != TYPE_BOOL) {
                     free(elems);
                     const char* msg = newStr("internal error: == did not return a bool");
                     return throwMsg(runtime, msg);
@@ -745,7 +745,7 @@ public:
             return throwMsg(runtime, formatStr(fmt, arity));
         }
 
-        if(typeOfThing2(self) != TYPE_OBJECT) {
+        if(typeOfThing(self) != TYPE_OBJECT) {
             //TODO report the actual type
             return throwMsg(runtime, "expected self to be an object");
         }
@@ -766,7 +766,7 @@ public:
             return throwMsg(runtime, formatStr(fmt, arity));
         }
 
-        if(typeOfThing2(args[0]) != TYPE_OBJECT) {
+        if(typeOfThing(args[0]) != TYPE_OBJECT) {
             //TODO report the actual type
             return throwMsg(runtime, "expected argument 1 to be an object");
         }
@@ -779,7 +779,7 @@ public:
                     return throwMsg(runtime, formatStr(fmt, arity));
                 }
 
-                if(typeOfThing2(args[1]) != TYPE_SYMBOL) {
+                if(typeOfThing(args[1]) != TYPE_SYMBOL) {
                     //TODO report the actual type
                     const char* msg = "expected argument 2 to be a symbol";
                     return throwMsg(runtime, newStr(msg));
@@ -933,7 +933,7 @@ void destroyThing(Thing* thing) {
     delete thing;
 }
 
-ThingTypes typeOfThing2(Thing* thing) {
+ThingTypes typeOfThing(Thing* thing) {
     return thing->type();
 }
 
@@ -1122,7 +1122,7 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 
     for(uint8_t i = 0; i < arity; i++) {
-        if(typeOfThing2(args[i]) != va_arg(types, ThingTypes)) {
+        if(typeOfThing(args[i]) != va_arg(types, ThingTypes)) {
             va_end(types);
             return throwMsg(runtime, formatStr("wrong type for argument %i", i + 1));
         }

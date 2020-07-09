@@ -56,7 +56,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     if(isRetValError(global)) {
         out.errorMsg = errorStackTrace(in.runtime, getRetVal(global));
         return out;
-    } else if(typeOfThing2(getRetVal(global)) != TYPE_MODULE) {
+    } else if(typeOfThing(getRetVal(global)) != TYPE_MODULE) {
         out.errorMsg = newStr("global scope is not a module");
         return out;
     }
@@ -65,7 +65,7 @@ ExecFuncOut execFunc(ExecFuncIn in) {
     if(func == NULL) {
         out.errorMsg = newStr("function not found");
         return out;
-    } else if(typeOfThing2(func) != TYPE_FUNC) {
+    } else if(typeOfThing(func) != TYPE_FUNC) {
         out.errorMsg = newStr("function is not a function");
         return out;
     }

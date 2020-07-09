@@ -121,7 +121,7 @@ RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    ThingTypes type = typeOfThing2(args[1]);
+    ThingTypes type = typeOfThing(args[1]);
 
     if(type != TYPE_NONE && type != TYPE_LIST) {
         const char* msg = formatStr("expected argument 2 to be none or a list");
@@ -183,9 +183,9 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     //ListThing* elements = (ListThing*) args[0];
     Thing* elements = args[0];
-    while(typeOfThing2(elements) == TYPE_LIST) {
+    while(typeOfThing(elements) == TYPE_LIST) {
         //if(typeOfThing2(elements->head) != TYPE_TUPLE) {
-        if(typeOfThing2(getListHead(elements)) != TYPE_TUPLE) {
+        if(typeOfThing(getListHead(elements)) != TYPE_TUPLE) {
             const char* msg = "internal error: expected pair to be a tuple";
             return throwMsg(runtime, newStr(msg));
         }
@@ -198,7 +198,7 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         }
 
         Thing* key = getTupleElem(pair, 0);
-        if(typeOfThing2(key) != TYPE_SYMBOL) {
+        if(typeOfThing(key) != TYPE_SYMBOL) {
             const char* msg = "key is not a symbol";
             return throwMsg(runtime, newStr(msg));
         }
@@ -257,7 +257,7 @@ RetVal libSetCell(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, msg);
     }
 
-    if(typeOfThing2(args[0]) != TYPE_CELL) {
+    if(typeOfThing(args[0]) != TYPE_CELL) {
         return throwMsg(runtime, newStr("expected argument 1 to be a cell"));
     }
 
@@ -334,7 +334,7 @@ RetVal libIsNone(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 1 arg but got %i", arity));
     }
 
-    uint8_t ret = typeOfThing2(args[0]) == TYPE_NONE;
+    uint8_t ret = typeOfThing(args[0]) == TYPE_NONE;
     return createRetVal(createBoolThing(runtime, ret), 0);
 }
 
@@ -344,7 +344,7 @@ RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    if(typeOfThing2(args[2]) != TYPE_INT) {
+    if(typeOfThing(args[2]) != TYPE_INT) {
         return throwMsg(runtime, newStr("expected argument 2 to be an int"));
     }
 
@@ -362,7 +362,7 @@ RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 
     Thing* tup = getRetVal(ret);
 
-    if(typeOfThing2(tup) != TYPE_TUPLE) {
+    if(typeOfThing(tup) != TYPE_TUPLE) {
         const char* str = "expected destructured value to be a tuple";
         return throwMsg(runtime, newStr(str));
     }
@@ -389,7 +389,7 @@ RetVal libAssertEqual(Runtime* runtime, Thing* self, Thing** args, uint8_t arity
 
     Thing* val = getRetVal(ret);
 
-    if(typeOfThing2(val) != TYPE_BOOL) {
+    if(typeOfThing(val) != TYPE_BOOL) {
         return throwMsg(runtime, newStr("result of == is not a bool"));
     }
 

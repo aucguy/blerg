@@ -18,7 +18,7 @@
 uint8_t checkInt(RetVal ret, int32_t num) {
     if(isRetValError(ret)) {
         return 0;
-    } else if(typeOfThing2(getRetVal(ret)) != TYPE_INT) {
+    } else if(typeOfThing(getRetVal(ret)) != TYPE_INT) {
         return 0;
     } else {
         return thingAsInt(getRetVal(ret)) == num;
@@ -28,7 +28,7 @@ uint8_t checkInt(RetVal ret, int32_t num) {
 uint8_t checkStr(RetVal ret, const char* str) {
     if(isRetValError(ret)) {
         return 0;
-    } else if(typeOfThing2(getRetVal(ret)) != TYPE_STR) {
+    } else if(typeOfThing(getRetVal(ret)) != TYPE_STR) {
         return 0;
     } else {
         return strcmp(thingAsStr(getRetVal(ret)), str) == 0;
@@ -38,7 +38,7 @@ uint8_t checkStr(RetVal ret, const char* str) {
 uint8_t checkBool(RetVal ret, uint8_t value) {
     if(isRetValError(ret)) {
         return 0;
-    } else if(typeOfThing2(getRetVal(ret)) != TYPE_BOOL) {
+    } else if(typeOfThing(getRetVal(ret)) != TYPE_BOOL) {
         return 0;
     } else {
         return thingAsBool(getRetVal(ret)) == value;
@@ -54,11 +54,11 @@ const char* executeTestGlobalHasMainFunc() {
 
     RetVal global = executeModule(runtime, module);
     assert(!isRetValError(global), "error occurred while executing the module");
-    assert(typeOfThing2(getRetVal(global)) == TYPE_MODULE, "global is not a module");
+    assert(typeOfThing(getRetVal(global)) == TYPE_MODULE, "global is not a module");
 
     Thing* mainFunc = getModuleProperty(getRetVal(global), "main");
     assert(mainFunc != NULL, "main function not found");
-    assert(typeOfThing2(mainFunc) == TYPE_FUNC, "main is not a function");
+    assert(typeOfThing(mainFunc) == TYPE_FUNC, "main is not a function");
 
     destroyRuntime(runtime);
     destroyModule(module);
