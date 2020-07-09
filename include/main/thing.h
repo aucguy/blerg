@@ -20,22 +20,6 @@ void initThing();
  */
 void deinitThing();
 
-//different builtin types. Initialized in initThing.
-extern ThingType* THING_TYPE_NONE;
-extern ThingType* THING_TYPE_INT;
-extern ThingType* THING_TYPE_FLOAT;
-extern ThingType* THING_TYPE_STR;
-extern ThingType* THING_TYPE_BOOL;
-//extern ThingType* THING_TYPE_SYMBOL;
-extern ThingType* THING_TYPE_MODULE;
-extern ThingType* THING_TYPE_FUNC;
-extern ThingType* THING_TYPE_NATIVE_FUNC;
-extern ThingType* THING_TYPE_ERROR;
-extern ThingType* THING_TYPE_TUPLE;
-extern ThingType* THING_TYPE_LIST;
-extern ThingType* THING_TYPE_OBJECT;
-extern ThingType* THING_TYPE_CELL;
-
 /**
  * Describes an 'object' within the blerg program.
  */
@@ -78,14 +62,9 @@ ThingType* typeOfThing(Thing* thing);
 
 ThingTypes typeOfThing2(Thing* thing);
 
-typedef struct {
-    //location of first bytecode of the function
-    unsigned int entry;
-    //module the function was declared in
-    Module* module;
-    //the scope the function was declared in
-    Scope* parentScope;
-} FuncThing;
+unsigned int getFuncEntry(Thing*);
+Module* getFuncModule(Thing*);
+Scope* getFuncParentScope(Thing*);
 
 Thing* createNoneThing(Runtime* runtime);
 
@@ -126,10 +105,8 @@ Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements);
 uint8_t getTupleSize(Thing* tuple);
 Thing* getTupleElem(Thing* tuple, uint8_t index);
 
-typedef struct {
-    Thing* head;
-    Thing* tail;
-} ListThing;
+Thing* getListHead(Thing*);
+Thing* getListTail(Thing*);
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail);
 

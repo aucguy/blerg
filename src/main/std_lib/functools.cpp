@@ -21,10 +21,10 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     //TODO extract to its own function once length for lists has been written
     uint8_t count = 0;
-    ListThing* list = (ListThing*) args[1];
+    Thing* list = args[1];
     while(typeOfThing2(list) != TYPE_NONE) {
         count++;
-        list = (ListThing*) list->tail;
+        list = getListTail(list);
     }
 
     if(count == 0) {
@@ -32,12 +32,12 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     }
 
     Thing** passedArgs = (Thing**) malloc(sizeof(Thing*) * count);
-    list = (ListThing*) args[1];
+    list = args[1];
     count = 0;
     while(typeOfThing2(list) != TYPE_NONE) {
-        passedArgs[count] = list->head;
+        passedArgs[count] = getListHead(list);
         count++;
-        list = (ListThing*) list->tail;
+        list = getListTail(list);
     }
 
     RetVal ret = callFunction(runtime, args[0], count, passedArgs);
@@ -45,15 +45,13 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ret;
 }
 
-ThingType* THING_TYPE_VARARG = NULL;
-
-typedef struct {
-    Thing* func;
-} VarargThing;
-
 class VarargThingType : public ThingType {
 public:
-    VarargThingType() {}
+    Thing* func;
+
+    VarargThingType(Thing* func) :
+        func(func) {}
+
     ~VarargThingType() {}
     void destroy(Thing* self) {}
 
@@ -72,9 +70,7 @@ public:
                 list
         };
 
-        Thing* func = ((VarargThing*) self)->func;
-
-        return callFunction(runtime, func, 1, passedArgs);
+        return callFunction(runtime, this->func, 1, passedArgs);
     }
 
     RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -101,16 +97,13 @@ RetVal varargCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
             list
     };
 
-    Thing* func = ((VarargThing*) self)->func;
+    Thing* func = ((VarargThingType*) typeOfThing(self))->func;
 
     return callFunction(runtime, func, 1, passedArgs);
 }
 
 Thing* createVarargThing(Runtime* runtime, Thing* func) {
-    VarargThing* vararg = (VarargThing*) createThing(runtime, THING_TYPE_VARARG,
-            sizeof(VarargThing));
-    vararg->func = func;
-    return vararg;
+    return createThing(runtime, new VarargThingType(func), 1);
 }
 
 RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -128,8 +121,6 @@ Thing* initFunctoolsModule(Runtime* runtime) {
     initialized = 1;
     Map* map = createMap();
 
-    THING_TYPE_VARARG = new VarargThingType();
-
     putMapStr(map, "call", createNativeFuncThing(runtime, libCall));
     putMapStr(map, "varargs", createNativeFuncThing(runtime, libVarargs));
     Thing* module = createModuleThing(runtime, map);
@@ -140,8 +131,5 @@ Thing* initFunctoolsModule(Runtime* runtime) {
 void destroyFunctoolsModule() {
     if(initialized) {
         initialized = 0;
-
-        delete THING_TYPE_VARARG;
-        THING_TYPE_VARARG = NULL;
     }
 }

@@ -137,7 +137,8 @@ RetVal libHead(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return ret;
     }
 
-    return createRetVal(((ListThing*) args[0])->head, 0);
+    //return createRetVal(((ListThing*) args[0])->head, 0);
+    return createRetVal(getListHead(args[0]), 0);
 }
 
 RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -146,7 +147,8 @@ RetVal libTail(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return ret;
     }
 
-    return createRetVal(((ListThing*) args[0])->tail, 0);
+    //return createRetVal(((ListThing*) args[0])->tail, 0);
+    return createRetVal(getListTail(args[0]), 0);
 }
 
 RetVal libCreateSymbol(Runtime* runtime, Thing* self, Thing** args,
@@ -179,14 +181,17 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     Map* map = createMap();
 
-    ListThing* elements = (ListThing*) args[0];
+    //ListThing* elements = (ListThing*) args[0];
+    Thing* elements = args[0];
     while(typeOfThing2(elements) == TYPE_LIST) {
-        if(typeOfThing2(elements->head) != TYPE_TUPLE) {
+        //if(typeOfThing2(elements->head) != TYPE_TUPLE) {
+        if(typeOfThing2(getListHead(elements)) != TYPE_TUPLE) {
             const char* msg = "internal error: expected pair to be a tuple";
             return throwMsg(runtime, newStr(msg));
         }
 
-        Thing* pair = elements->head;
+        //Thing* pair = elements->head;
+        Thing* pair = getListHead(elements);
         if(getTupleSize(pair) != 2) {
             const char* msg = "internal error: expected pair to have two elements";
             return throwMsg(runtime, newStr(msg));
@@ -201,7 +206,8 @@ RetVal libObject(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         Thing* value = getTupleElem(pair, 1);
         putMapUint32(map, getSymbolId(key), value);
 
-        elements = (ListThing*) elements->tail;
+        //elements = (ListThing*) elements->tail;
+        elements = getListTail(elements);
     }
 
     return createRetVal(createObjectThing(runtime, map), 0);
@@ -215,10 +221,12 @@ RetVal libUnpackCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
         return ret;
     }
 
-    ListThing* list = (ListThing*) args[0];
+    //ListThing* list = (ListThing*) args[0];
     Thing** elements = (Thing**) malloc(2 * sizeof(Thing*));
-    elements[0] = list->head;
-    elements[1] = list->tail;
+    //elements[0] = list->head;
+    //elements[1] = list->tail;
+    elements[0] = getListHead(args[0]);
+    elements[1] = getListTail(args[0]);
     return createRetVal(createTupleThing(runtime, 2, elements), 0);
 }
 
@@ -354,7 +362,7 @@ RetVal libUnpackCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
 
     Thing* tup = getRetVal(ret);
 
-    if(typeOfThing(tup) != THING_TYPE_TUPLE) {
+    if(typeOfThing2(tup) != TYPE_TUPLE) {
         const char* str = "expected destructured value to be a tuple";
         return throwMsg(runtime, newStr(str));
     }

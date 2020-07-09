@@ -7,6 +7,8 @@
 #include "main/runtime.h"
 #include "main/thing.h"
 
+float thingAsFloat(Thing* thing);
+
 RetVal callFail(Runtime* runtime) {
     return throwMsg(runtime, "cannot call this type");
 }
@@ -28,11 +30,6 @@ public:
         return TYPE_NONE;
     }
 };
-
-/*typedef struct {
-    uint32_t id;
-    uint8_t arity;
-} SymbolThing;*/
 
 //TODO rename function
 RetVal symbolDispatch(Runtime* runtime, Thing* self, Thing** args,
@@ -69,7 +66,6 @@ public:
     void destroy(Thing* self) {}
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-        //uint8_t expected = ((SymbolThing*) self)->arity;
         //TODO remove this check
         if(arity != this->arity && arity != 0) {
             const char* format = "expected %i arguments, but got %i";
@@ -89,7 +85,10 @@ public:
 
 class IntThingType : public ThingType {
 public:
-    IntThingType() {}
+    int32_t value;
+
+    IntThingType(int32_t value) :
+        value(value) {}
     ~IntThingType() {}
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -179,7 +178,11 @@ public:
 
 class FloatThingType : public ThingType {
 public:
-    FloatThingType() {}
+    float value;
+
+    FloatThingType(float value) :
+        value(value) {}
+
     ~FloatThingType() {}
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -221,8 +224,8 @@ public:
                 return retVal;
             }
 
-            float valueA = thingAsInt(args[0]);
-            float valueB = thingAsInt(args[1]);
+            float valueA = thingAsFloat(args[0]);
+            float valueB = thingAsFloat(args[1]);
 
             Thing* thing = NULL;
             const char* error = NULL;
@@ -265,21 +268,20 @@ public:
     }
 };
 
-typedef struct {
-    const char* value;
-    uint8_t literal;
-} StrThing;
-
 class StrThingType : public ThingType {
 public:
-    StrThingType() {}
+    const char* value;
+    uint8_t literal;
+
+    StrThingType(const char* value, uint8_t literal) :
+        value(value), literal(literal) {}
     ~StrThingType() {}
 
     void destroy(Thing* self) {
-        StrThing* str = (StrThing*) self;
-        if(!str->literal) {
-            free((char*) str->value);
-        }
+        //StrThing* str = (StrThing*) self;
+        //if(!str->literal) {
+        //    free((char*) str->value);
+        //}
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -352,7 +354,11 @@ public:
 
 class BoolThingType : public ThingType {
 public:
-    BoolThingType() {}
+    uint8_t value;
+
+    BoolThingType(uint8_t value) :
+        value(value) {}
+
     ~BoolThingType() {}
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -431,17 +437,17 @@ public:
     }
 };
 
-typedef struct {
-    Map* properties;
-} ModuleThing;
-
 class ModuleThingType : public ThingType {
 public:
-    ModuleThingType() {}
+    Map* properties;
+
+    ModuleThingType(Map* properties) :
+        properties(properties) {}
+
     ~ModuleThingType() {}
 
     void destroy(Thing* self) {
-        destroyMap(((ModuleThing*) self)->properties, nothing, nothing);
+        //destroyMap(((ModuleThing*) self)->properties, nothing, nothing);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -493,7 +499,16 @@ public:
 
 class FuncThingType : public ThingType {
 public:
-    FuncThingType() {}
+    //location of first bytecode of the function
+    unsigned int entry;
+    //module the function was declared in
+    Module* module;
+    //the scope the function was declared in
+    Scope* parentScope;
+
+    FuncThingType(unsigned int entry, Module* module, Scope* parentScope) :
+        entry(entry), module(module), parentScope(parentScope) {}
+
     ~FuncThingType() {}
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -509,17 +524,29 @@ public:
     }
 };
 
-typedef struct {
-    ExecFunc func;
-} NativeFuncThing;
+unsigned int getFuncEntry(Thing* thing) {
+    return ((FuncThingType*) typeOfThing(thing))->entry;
+}
+
+Module* getFuncModule(Thing* thing) {
+    return ((FuncThingType*) typeOfThing(thing))->module;
+}
+
+Scope* getFuncParentScope(Thing* thing) {
+    return ((FuncThingType*) typeOfThing(thing))->parentScope;
+}
 
 class NativeFuncThingType : public ThingType {
 public:
-    NativeFuncThingType() {}
+    ExecFunc func;
+
+    NativeFuncThingType(ExecFunc func)
+        : func(func) {}
     ~NativeFuncThingType() {}
+
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
-        return ((NativeFuncThing*) self)->func(runtime, self, args, arity);
+        return this->func(runtime, self, args, arity);
     }
 
     RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -537,20 +564,19 @@ typedef struct {
     const char* filename;
 } ErrorFrame;
 
-typedef struct {
-    const char* msg;
-    List* stackFrame;
-} ErrorThing;
-
 class ErrorThingType : public ThingType {
 public:
-    ErrorThingType() {}
+    const char* msg;
+    List* stackFrame;
+
+    ErrorThingType(const char* msg, List* stackFrame) :
+        msg(msg), stackFrame(stackFrame) {}
     ~ErrorThingType() {}
 
     void destroy(Thing* thing) {
-        ErrorThing* self = (ErrorThing*) thing;
-        free((char*) self->msg);
-        destroyList(self->stackFrame, free);
+        //ErrorThing* self = (ErrorThing*) thing;
+        //free((char*) self->msg);
+        //destroyList(self->stackFrame, free);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -566,18 +592,17 @@ public:
     }
 };
 
-typedef struct {
-    uint8_t size;
-    Thing** elements;
-} TupleThing;
-
 class TupleThingType : public ThingType {
 public:
-    TupleThingType() {}
+    uint8_t size;
+    Thing** elements;
+
+    TupleThingType(uint8_t size, Thing** elements) :
+        size(size), elements(elements) {}
     ~TupleThingType() {}
 
     void destroy(Thing* self) {
-        free(((TupleThing*) self)->elements);
+        //free(((TupleThing*) self)->elements);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -616,8 +641,8 @@ public:
             }
             uint8_t all = getSymbolId(self) == SYM_EQ;
 
-            TupleThing* valueA = (TupleThing*) args[0];
-            TupleThing* valueB = (TupleThing*) args[1];
+            TupleThingType* valueA = (TupleThingType*) typeOfThing(args[0]);
+            TupleThingType* valueB = (TupleThingType*) typeOfThing(args[1]);
 
             if(valueA->size != valueB->size) {
                 return createRetVal(createBoolThing(runtime, 0), 0);
@@ -661,7 +686,7 @@ public:
                 return ret;
             }
 
-            TupleThing* tuple = (TupleThing*) args[0];
+            TupleThingType* tuple = (TupleThingType*) typeOfThing(args[0]);
             int32_t index = thingAsInt(args[1]);
 
             if(index >= tuple->size) {
@@ -683,9 +708,14 @@ public:
 
 class ListThingType : public ThingType {
 public:
-    ListThingType() {}
+    Thing* head;
+    Thing* tail;
+
+    ListThingType(Thing* head, Thing* tail) :
+        head(head), tail(tail) {}
     ~ListThingType() {}
     void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -699,18 +729,25 @@ public:
     }
 };
 
-typedef struct {
-    Map* map;
-} ObjectThing;
+Thing* getListHead(Thing* thing) {
+    return ((ListThingType*) typeOfThing(thing))->head;
+}
+
+Thing* getListTail(Thing* thing) {
+    return ((ListThingType*) typeOfThing(thing))->tail;
+}
 
 class ObjectThingType : public ThingType {
 public:
-    ObjectThingType() {}
+    Map* map;
+
+    ObjectThingType(Map* map) :
+        map(map) {}
     ~ObjectThingType() {}
 
     void destroy(Thing* self) {
-        ObjectThing* object = (ObjectThing*) self;
-        destroyMap(object->map, free, nothing);
+        //ObjectThing* object = (ObjectThing*) self;
+        //destroyMap(object->map, free, nothing);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -725,8 +762,7 @@ public:
             return throwMsg(runtime, "expected self to be an object");
         }
 
-        ObjectThing* object = (ObjectThing*) self;
-        Thing** value = (Thing**) getMapUint32(object->map, SYM_CALL);
+        Thing** value = (Thing**) getMapUint32(this->map, SYM_CALL);
         if(value == NULL) {
             const char* msg = "object is not callable (does not have call property)";
             return throwMsg(runtime, newStr(msg));
@@ -747,8 +783,7 @@ public:
             return throwMsg(runtime, "expected argument 1 to be an object");
         }
 
-        ObjectThing* object = (ObjectThing*) args[0];
-        Thing* value = getMapUint32(object->map, getSymbolId(self));
+        Thing* value = getMapUint32(this->map, getSymbolId(self));
         if(value == NULL) {
             if(getSymbolId(self) == SYM_RESPONDS_TO) {
                 if(arity != 2) {
@@ -763,7 +798,7 @@ public:
                 }
 
                 uint32_t checking = getSymbolId(args[1]);
-                uint32_t responds = getMapUint32(object->map, checking) != NULL;
+                uint32_t responds = getMapUint32(this->map, checking) != NULL;
                 return createRetVal(createBoolThing(runtime, responds), 0);
             } else {
                 const char* msg = "object does not respond to that symbol";
@@ -790,8 +825,12 @@ public:
 
 class CellThingType : public ThingType {
 public:
-    CellThingType() {}
+    Thing* value;
+
+    CellThingType(Thing* value) :
+        value(value) {}
     ~CellThingType() {}
+
     void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
@@ -805,21 +844,6 @@ public:
         return TYPE_CELL;
     }
 };
-
-ThingType* THING_TYPE_NONE = NULL;
-ThingType* THING_TYPE_INT = NULL;
-ThingType* THING_TYPE_FLOAT = NULL;
-ThingType* THING_TYPE_STR = NULL;
-ThingType* THING_TYPE_BOOL = NULL;
-//ThingType* THING_TYPE_SYMBOL = NULL;
-ThingType* THING_TYPE_MODULE = NULL;
-ThingType* THING_TYPE_FUNC = NULL;
-ThingType* THING_TYPE_NATIVE_FUNC = NULL;
-ThingType* THING_TYPE_ERROR = NULL;
-ThingType* THING_TYPE_TUPLE = NULL;
-ThingType* THING_TYPE_LIST = NULL;
-ThingType* THING_TYPE_OBJECT = NULL;
-ThingType* THING_TYPE_CELL = NULL;
 
 uint32_t SYM_ADD = 0;
 uint32_t SYM_SUB = 0;
@@ -859,21 +883,6 @@ static uint8_t initialized = 0;
 
 void initThing() {
     if(!initialized) {
-        THING_TYPE_NONE = new NoneThingType();
-        //THING_TYPE_SYMBOL = new SymbolThingType();
-        THING_TYPE_INT = new IntThingType();
-        THING_TYPE_FLOAT = new FloatThingType();
-        THING_TYPE_STR = new StrThingType();
-        THING_TYPE_BOOL = new BoolThingType();
-        THING_TYPE_MODULE = new ModuleThingType();
-        THING_TYPE_FUNC = new FuncThingType();
-        THING_TYPE_NATIVE_FUNC = new NativeFuncThingType();
-        THING_TYPE_ERROR = new ErrorThingType();
-        THING_TYPE_TUPLE = new TupleThingType();
-        THING_TYPE_LIST = new ListThingType();
-        THING_TYPE_OBJECT = new ObjectThingType();
-        THING_TYPE_CELL = new CellThingType();
-
         SYM_ADD = newSymbolId();
         SYM_SUB = newSymbolId();
         SYM_MUL = newSymbolId();
@@ -899,48 +908,6 @@ void initThing() {
 
 void deinitThing() {
     if(initialized) {
-        delete THING_TYPE_NONE;
-        THING_TYPE_NONE = NULL;
-
-        delete THING_TYPE_INT;
-        THING_TYPE_INT = NULL;
-
-        delete THING_TYPE_FLOAT;
-        THING_TYPE_FLOAT = NULL;
-
-        delete THING_TYPE_STR;
-        THING_TYPE_STR = NULL;
-
-        delete THING_TYPE_BOOL;
-        THING_TYPE_BOOL = NULL;
-
-        //delete THING_TYPE_SYMBOL;
-        //THING_TYPE_SYMBOL = NULL;
-
-        delete THING_TYPE_MODULE;
-        THING_TYPE_MODULE = NULL;
-
-        delete THING_TYPE_FUNC;
-        THING_TYPE_FUNC = NULL;
-
-        delete THING_TYPE_NATIVE_FUNC;
-        THING_TYPE_NATIVE_FUNC = NULL;
-
-        delete THING_TYPE_ERROR;
-        THING_TYPE_ERROR = NULL;
-
-        delete THING_TYPE_TUPLE;
-        THING_TYPE_TUPLE = NULL;
-
-        delete THING_TYPE_LIST;
-        THING_TYPE_LIST = NULL;
-
-        delete THING_TYPE_OBJECT;
-        THING_TYPE_OBJECT = NULL;
-
-        delete THING_TYPE_CELL;
-        THING_TYPE_CELL = NULL;
-
         SYM_ADD = 0;
         SYM_SUB = 0;
         SYM_MUL = 0;
@@ -1009,74 +976,44 @@ ThingTypes typeOfThing2(Thing* thing) {
 /**
  * Singleton none object.
  */
-typedef struct {
-    //structs must have nonzero length.
-    char dummy;
-} NoneThing;
 
 Thing* createNoneThing(Runtime* runtime) {
-    NoneThing* thing = (NoneThing*) createThing(runtime, THING_TYPE_NONE, sizeof(NoneThing));
-    thing->dummy = 0;
-    return thing;
+    return createThing(runtime, new NoneThingType(), 1);
 }
 
 /**
  * Represents integers found in the source code.
  */
-typedef struct {
-    int32_t value;
-} IntThing;
-
 Thing* createIntThing(Runtime* runtime, int32_t value) {
-    IntThing* thing = (IntThing*) createThing(runtime, THING_TYPE_INT, sizeof(IntThing));
-    thing->value = value;
-    return thing;
+    return createThing(runtime, new IntThingType(value), 1);
 }
 
 int32_t thingAsInt(Thing* thing) {
-    return ((IntThing*) thing)->value;
+    return ((IntThingType*) typeOfThing(thing))->value;
 }
 
-typedef struct {
-    float value;
-} FloatThing;
-
 Thing* createFloatThing(Runtime* runtime, float value) {
-    FloatThing* thing = (FloatThing*) createThing(runtime, THING_TYPE_FLOAT, sizeof(FloatThing));
-    thing->value = value;
-    return thing;
+    return createThing(runtime, new FloatThingType(value), 1);
+}
+
+float thingAsFloat(Thing* thing) {
+    return ((FloatThingType*) typeOfThing(thing))->value;
 }
 
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal) {
-    StrThing* thing = (StrThing*) createThing(runtime, THING_TYPE_STR, sizeof(StrThing));
-    thing->value = value;
-    thing->literal = literal != 0; // !=0 makes the value a one or a zero
-    return thing;
-}
-
-void destroyStrThing(Thing* self) {
-    StrThing* str = (StrThing*) self;
-    if(!str->literal) {
-        free((char*) str->value);
-    }
+    return createThing(runtime, new StrThingType(value, literal), 1);
 }
 
 const char* thingAsStr(Thing* self) {
-    return ((StrThing*) self)->value;
+    return ((StrThingType*) typeOfThing(self))->value;
 }
 
-typedef struct {
-    uint8_t value;
-} BoolThing;
-
 Thing* createBoolThing(Runtime* runtime, uint8_t value) {
-    BoolThing* thing = (BoolThing*) createThing(runtime, THING_TYPE_BOOL, sizeof(BoolThing));
-    thing->value = value != 0; //ensure the value is 0 or 1
-    return thing;
+    return createThing(runtime, new BoolThingType(value), 1);
 }
 
 uint8_t thingAsBool(Thing* thing) {
-    return ((BoolThing*) thing)->value;
+    return ((BoolThingType*) typeOfThing(thing))->value;
 }
 
 uint32_t symbolId = 0;
@@ -1086,11 +1023,7 @@ uint32_t newSymbolId() {
 }
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
-    //SymbolThing* thing = (SymbolThing*) createThingNew(runtime, new SymbolThing(id, arity));
     return createThing(runtime, new SymbolThingType(id, arity), 1);
-    //thing->id = id;
-    //thing->arity = arity;
-    //return thing;
 }
 
 uint32_t getSymbolId(Thing* self) {
@@ -1101,41 +1034,25 @@ uint32_t getSymbolId(Thing* self) {
  * Used for module objects and object literals. Associates strings with things.
  */
 Thing* createModuleThing(Runtime* runtime, Map* map) {
-    ModuleThing* thing = (ModuleThing*) createThing(runtime, THING_TYPE_MODULE,
-            sizeof(ModuleThing));
-    thing->properties = copyMap(map);
-    return thing;
-}
-
-void destroyModuleThing(Thing* thing) {
-    destroyMap(((ModuleThing*) thing)->properties, nothing, nothing);
+    return createThing(runtime, new ModuleThingType(copyMap(map)), 1);
 }
 
 Thing* getModuleProperty(Thing* thing, const char* name) {
-    return getMapStr(((ModuleThing*) thing)->properties, name);
+    return getMapStr(((ModuleThingType*) typeOfThing(thing))->properties, name);
 }
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope) {
-    FuncThing* thing = (FuncThing*) createThing(runtime, THING_TYPE_FUNC, sizeof(FuncThing));
-    thing->entry = entry;
-    thing->module = module;
-    thing->parentScope = parentScope;
-    return thing;
+    return createThing(runtime, new FuncThingType(entry, module, parentScope), 1);
 }
 
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
-    NativeFuncThing* thing = (NativeFuncThing*) createThing(runtime, THING_TYPE_NATIVE_FUNC,
-            sizeof(NativeFuncThing));
-    thing->func = func;
-    return thing;
+    return createThing(runtime, new NativeFuncThingType(func), 1);
 }
 
 Thing* createErrorThing(Runtime* runtime, const char* msg) {
-    ErrorThing* self = (ErrorThing*) createThing(runtime, THING_TYPE_ERROR,
-            sizeof(ErrorThing));
-    self->msg = msg;
-    self->stackFrame = NULL;
+    Thing* thing = createThing(runtime, new ErrorThingType(msg, NULL), 1);
+    ErrorThingType* self = (ErrorThingType*) typeOfThing(thing);
 
     List* list = reverseList(runtime->stackFrame);
     List* listOriginal = list;
@@ -1172,19 +1089,13 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
 
     destroyList(listOriginal, nothing);
 
-    return self;
-}
-
-void destroyErrorThing(Thing* thing) {
-    ErrorThing* self = (ErrorThing*) thing;
-    free((char*) self->msg);
-    destroyList(self->stackFrame, free);
+    return thing;
 }
 
 const char* errorStackTrace(Runtime* runtime, Thing* self) {
     UNUSED(runtime);
 
-    ErrorThing* error = (ErrorThing*) self;
+    ErrorThingType* error = (ErrorThingType*) typeOfThing(self);
     const char* footer = formatStr("\terror: %s", error->msg);
     List* parts = consList((char*) footer, NULL);
     size_t length = strlen(footer) + 2;
@@ -1259,58 +1170,41 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 }
 
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
-    TupleThing* self = (TupleThing*) createThing(runtime, THING_TYPE_TUPLE, sizeof(TupleThing));
-    self->size = size;
-    self->elements = elements;
-    return self;
+    return createThing(runtime, new TupleThingType(size, elements), 1);
 }
 
 uint8_t getTupleSize(Thing* tuple) {
-    return ((TupleThing*) tuple)->size;
+    return ((TupleThingType*) typeOfThing(tuple))->size;
 }
 
 Thing* getTupleElem(Thing* tuple, uint8_t index) {
-    return ((TupleThing*) tuple)->elements[index];
+    return ((TupleThingType*) typeOfThing(tuple))->elements[index];
 }
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
-    ListThing* list = (ListThing*) createThing(runtime, THING_TYPE_LIST, sizeof(ListThing));
-    list->head = head;
-    list->tail = tail;
-    return list;
+
+    return createThing(runtime, new ListThingType(head, tail), 1);
 }
 
 Thing* createObjectThing(Runtime* runtime, Map* map) {
-    ObjectThing* object = (ObjectThing*) createThing(runtime, THING_TYPE_OBJECT,
-            sizeof(ObjectThing));
-
-    object->map = map;
-    return object;
+    return createThing(runtime, new ObjectThingType(map), 1);
 }
 
 Map* getObjectMap(Thing* object) {
-    return ((ObjectThing*) object)->map;
+    return ((ObjectThingType*) typeOfThing(object))->map;
 }
 
 void destroyObjectThing(Thing* self) {
-    ObjectThing* object = (ObjectThing*) self;
-    destroyMap(object->map, free, nothing);
 }
 
-typedef struct {
-    Thing* value;
-} CellThing;
-
 Thing* createCellThing(Runtime* runtime, Thing* value) {
-    CellThing* cell = (CellThing*) createThing(runtime, THING_TYPE_CELL, sizeof(CellThing));
-    cell->value = value;
-    return cell;
+    return createThing(runtime, new CellThingType(value), 1);
 }
 
 Thing* getCellValue(Thing* cell) {
-    return ((CellThing*) cell)->value;
+    return ((CellThingType*) typeOfThing(cell))->value;
 }
 
 void setCellValue(Thing* cell, Thing* value) {
-    ((CellThing*) cell)->value = value;
+    ((CellThingType*) typeOfThing(cell))->value = value;
 }

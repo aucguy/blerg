@@ -258,39 +258,38 @@ const char* readConstantModule(Module* module, uint32_t index) {
     return module->constants[readU32Module(module, index)];
 }
 
-StackFrame* createFrameCall(Runtime* runtime, FuncThing* func, uint32_t argNo,
+StackFrame* createFrameCall(Runtime* runtime, Thing* func, uint32_t argNo,
         Thing** args, uint8_t* error) {
     //currently, native code can only call blerg code
     if(typeOfThing2(func) != TYPE_FUNC) {
         *error = 1;
         return NULL;
     }
-    FuncThing* funcThing = func;
-    uint32_t index = funcThing->entry;
-    uint8_t opcode = funcThing->module->bytecode[index++];
+    uint32_t index = getFuncEntry(func);
+    uint8_t opcode = getFuncModule(func)->bytecode[index++];
     if(opcode != OP_DEF_FUNC) {
         *error = 1;
         return NULL;
     }
 
     //check that the provided number of arguments equals the function's arity
-    if(funcThing->module->bytecode[index++] != argNo) {
+    if(getFuncModule(func)->bytecode[index++] != argNo) {
         *error = 1;
         return NULL;
     }
 
     //if its the init function, the local scope is the parent scope
-    Scope* scope = createScope(runtime, funcThing->parentScope);
+    Scope* scope = createScope(runtime, getFuncParentScope(func));
 
     //assign the arguments provided to the names of the variables in the local
     //scope.
     for(uint32_t i = 0; i < argNo; i++) {
-        const char* constant = readConstantModule(funcThing->module, index);
+        const char* constant = readConstantModule(getFuncModule(func), index);
         setScopeLocal(scope, constant, args[i]);
         index += 4;
     }
 
-    return createStackFrameDef(func->module, index, scope);
+    return createStackFrameDef(getFuncModule(func), index, scope);
 }
 
 /**
@@ -388,7 +387,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
             //TODO fix conversion
             uint8_t arity = (unsigned int) readU32Module(module, index);
             index += 4;
-            FuncThing* func = (FuncThing*) peekStackIndex(runtime, arity);
+            Thing* func = peekStackIndex(runtime, arity);
             Thing** args = (Thing**) malloc(arity * sizeof(Thing*));
             for(uint8_t i = 0; i < arity; i++) {
                 args[arity - i - 1] = popStack(runtime);
@@ -495,7 +494,7 @@ RetVal executeModule(Runtime* runtime, Module* module) {
 RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args) {
     if(typeOfThing2(func) == TYPE_FUNC) {
         uint8_t error = 0;
-        StackFrame* frame = createFrameCall(runtime, (FuncThing*) func, argNo, args, &error);
+        StackFrame* frame = createFrameCall(runtime, func, argNo, args, &error);
         if(error) {
             return throwMsg(runtime, "error creating function stack frame");
         }
