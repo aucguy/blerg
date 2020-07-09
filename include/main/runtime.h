@@ -89,7 +89,6 @@ extern ThingTypes TYPE_UNDEF;
 class Thing {
 public:
     virtual ~Thing() = 0;
-    virtual void destroy(Thing*) = 0;
     virtual RetVal call(Runtime*, Thing*, Thing**, uint8_t) = 0;
     virtual RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t) = 0;
     virtual ThingTypes type() = 0;

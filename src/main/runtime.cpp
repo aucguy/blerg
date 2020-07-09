@@ -18,8 +18,7 @@ RetVal throwMsg(Runtime* runtime, const char* msg) {
     return createRetVal(createErrorThing(runtime, msg), 1);
 }
 
-Thing::~Thing() {
-}
+Thing::~Thing() {}
 
 ThingTypes TYPE_NONE = 0;
 ThingTypes TYPE_INT = 1;

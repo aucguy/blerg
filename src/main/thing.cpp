@@ -17,7 +17,7 @@ class NoneThing : public Thing {
 public:
     NoneThing() {}
     ~NoneThing() {}
-    void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -63,7 +63,6 @@ public:
     SymbolThing(uint32_t id, uint8_t arity) :
         id(id), arity(arity) {}
     ~SymbolThing() {}
-    void destroy(Thing* self) {}
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         //TODO remove this check
@@ -90,7 +89,7 @@ public:
     IntThing(int32_t value) :
         value(value) {}
     ~IntThing() {}
-    void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -184,7 +183,7 @@ public:
         value(value) {}
 
     ~FloatThing() {}
-    void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -275,13 +274,11 @@ public:
 
     StrThing(const char* value, uint8_t literal) :
         value(value), literal(literal) {}
-    ~StrThing() {}
 
-    void destroy(Thing* self) {
-        //StrThing* str = (StrThing*) self;
-        //if(!str->literal) {
-        //    free((char*) str->value);
-        //}
+    ~StrThing() {
+        if(!this->literal) {
+            free((char*) this->value);
+        }
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -360,7 +357,7 @@ public:
         value(value) {}
 
     ~BoolThing() {}
-    void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -444,10 +441,8 @@ public:
     ModuleThing(Map* properties) :
         properties(properties) {}
 
-    ~ModuleThing() {}
-
-    void destroy(Thing* self) {
-        //destroyMap(((ModuleThing*) self)->properties, nothing, nothing);
+    ~ModuleThing() {
+        destroyMap(this->properties, nothing, nothing);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -510,7 +505,7 @@ public:
         entry(entry), module(module), parentScope(parentScope) {}
 
     ~FuncThing() {}
-    void destroy(Thing* self) {}
+
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -544,7 +539,6 @@ public:
         : func(func) {}
     ~NativeFuncThing() {}
 
-    void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return this->func(runtime, self, args, arity);
     }
@@ -571,12 +565,10 @@ public:
 
     ErrorThing(const char* msg, List* stackFrame) :
         msg(msg), stackFrame(stackFrame) {}
-    ~ErrorThing() {}
 
-    void destroy(Thing* thing) {
-        //ErrorThing* self = (ErrorThing*) thing;
-        //free((char*) self->msg);
-        //destroyList(self->stackFrame, free);
+    ~ErrorThing() {
+        free((char*) this->msg);
+        destroyList(this->stackFrame, free);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -599,10 +591,9 @@ public:
 
     TupleThing(uint8_t size, Thing** elements) :
         size(size), elements(elements) {}
-    ~TupleThing() {}
 
-    void destroy(Thing* self) {
-        //free(((TupleThing*) self)->elements);
+    ~TupleThing() {
+        free(this->elements);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -714,7 +705,6 @@ public:
     ListThing(Thing* head, Thing* tail) :
         head(head), tail(tail) {}
     ~ListThing() {}
-    void destroy(Thing* self) {}
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
@@ -743,11 +733,9 @@ public:
 
     ObjectThing(Map* map) :
         map(map) {}
-    ~ObjectThing() {}
 
-    void destroy(Thing* self) {
-        //ObjectThing* object = (ObjectThing*) self;
-        //destroyMap(object->map, free, nothing);
+    ~ObjectThing() {
+        destroyMap(this->map, free, nothing);
     }
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -831,7 +819,6 @@ public:
         value(value) {}
     ~CellThing() {}
 
-    void destroy(Thing* self) {}
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return callFail(runtime);
     }
@@ -943,9 +930,7 @@ Thing* createThing(Runtime* runtime, Thing* type) {
 }
 
 void destroyThing(Thing* thing) {
-    //ThingHeader* header = customDataToThingHeader(thing);
-    //header->type->destroy((Thing*) thing);
-    //free(header);
+    delete thing;
 }
 
 ThingTypes typeOfThing2(Thing* thing) {

@@ -53,7 +53,6 @@ public:
         func(func) {}
 
     ~VarargThing() {}
-    void destroy(Thing* self) {}
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         if(arity < 1) {
