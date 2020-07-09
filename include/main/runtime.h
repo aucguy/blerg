@@ -4,7 +4,8 @@
 #include "main/util.h"
 #include "main/bytecode.h"
 
-typedef void Thing;
+typedef class ThingType Thing;
+
 
 typedef struct {
     Thing* value;

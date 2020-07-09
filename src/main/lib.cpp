@@ -293,7 +293,7 @@ RetVal libImport(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
 
     const char* filename = thingAsStr(args[0]);
     //TODO normalize import path
-    Thing* moduleThing = getMapStr(runtime->modules, filename);
+    Thing* moduleThing = (Thing*) getMapStr(runtime->modules, filename);
     if(moduleThing != NULL) {
         return createRetVal(moduleThing, 0);
     }
@@ -380,7 +380,7 @@ RetVal libAssertEqual(Runtime* runtime, Thing* self, Thing** args, uint8_t arity
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    Thing* symbol = getMapStr(runtime->operators, "==");
+    Thing* symbol = (Thing*) getMapStr(runtime->operators, "==");
     RetVal ret = callFunction(runtime, symbol, 2, args);
 
     if(isRetValError(ret)) {

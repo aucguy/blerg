@@ -14,7 +14,7 @@ RetVal libProperties(Runtime* runtime, Thing* self, Thing** args, uint8_t arity)
         Thing** elements = (Thing**) malloc(sizeof(Thing*) * 2);
         uint32_t* key = (uint32_t*) entry->key;
         elements[0] = createSymbolThing(runtime, *key, 0);
-        elements[1] = entry->value;
+        elements[1] = (Thing*) entry->value;
         Thing* head = createTupleThing(runtime, 2, elements);
 
         list = createListThing(runtime, head, list);

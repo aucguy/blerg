@@ -48,8 +48,6 @@ Thing* getModuleProperty(Thing* thing, const char* name);
  * Returns the type of the given thing. Use this to check its type before
  * passing it to functions which require a certain type.
  */
-ThingType* typeOfThing(Thing* thing);
-
 ThingTypes typeOfThing2(Thing* thing);
 
 unsigned int getFuncEntry(Thing*);
@@ -112,7 +110,7 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 void destroySimpleThing(Thing* thing);
 RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity);
-Thing* createThing(Runtime* runtime, ThingType* type, size_t size);
+Thing* createThing(Runtime* runtime, ThingType* type);
 RetVal symbolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 
 #endif /* THING_H_ */

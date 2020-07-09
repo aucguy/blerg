@@ -71,7 +71,7 @@ public:
             const char* format = "expected %i arguments, but got %i";
             return throwMsg(runtime, formatStr(format, this->arity, arity));
         }
-        return typeOfThing(args[0])->dispatch(runtime, self, args, arity);
+        return args[0]->dispatch(runtime, self, args, arity);
     }
 
     RetVal dispatch(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -525,15 +525,15 @@ public:
 };
 
 unsigned int getFuncEntry(Thing* thing) {
-    return ((FuncThingType*) typeOfThing(thing))->entry;
+    return ((FuncThingType*) thing)->entry;
 }
 
 Module* getFuncModule(Thing* thing) {
-    return ((FuncThingType*) typeOfThing(thing))->module;
+    return ((FuncThingType*) thing)->module;
 }
 
 Scope* getFuncParentScope(Thing* thing) {
-    return ((FuncThingType*) typeOfThing(thing))->parentScope;
+    return ((FuncThingType*) thing)->parentScope;
 }
 
 class NativeFuncThingType : public ThingType {
@@ -641,14 +641,14 @@ public:
             }
             uint8_t all = getSymbolId(self) == SYM_EQ;
 
-            TupleThingType* valueA = (TupleThingType*) typeOfThing(args[0]);
-            TupleThingType* valueB = (TupleThingType*) typeOfThing(args[1]);
+            TupleThingType* valueA = (TupleThingType*) args[0];
+            TupleThingType* valueB = (TupleThingType*) args[1];
 
             if(valueA->size != valueB->size) {
                 return createRetVal(createBoolThing(runtime, 0), 0);
             }
 
-            Thing* eqSym = getMapStr(runtime->operators, "==");
+            Thing* eqSym = (Thing*) getMapStr(runtime->operators, "==");
 
             Thing** elems = (Thing**) malloc(sizeof(Thing*) * 2);
 
@@ -686,7 +686,7 @@ public:
                 return ret;
             }
 
-            TupleThingType* tuple = (TupleThingType*) typeOfThing(args[0]);
+            TupleThingType* tuple = (TupleThingType*) args[0];
             int32_t index = thingAsInt(args[1]);
 
             if(index >= tuple->size) {
@@ -730,11 +730,11 @@ public:
 };
 
 Thing* getListHead(Thing* thing) {
-    return ((ListThingType*) typeOfThing(thing))->head;
+    return ((ListThingType*) thing)->head;
 }
 
 Thing* getListTail(Thing* thing) {
-    return ((ListThingType*) typeOfThing(thing))->tail;
+    return ((ListThingType*) thing)->tail;
 }
 
 class ObjectThingType : public ThingType {
@@ -762,7 +762,7 @@ public:
             return throwMsg(runtime, "expected self to be an object");
         }
 
-        Thing** value = (Thing**) getMapUint32(this->map, SYM_CALL);
+        Thing* value = (Thing*) getMapUint32(this->map, SYM_CALL);
         if(value == NULL) {
             const char* msg = "object is not callable (does not have call property)";
             return throwMsg(runtime, newStr(msg));
@@ -783,7 +783,7 @@ public:
             return throwMsg(runtime, "expected argument 1 to be an object");
         }
 
-        Thing* value = getMapUint32(this->map, getSymbolId(self));
+        Thing* value = (Thing*) getMapUint32(this->map, getSymbolId(self));
         if(value == NULL) {
             if(getSymbolId(self) == SYM_RESPONDS_TO) {
                 if(arity != 2) {
@@ -937,14 +937,9 @@ void deinitThing() {
  * @param size the size of the object's custom data. The custom data is found
  *      after the Thing struct.
  */
-Thing* createThing(Runtime* runtime, ThingType* type, size_t size) {
+Thing* createThing(Runtime* runtime, ThingType* type) {
+    runtime->allocatedThings = consList(type, runtime->allocatedThings);
     return type;
-}
-
-Thing* createThingNew(Runtime* runtime, ThingType* instance) {
-    Thing* thing = createThing(runtime, instance, sizeof(ThingType*));
-    *((ThingType**) thing) = instance;
-    return thing;
 }
 
 void destroyThing(Thing* thing) {
@@ -953,12 +948,8 @@ void destroyThing(Thing* thing) {
     //free(header);
 }
 
-ThingType* typeOfThing(Thing* thing) {
-    return (ThingType*) thing;
-}
-
 ThingTypes typeOfThing2(Thing* thing) {
-    return typeOfThing(thing)->type();
+    return thing->type();
 }
 
 /**
@@ -966,42 +957,42 @@ ThingTypes typeOfThing2(Thing* thing) {
  */
 
 Thing* createNoneThing(Runtime* runtime) {
-    return createThing(runtime, new NoneThingType(), 1);
+    return createThing(runtime, new NoneThingType());
 }
 
 /**
  * Represents integers found in the source code.
  */
 Thing* createIntThing(Runtime* runtime, int32_t value) {
-    return createThing(runtime, new IntThingType(value), 1);
+    return createThing(runtime, new IntThingType(value));
 }
 
 int32_t thingAsInt(Thing* thing) {
-    return ((IntThingType*) typeOfThing(thing))->value;
+    return ((IntThingType*) thing)->value;
 }
 
 Thing* createFloatThing(Runtime* runtime, float value) {
-    return createThing(runtime, new FloatThingType(value), 1);
+    return createThing(runtime, new FloatThingType(value));
 }
 
 float thingAsFloat(Thing* thing) {
-    return ((FloatThingType*) typeOfThing(thing))->value;
+    return ((FloatThingType*) thing)->value;
 }
 
 Thing* createStrThing(Runtime* runtime, const char* value, uint8_t literal) {
-    return createThing(runtime, new StrThingType(value, literal), 1);
+    return createThing(runtime, new StrThingType(value, literal));
 }
 
 const char* thingAsStr(Thing* self) {
-    return ((StrThingType*) typeOfThing(self))->value;
+    return ((StrThingType*) self)->value;
 }
 
 Thing* createBoolThing(Runtime* runtime, uint8_t value) {
-    return createThing(runtime, new BoolThingType(value), 1);
+    return createThing(runtime, new BoolThingType(value));
 }
 
 uint8_t thingAsBool(Thing* thing) {
-    return ((BoolThingType*) typeOfThing(thing))->value;
+    return ((BoolThingType*) thing)->value;
 }
 
 uint32_t symbolId = 0;
@@ -1011,36 +1002,36 @@ uint32_t newSymbolId() {
 }
 
 Thing* createSymbolThing(Runtime* runtime, uint32_t id, uint8_t arity) {
-    return createThing(runtime, new SymbolThingType(id, arity), 1);
+    return createThing(runtime, new SymbolThingType(id, arity));
 }
 
 uint32_t getSymbolId(Thing* self) {
-    return ((SymbolThingType*) typeOfThing(self))->id;
+    return ((SymbolThingType*) self)->id;
 }
 
 /**
  * Used for module objects and object literals. Associates strings with things.
  */
 Thing* createModuleThing(Runtime* runtime, Map* map) {
-    return createThing(runtime, new ModuleThingType(copyMap(map)), 1);
+    return createThing(runtime, new ModuleThingType(copyMap(map)));
 }
 
 Thing* getModuleProperty(Thing* thing, const char* name) {
-    return getMapStr(((ModuleThingType*) typeOfThing(thing))->properties, name);
+    return (Thing*) getMapStr(((ModuleThingType*) thing)->properties, name);
 }
 
 Thing* createFuncThing(Runtime* runtime, uint32_t entry,
         Module* module, Scope* parentScope) {
-    return createThing(runtime, new FuncThingType(entry, module, parentScope), 1);
+    return createThing(runtime, new FuncThingType(entry, module, parentScope));
 }
 
 Thing* createNativeFuncThing(Runtime* runtime, ExecFunc func) {
-    return createThing(runtime, new NativeFuncThingType(func), 1);
+    return createThing(runtime, new NativeFuncThingType(func));
 }
 
 Thing* createErrorThing(Runtime* runtime, const char* msg) {
-    Thing* thing = createThing(runtime, new ErrorThingType(msg, NULL), 1);
-    ErrorThingType* self = (ErrorThingType*) typeOfThing(thing);
+    Thing* thing = createThing(runtime, new ErrorThingType(msg, NULL));
+    ErrorThingType* self = (ErrorThingType*) thing;
 
     List* list = reverseList(runtime->stackFrame);
     List* listOriginal = list;
@@ -1083,7 +1074,7 @@ Thing* createErrorThing(Runtime* runtime, const char* msg) {
 const char* errorStackTrace(Runtime* runtime, Thing* self) {
     UNUSED(runtime);
 
-    ErrorThingType* error = (ErrorThingType*) typeOfThing(self);
+    ErrorThingType* error = (ErrorThingType*) self;
     const char* footer = formatStr("\terror: %s", error->msg);
     List* parts = consList((char*) footer, NULL);
     size_t length = strlen(footer) + 2;
@@ -1158,41 +1149,40 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 }
 
 Thing* createTupleThing(Runtime* runtime, uint8_t size, Thing** elements) {
-    return createThing(runtime, new TupleThingType(size, elements), 1);
+    return createThing(runtime, new TupleThingType(size, elements));
 }
 
 uint8_t getTupleSize(Thing* tuple) {
-    return ((TupleThingType*) typeOfThing(tuple))->size;
+    return ((TupleThingType*) tuple)->size;
 }
 
 Thing* getTupleElem(Thing* tuple, uint8_t index) {
-    return ((TupleThingType*) typeOfThing(tuple))->elements[index];
+    return ((TupleThingType*) tuple)->elements[index];
 }
 
 Thing* createListThing(Runtime* runtime, Thing* head, Thing* tail) {
-
-    return createThing(runtime, new ListThingType(head, tail), 1);
+    return createThing(runtime, new ListThingType(head, tail));
 }
 
 Thing* createObjectThing(Runtime* runtime, Map* map) {
-    return createThing(runtime, new ObjectThingType(map), 1);
+    return createThing(runtime, new ObjectThingType(map));
 }
 
 Map* getObjectMap(Thing* object) {
-    return ((ObjectThingType*) typeOfThing(object))->map;
+    return ((ObjectThingType*) object)->map;
 }
 
 void destroyObjectThing(Thing* self) {
 }
 
 Thing* createCellThing(Runtime* runtime, Thing* value) {
-    return createThing(runtime, new CellThingType(value), 1);
+    return createThing(runtime, new CellThingType(value));
 }
 
 Thing* getCellValue(Thing* cell) {
-    return ((CellThingType*) typeOfThing(cell))->value;
+    return ((CellThingType*) cell)->value;
 }
 
 void setCellValue(Thing* cell, Thing* value) {
-    ((CellThingType*) typeOfThing(cell))->value = value;
+    ((CellThingType*) cell)->value = value;
 }

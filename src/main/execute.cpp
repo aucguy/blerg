@@ -24,7 +24,7 @@ void destroyScope(void* scope) {
 }
 
 Thing* getScopeValue(Scope* scope, const char* name) {
-    Thing* value = getMapStr(scope->locals, name);
+    Thing* value = (Thing*) getMapStr(scope->locals, name);
     if(value != NULL) {
         return value;
     } else if(scope->parent != NULL) {
@@ -46,7 +46,7 @@ Scope* copyScope(Runtime* runtime, Scope* oldScope) {
 
         while(locals != NULL) {
             if(getMapStr(newScope->locals, (const char*) locals->key) == NULL) {
-                setScopeLocal(newScope, (const char*) locals->key, locals->value);
+                setScopeLocal(newScope, (const char*) locals->key, (Thing*) locals->value);
             }
             locals = locals->tail;
         }
@@ -137,7 +137,7 @@ Runtime* createRuntime(uint8_t argc, const char* args[]) {
     setScopeLocal(builtins, "trycatch", createNativeFuncThing(runtime, libTryCatch));
     setScopeLocal(builtins, "head", createNativeFuncThing(runtime, libHead));
     setScopeLocal(builtins, "tail", createNativeFuncThing(runtime, libTail));
-    setScopeLocal(builtins, "get", getMapStr(ops, "get"));
+    setScopeLocal(builtins, "get", (Thing*) getMapStr(ops, "get"));
     setScopeLocal(builtins, "createSymbol",
             createNativeFuncThing(runtime, libCreateSymbol));
     setScopeLocal(builtins, "createCell",
@@ -160,7 +160,7 @@ void destroyModuleVoid(void* module) {
 void destroyRuntime(Runtime* runtime) {
     destroyList(runtime->stackFrame, free);
     destroyShallowList(runtime->stack);
-    destroyList(runtime->allocatedThings, destroyThing);
+    destroyList(runtime->allocatedThings, (void (*)(void*)) destroyThing);
     destroyList(runtime->allocatedScopes, destroyScope);
     destroyMap(runtime->operators, nothing, nothing);
     destroyMap(runtime->modules, nothing, nothing);
@@ -211,7 +211,7 @@ void pushStack(Runtime* runtime, Thing* thing) {
 }
 
 Thing* popStack(Runtime* runtime) {
-    Thing* thing = runtime->stack->head;
+    Thing* thing = (Thing*) runtime->stack->head;
     List* toDelete = runtime->stack;
     runtime->stack = runtime->stack->tail;
     free(toDelete);
@@ -223,7 +223,7 @@ Thing* peekStackIndex(Runtime* runtime, uint32_t index) {
     for(uint32_t i = 0; i < index; i++) {
         stack = stack->tail;
     }
-    return stack->head;
+    return (Thing*) stack->head;
 }
 
 /**
@@ -341,7 +341,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
         } else if(opcode == OP_PUSH_BUILTIN) {
             const char* constant = readConstantModule(module, index);
             index += 4;
-            Thing* value = getMapStr(runtime->operators, constant);
+            Thing* value = (Thing*) getMapStr(runtime->operators, constant);
             if(value == NULL) {
                 const char* format = "internal error: builtin '%s' not found";
                 RetVal error = throwMsg(runtime, formatStr(format, constant));
@@ -409,7 +409,7 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 pushStackFrame(runtime, frame);
             } else {
                 pushStackFrame(runtime, createStackFrameNative());
-                RetVal ret = typeOfThing(func)->call(runtime, func, args, arity);
+                RetVal ret = func->call(runtime, func, args, arity);
                 popStackFrame(runtime);
 
                 if(isRetValError(ret)) {
@@ -500,7 +500,7 @@ RetVal callFunction(Runtime* runtime, Thing* func, uint32_t argNo, Thing** args)
         return executeCode(runtime, frame);
     } else {
         pushStackFrame(runtime, createStackFrameNative());
-        RetVal ret = typeOfThing(func)->call(runtime, func, args, argNo);
+        RetVal ret = func->call(runtime, func, args, argNo);
         popStackFrame(runtime);
         return ret;
     }
