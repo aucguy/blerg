@@ -928,14 +928,6 @@ void deinitThing() {
     }
 }
 
-Thing* thingHeaderToCustomData(ThingHeader* header) {
-    return ((char*) header) + sizeof(ThingHeader);
-}
-
-ThingHeader* customDataToThingHeader(Thing* thing) {
-    return (ThingHeader*) (((char*) thing) - sizeof(ThingHeader));
-}
-
 /**
  * Creates a thing. If the runtime is destroyed, the object will also be
  * destroyed.
@@ -946,11 +938,7 @@ ThingHeader* customDataToThingHeader(Thing* thing) {
  *      after the Thing struct.
  */
 Thing* createThing(Runtime* runtime, ThingType* type, size_t size) {
-    ThingHeader* header = (ThingHeader*) malloc(sizeof(ThingHeader) + size);
-    header->type = type;
-    Thing* thing = thingHeaderToCustomData(header);
-    runtime->allocatedThings = consList(thing, runtime->allocatedThings);
-    return thing;
+    return type;
 }
 
 Thing* createThingNew(Runtime* runtime, ThingType* instance) {
@@ -960,17 +948,17 @@ Thing* createThingNew(Runtime* runtime, ThingType* instance) {
 }
 
 void destroyThing(Thing* thing) {
-    ThingHeader* header = customDataToThingHeader(thing);
-    header->type->destroy((Thing*) thing);
-    free(header);
+    //ThingHeader* header = customDataToThingHeader(thing);
+    //header->type->destroy((Thing*) thing);
+    //free(header);
 }
 
 ThingType* typeOfThing(Thing* thing) {
-    return customDataToThingHeader(thing)->type;
+    return (ThingType*) thing;
 }
 
 ThingTypes typeOfThing2(Thing* thing) {
-    return customDataToThingHeader(thing)->type->type();
+    return typeOfThing(thing)->type();
 }
 
 /**

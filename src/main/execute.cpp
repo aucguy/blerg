@@ -408,9 +408,8 @@ RetVal executeCode(Runtime* runtime, StackFrame* frame) {
                 }
                 pushStackFrame(runtime, frame);
             } else {
-                ThingHeader* header = customDataToThingHeader(func);
                 pushStackFrame(runtime, createStackFrameNative());
-                RetVal ret = header->type->call(runtime, func, args, arity);
+                RetVal ret = typeOfThing(func)->call(runtime, func, args, arity);
                 popStackFrame(runtime);
 
                 if(isRetValError(ret)) {

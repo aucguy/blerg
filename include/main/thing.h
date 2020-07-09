@@ -20,16 +20,6 @@ void initThing();
  */
 void deinitThing();
 
-/**
- * Describes an 'object' within the blerg program.
- */
-typedef struct {
-    ThingType* type;
-} ThingHeader;
-
-Thing* thingHeaderToCustomData(ThingHeader* header);
-ThingHeader* customDataToThingHeader(Thing* thing);
-
 void destroyThing(Thing* thing);
 
 Thing* createIntThing(Runtime* runtime, int32_t value);
