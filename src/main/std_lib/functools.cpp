@@ -45,14 +45,14 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
     return ret;
 }
 
-class VarargThingType : public ThingType {
+class VarargThing : public Thing {
 public:
     Thing* func;
 
-    VarargThingType(Thing* func) :
+    VarargThing(Thing* func) :
         func(func) {}
 
-    ~VarargThingType() {}
+    ~VarargThing() {}
     void destroy(Thing* self) {}
 
     RetVal call(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
@@ -97,13 +97,13 @@ RetVal varargCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
             list
     };
 
-    Thing* func = ((VarargThingType*) self)->func;
+    Thing* func = ((VarargThing*) self)->func;
 
     return callFunction(runtime, func, 1, passedArgs);
 }
 
 Thing* createVarargThing(Runtime* runtime, Thing* func) {
-    return createThing(runtime, new VarargThingType(func));
+    return createThing(runtime, new VarargThing(func));
 }
 
 RetVal libVarargs(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {

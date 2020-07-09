@@ -110,7 +110,7 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 void destroySimpleThing(Thing* thing);
 RetVal errorCall(Runtime* runtime, Thing* thing, Thing** args, uint8_t arity);
-Thing* createThing(Runtime* runtime, ThingType* type);
+Thing* createThing(Runtime* runtime, Thing* type);
 RetVal symbolDispatch(Runtime*, Thing*, Thing**, uint8_t);
 
 #endif /* THING_H_ */

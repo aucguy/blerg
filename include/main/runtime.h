@@ -4,8 +4,7 @@
 #include "main/util.h"
 #include "main/bytecode.h"
 
-typedef class ThingType Thing;
-
+typedef class Thing Thing;
 
 typedef struct {
     Thing* value;
@@ -87,9 +86,9 @@ extern ThingTypes TYPE_SYMBOL;
 extern ThingTypes TYPE_VARARG;
 extern ThingTypes TYPE_UNDEF;
 
-class ThingType {
+class Thing {
 public:
-    virtual ~ThingType() = 0;
+    virtual ~Thing() = 0;
     virtual void destroy(Thing*) = 0;
     virtual RetVal call(Runtime*, Thing*, Thing**, uint8_t) = 0;
     virtual RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t) = 0;
