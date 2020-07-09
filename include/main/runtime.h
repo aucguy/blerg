@@ -59,14 +59,6 @@ typedef struct {
 
 typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
 
-class ThingClass {
-public:
-    virtual void destroy() = 0;
-    virtual RetVal call(Runtime* runtime, Thing** args, uint8_t arity) = 0;
-    virtual RetVal dispatch(Runtime* runtime, Thing** args, uint8_t arity) = 0;
-    virtual ~ThingClass();
-};
-
 typedef uint32_t ThingTypes;
 
 extern ThingTypes TYPE_NONE;
