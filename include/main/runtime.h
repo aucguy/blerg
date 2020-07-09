@@ -59,31 +59,31 @@ typedef struct {
 
 typedef RetVal (*ExecFunc)(Runtime*, Thing*, Thing**, uint8_t);
 
-typedef uint32_t ThingTypes;
+typedef uint32_t ThingType;
 
-extern ThingTypes TYPE_NONE;
-extern ThingTypes TYPE_INT;
-extern ThingTypes TYPE_FLOAT;
-extern ThingTypes TYPE_STR;
-extern ThingTypes TYPE_BOOL;
-extern ThingTypes TYPE_MODULE;
-extern ThingTypes TYPE_FUNC;
-extern ThingTypes TYPE_NATIVE_FUNC;
-extern ThingTypes TYPE_ERROR;
-extern ThingTypes TYPE_TUPLE;
-extern ThingTypes TYPE_LIST;
-extern ThingTypes TYPE_OBJECT;
-extern ThingTypes TYPE_CELL;
-extern ThingTypes TYPE_SYMBOL;
-extern ThingTypes TYPE_VARARG;
-extern ThingTypes TYPE_UNDEF;
+extern ThingType TYPE_NONE;
+extern ThingType TYPE_INT;
+extern ThingType TYPE_FLOAT;
+extern ThingType TYPE_STR;
+extern ThingType TYPE_BOOL;
+extern ThingType TYPE_MODULE;
+extern ThingType TYPE_FUNC;
+extern ThingType TYPE_NATIVE_FUNC;
+extern ThingType TYPE_ERROR;
+extern ThingType TYPE_TUPLE;
+extern ThingType TYPE_LIST;
+extern ThingType TYPE_OBJECT;
+extern ThingType TYPE_CELL;
+extern ThingType TYPE_SYMBOL;
+extern ThingType TYPE_VARARG;
+extern ThingType TYPE_UNDEF;
 
 class Thing {
 public:
     virtual ~Thing() = 0;
     virtual RetVal call(Runtime*, Thing*, Thing**, uint8_t) = 0;
     virtual RetVal dispatch(Runtime*, Thing*, Thing**, uint8_t) = 0;
-    virtual ThingTypes type() = 0;
+    virtual ThingType type() = 0;
 };
 
 RetVal throwMsg(Runtime* runtime, const char* msg);

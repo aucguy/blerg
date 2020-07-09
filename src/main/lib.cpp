@@ -121,7 +121,7 @@ RetVal libCons(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    ThingTypes type = typeOfThing(args[1]);
+    ThingType type = typeOfThing(args[1]);
 
     if(type != TYPE_NONE && type != TYPE_LIST) {
         const char* msg = formatStr("expected argument 2 to be none or a list");

@@ -26,7 +26,7 @@ public:
         return callFail(runtime);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_NONE;
     }
 };
@@ -77,7 +77,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_SYMBOL;
     }
 };
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_INT;
     }
 };
@@ -262,7 +262,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_FLOAT;
     }
 };
@@ -344,7 +344,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_STR;
     }
 };
@@ -429,7 +429,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_BOOL;
     }
 };
@@ -487,7 +487,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_MODULE;
     }
 };
@@ -514,7 +514,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_FUNC;
     }
 };
@@ -547,7 +547,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_NATIVE_FUNC;
     }
 };
@@ -579,7 +579,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_ERROR;
     }
 };
@@ -692,7 +692,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_TUPLE;
     }
 };
@@ -714,7 +714,7 @@ public:
         return callFail(runtime);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_LIST;
     }
 };
@@ -806,7 +806,7 @@ public:
         }
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_OBJECT;
     }
 };
@@ -827,7 +827,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_CELL;
     }
 };
@@ -933,7 +933,7 @@ void destroyThing(Thing* thing) {
     delete thing;
 }
 
-ThingTypes typeOfThing(Thing* thing) {
+ThingType typeOfThing(Thing* thing) {
     return thing->type();
 }
 
@@ -1122,7 +1122,7 @@ RetVal typeCheck(Runtime* runtime, Thing* self, Thing** args, uint8_t arity,
 
 
     for(uint8_t i = 0; i < arity; i++) {
-        if(typeOfThing(args[i]) != va_arg(types, ThingTypes)) {
+        if(typeOfThing(args[i]) != va_arg(types, ThingType)) {
             va_end(types);
             return throwMsg(runtime, formatStr("wrong type for argument %i", i + 1));
         }

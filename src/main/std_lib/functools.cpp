@@ -13,7 +13,7 @@ RetVal libCall(Runtime* runtime, Thing* self, Thing** args, uint8_t arity) {
         return throwMsg(runtime, formatStr("expected 2 args but got %i", arity));
     }
 
-    ThingTypes type = typeOfThing(args[1]);
+    ThingType type = typeOfThing(args[1]);
     if(type != TYPE_LIST && type != TYPE_NONE) {
         //TODO report the actual type
         return throwMsg(runtime, formatStr("expected argument 2 to be a list"));
@@ -76,7 +76,7 @@ public:
         return symbolDispatch(runtime, self, args, arity);
     }
 
-    ThingTypes type() {
+    ThingType type() {
         return TYPE_VARARG;
     }
 };

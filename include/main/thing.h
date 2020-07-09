@@ -48,7 +48,7 @@ Thing* getModuleProperty(Thing* thing, const char* name);
  * Returns the type of the given thing. Use this to check its type before
  * passing it to functions which require a certain type.
  */
-ThingTypes typeOfThing(Thing* thing);
+ThingType typeOfThing(Thing* thing);
 
 unsigned int getFuncEntry(Thing*);
 Module* getFuncModule(Thing*);

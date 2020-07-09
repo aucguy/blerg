@@ -20,19 +20,19 @@ RetVal throwMsg(Runtime* runtime, const char* msg) {
 
 Thing::~Thing() {}
 
-ThingTypes TYPE_NONE = 0;
-ThingTypes TYPE_INT = 1;
-ThingTypes TYPE_FLOAT = 2;
-ThingTypes TYPE_STR = 3;
-ThingTypes TYPE_BOOL = 4;
-ThingTypes TYPE_MODULE = 5;
-ThingTypes TYPE_FUNC = 6;
-ThingTypes TYPE_NATIVE_FUNC = 7;
-ThingTypes TYPE_ERROR = 8;
-ThingTypes TYPE_TUPLE = 9;
-ThingTypes TYPE_LIST = 10;
-ThingTypes TYPE_OBJECT = 11;
-ThingTypes TYPE_CELL = 12;
-ThingTypes TYPE_SYMBOL = 13;
-ThingTypes TYPE_VARARG = 14;
-ThingTypes TYPE_UNDEF = 15;
+ThingType TYPE_NONE = 0;
+ThingType TYPE_INT = 1;
+ThingType TYPE_FLOAT = 2;
+ThingType TYPE_STR = 3;
+ThingType TYPE_BOOL = 4;
+ThingType TYPE_MODULE = 5;
+ThingType TYPE_FUNC = 6;
+ThingType TYPE_NATIVE_FUNC = 7;
+ThingType TYPE_ERROR = 8;
+ThingType TYPE_TUPLE = 9;
+ThingType TYPE_LIST = 10;
+ThingType TYPE_OBJECT = 11;
+ThingType TYPE_CELL = 12;
+ThingType TYPE_SYMBOL = 13;
+ThingType TYPE_VARARG = 14;
+ThingType TYPE_UNDEF = 15;
