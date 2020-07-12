@@ -50,50 +50,65 @@ typedef struct Token Token;
 
 typedef struct Token* (*CopyVisitor)(struct Token*, void*);
 
+/*class TokenMethods {
+    virtual TokenType type() = 0;
+    virtual void destroy(Token*) = 0;
+    virtual void print(Token, uint8_t) = 0;
+    virtual uint8_t equals(Token, Token) = 0;
+    virtual Token copy(Token, CopyVisitor, void*) = 0;
+};*/
+
 /**
  * Supertype for all tokens. This should be the first field of all tokens,
  * so tokens can be casted to their subtype and this supertype. All fields of
  * the token must be unique references.
  */
 struct Token {
+    //TokenMethods* methods;
+
     //class fields
-    TokenType type;
+    TokenType type_;
     void (*destroy)(struct Token*);
     void (*print)(struct Token*, uint8_t);
     uint8_t (*equals)(struct Token*, struct Token*);
     struct Token* (*copy)(struct Token*, CopyVisitor, void*);
 
     //instance fields
-    SrcLoc location;
+    SrcLoc location_;
 };
 
+SrcLoc tokenLocation(Token* token);
+void setTokenLocation(Token* token, SrcLoc loc);
+TokenType getTokenType(Token* token);
+void setTokenType(Token* token, Token type);
+
 typedef struct {
-    Token token;
+    Token token_;
     int32_t value;
 } IntToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     float value;
 } FloatToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* value;
 } LiteralToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* value;
 } IdentifierToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* elements;
 } TupleToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* elements;
 } ListToken;
 
@@ -103,36 +118,36 @@ typedef struct {
 } ObjectPair;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* elements;
 } ObjectToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* children;
 } CallToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* op;
     Token* left;
     Token* right;
 } BinaryOpToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* op;
     Token* child;
 } UnaryOpToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     Token* left;
     Token* right;
 } AssignmentToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* children;
 } BlockToken;
 
@@ -142,41 +157,41 @@ typedef struct {
 } IfBranch;
 
 typedef struct {
-    Token token;
+    Token token_;
     List* branches;
     BlockToken* elseBranch;
 } IfToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     Token* condition;
     BlockToken* body;
 } WhileToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     IdentifierToken* name;
     List* args;
     BlockToken* body;
 } FuncToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     Token* body;
 } ReturnToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* name;
 } LabelToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* label;
 } AbsJumpToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     Token* condition;
     const char* label;
     //if the condition is false and when is 0 then the jump is taken
@@ -185,57 +200,57 @@ typedef struct {
 } CondJumpToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* name;
 } PushBuiltinToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     int32_t value;
 } PushIntToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     uint8_t arity;
 } CallOpToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* name;
 } StoreToken;
 
 typedef struct {
-  Token token;
+    Token token_;
 } DupToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     Token* value;
 } PushToken;
 
 typedef struct {
-    Token token;
+    Token token_;
 } Rot3Token;
 
 typedef struct {
-    Token token;
+    Token token_;
 } SwapToken;
 
 typedef struct {
-    Token token;
+    Token token_;
 } PopToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* name;
 } BuiltinToken;
 
 typedef struct {
-    Token token;
+    Token token_;
 } CheckNoneToken;
 
 typedef struct {
-    Token token;
+    Token token_;
     const char* name;
 } NewFuncToken;
 

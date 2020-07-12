@@ -318,34 +318,34 @@ Module* builderToModule(ModuleBuilder* builder, uint32_t entryLabel) {
  */
 void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         Token* token) {
-    if(token->type == TOKEN_INT) {
-        emitSrcLoc(builder, token->location);
+    if(getTokenType(token) == TOKEN_INT) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushInt(builder, ((IntToken*) token)->value);
-    } else if(token->type == TOKEN_FLOAT) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_FLOAT) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushFloat(builder, ((FloatToken*) token)->value);
-    } else if(token->type == TOKEN_LITERAL) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_LITERAL) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushLiteral(builder, ((LiteralToken*) token)->value);
-    } else if(token->type == TOKEN_IDENTIFIER) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_IDENTIFIER) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitLoad(builder, ((IdentifierToken*) token)->value);
-    } else if(token->type == TOKEN_LABEL) {
+    } else if(getTokenType(token) == TOKEN_LABEL) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((LabelToken*) token)->name);
         emitLabel(builder, *label);
-    } else if(token->type == TOKEN_ABS_JUMP) {
+    } else if(getTokenType(token) == TOKEN_ABS_JUMP) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((AbsJumpToken*) token)->label);
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitAbsJump(builder, *label);
-    } else if(token->type == TOKEN_COND_JUMP) {
+    } else if(getTokenType(token) == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
         compileToken(builder, globalFuncs, labels, condJump->condition);
 
         uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitCondJump(builder, *label, condJump->when);
-    } else if(token->type == TOKEN_TUPLE) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_TUPLE) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushBuiltin(builder, "tuple");
 
         TupleToken* tuple = (TupleToken*) token;
@@ -358,9 +358,9 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
             count++;
         }
 
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, count);
-    } else if(token->type == TOKEN_CALL) {
+    } else if(getTokenType(token) == TOKEN_CALL) {
         CallToken* call = (CallToken*) token;
         List* children = call->children;
         uint32_t count = 0;
@@ -370,67 +370,67 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
             count++;
         }
 
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, count - 1);
-    } else if(token->type == TOKEN_UNARY_OP) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_UNARY_OP) {
+        emitSrcLoc(builder, tokenLocation(token));
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
         emitPushBuiltin(builder, unaryOp->op);
 
         compileToken(builder, globalFuncs, labels, unaryOp->child);
 
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, 1);
-    } else if(token->type == TOKEN_BINARY_OP) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_BINARY_OP) {
+        emitSrcLoc(builder, tokenLocation(token));
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
         emitPushBuiltin(builder, binaryOp->op);
         compileToken(builder, globalFuncs, labels, binaryOp->left);
         compileToken(builder, globalFuncs, labels, binaryOp->right);
 
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, 2);
-    } else if(token->type == TOKEN_RETURN) {
+    } else if(getTokenType(token) == TOKEN_RETURN) {
         ReturnToken* ret = (ReturnToken*) token;
         compileToken(builder, globalFuncs, labels, ret->body);
 
-        emitSrcLoc(builder, token->location);
+        emitSrcLoc(builder, tokenLocation(token));
         emitReturn(builder);
-    } else if(token->type == TOKEN_PUSH_BUILTIN) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_PUSH_BUILTIN) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushBuiltin(builder, ((PushBuiltinToken*) token)->name);
-    } else if(token->type == TOKEN_PUSH_INT) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_PUSH_INT) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushInt(builder, ((IntToken*) token)->value);
-    } else if(token->type == TOKEN_OP_CALL) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_OP_CALL) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, ((CallOpToken*) token)->arity);
-    } else if(token->type == TOKEN_STORE) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_STORE) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitStore(builder, ((StoreToken*) token)->name);
-    } else if(token->type == TOKEN_DUP) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_DUP) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitDup(builder);
-    } else if(token->type == TOKEN_PUSH) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_PUSH) {
+        emitSrcLoc(builder, tokenLocation(token));
         compileToken(builder, globalFuncs, labels, ((PushToken*) token)->value);
-    } else if(token->type == TOKEN_ROT3) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_ROT3) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitRot3(builder);
-    } else if(token->type == TOKEN_SWAP) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_SWAP) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitSwap(builder);
-    } else if(token->type == TOKEN_POP) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_POP) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPop(builder);
-    } else if(token->type == TOKEN_BUILTIN) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_BUILTIN) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitPushBuiltin(builder, ((BuiltinToken*) token)->name);
-    } else if(token->type == TOKEN_CHECK_NONE) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_CHECK_NONE) {
+        emitSrcLoc(builder, tokenLocation(token));
         emitCheckNone(builder);
-    } else if(token->type == TOKEN_NEW_FUNC) {
-        emitSrcLoc(builder, token->location);
+    } else if(getTokenType(token) == TOKEN_NEW_FUNC) {
+        emitSrcLoc(builder, tokenLocation(token));
         uint32_t* label = (uint32_t*) getMapStr(globalFuncs, ((NewFuncToken*) token)->name);
         emitCreateFunc(builder, *label);
     } else {
@@ -458,7 +458,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
         arg = arg->tail;
     }
     //indicate the beginning of the function
-    emitSrcLoc(builder, func->token.location);
+    emitSrcLoc(builder, tokenLocation((Token*) func));
     uint8_t isInit = strcmp(func->name->value, "$init") == 0;
     emitDefFunc(builder, argNum, (const char**) args, isInit);
     free(args);
@@ -468,7 +468,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     Map* labels = createMap();
     for(List* list = func->body->children; list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
-        if(token->type == TOKEN_LABEL) {
+        if(getTokenType(token) == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
             putMapStr(labels, label->name, boxUint32(createLabel(builder)));
         }
@@ -494,7 +494,7 @@ Module* compileModule(Token* ast) {
     //create the module object / global scope as the local scope
     for(List* list = block->children; list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
-        if(token->type == TOKEN_FUNC) {
+        if(getTokenType(token) == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
             uint32_t label = createLabel(builder);
             putMapStr(globalFuncs, newStr(func->name->value), boxUint32(label));
@@ -517,7 +517,7 @@ Module* compileModule(Token* ast) {
     //compile each function
     for(List* list = block->children; list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
-        if(token->type == TOKEN_FUNC) {
+        if(getTokenType(token) == TOKEN_FUNC) {
             compileFunc(builder, globalFuncs, (FuncToken*) token);
         }
     }

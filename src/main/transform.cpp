@@ -76,7 +76,7 @@ Token* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
         //jump to the next branch if the above condition is false
         const char* nextLabel = uniqueName(uniqueId);
         CondJumpToken* condJump = createCondJumpToken(
-                branch->condition->location,
+                tokenLocation(branch->condition),
                 toJumpsVisitor(branch->condition, uniqueId),
                 newStr(nextLabel), 0);
         stmts = consList(condJump, stmts);
@@ -113,7 +113,7 @@ Token* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     free((void*) endLabel);
     List* ret = reverseList(stmts);
     destroyShallowList(stmts);
-    return (Token*) createBlockToken(token->token.location, ret);
+    return (Token*) createBlockToken(tokenLocation((Token*) token), ret);
 }
 
 /**
@@ -142,7 +142,7 @@ Token* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     //jump to the end if the condition is false
     const char* endLabel = uniqueName(uniqueId);
     CondJumpToken* condJump = createCondJumpToken(
-            token->condition->location,
+            tokenLocation(token->condition),
             toJumpsVisitor(token->condition, uniqueId),
             newStr(endLabel), 0);
     stmts = consList(condJump, stmts);
@@ -159,7 +159,7 @@ Token* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
 
     List* ret = reverseList(stmts);
     destroyShallowList(stmts);
-    return (Token*) createBlockToken(token->token.location, ret);
+    return (Token*) createBlockToken(tokenLocation((Token*) token), ret);
 }
 
 /**
@@ -172,14 +172,14 @@ Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     List* oldArgs = token->args;
     while(oldArgs != NULL) {
         IdentifierToken* oldId = (IdentifierToken*) oldArgs->head;
-        SrcLoc location = oldId->token.location;
+        SrcLoc location = tokenLocation((Token*) oldId);
         const char* newName = newStr(oldId->value);
         IdentifierToken* newId = createIdentifierToken(location, newName);
         newArgs = consList((void*) newId, newArgs);
         oldArgs = oldArgs->tail;
     }
 
-    SrcLoc location = token->token.location;
+    SrcLoc location = tokenLocation((Token*) token);
     IdentifierToken* name = (IdentifierToken*)
             copyToken((Token*) token->name, (CopyVisitor) toJumpsVisitor, uniqueId);
 
@@ -201,7 +201,7 @@ Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
  * variable. It is modified each time a new name is created.
  */
 Token* toJumpsVisitor(Token* token, uint8_t* uniqueId) {
-    switch(token->type) {
+    switch(getTokenType(token)) {
     case TOKEN_INT:
     case TOKEN_FLOAT:
     case TOKEN_LITERAL:
@@ -258,7 +258,7 @@ List* flatList(BlockToken* token) {
 
     while(list != NULL) {
         Token* stmt = (Token*) list->head;
-        if(stmt->type == TOKEN_BLOCK) {
+        if(getTokenType((Token*) stmt) == TOKEN_BLOCK) {
             List* output = flatList((BlockToken*) stmt);
             flattened = prependReverseList(output, flattened);
             destroyShallowList(output);
@@ -275,7 +275,7 @@ List* flatList(BlockToken* token) {
 
 Token* flattenBlocksVisitor(Token* token, void* data) {
     UNUSED(data);
-    switch(token->type) {
+    switch(getTokenType(token)) {
      case TOKEN_INT:
      case TOKEN_FLOAT:
      case TOKEN_LITERAL:
@@ -310,7 +310,7 @@ Token* flattenBlocksVisitor(Token* token, void* data) {
      case TOKEN_NEW_FUNC:
          return copyToken(token, (CopyVisitor) flattenBlocksVisitor, NULL);
      case TOKEN_BLOCK:
-         return (Token*) createBlockToken(token->location,
+         return (Token*) createBlockToken(tokenLocation(token),
                  flatList((BlockToken*) token));
      }
      return NULL;
@@ -334,7 +334,7 @@ Token* listToConsListHelper(List* elements) {
         const char* op = newStr("::");
         Token* left = listToConsVisitor((Token*) elements->head, NULL);
         Token* right = listToConsListHelper(elements->tail);
-        return (Token*) createBinaryOpToken(left->location, op, left, right);
+        return (Token*) createBinaryOpToken(tokenLocation(left), op, left, right);
     }
 }
 
@@ -345,7 +345,7 @@ Token* listToConsList(Token* token) {
 
 Token* listToConsVisitor(Token* token, void* data) {
     UNUSED(data);
-    switch(token->type) {
+    switch(getTokenType(token)) {
     case TOKEN_INT:
     case TOKEN_FLOAT:
     case TOKEN_LITERAL:
@@ -393,7 +393,7 @@ Token* objectDesugarObject(Token* token) {
     ObjectToken* object = (ObjectToken*) token;
     List* tuples = NULL;
     List* elements = object->elements;
-    SrcLoc loc = token->location;
+    SrcLoc loc = tokenLocation(token);
 
     while(elements != NULL) {
         ObjectPair* pair = (ObjectPair*) elements->head;
@@ -412,7 +412,7 @@ Token* objectDesugarObject(Token* token) {
 
 Token* objectDesugarVisitor(Token* token, void* data) {
     UNUSED(data);
-    switch(token->type) {
+    switch(getTokenType(token)) {
     case TOKEN_INT:
     case TOKEN_FLOAT:
     case TOKEN_LITERAL:
@@ -457,19 +457,19 @@ Token* transformObjectDesugar(Token* module) {
 Token* destructureVisitor(Token* token, void* data);
 
 Token* destructureLValue(Token* lvalue) {
-    SrcLoc loc = lvalue->location;
-    if(lvalue->type == TOKEN_IDENTIFIER) {
+    SrcLoc loc = tokenLocation(lvalue);
+    if(getTokenType(lvalue)== TOKEN_IDENTIFIER) {
         IdentifierToken* identifier = (IdentifierToken*) lvalue;
         StoreToken* ret = createStoreToken(loc, newStr(identifier->value));
         return (Token*) ret;
-    } else if(lvalue->type == TOKEN_BUILTIN) {
+    } else if(getTokenType(lvalue) == TOKEN_BUILTIN) {
         BuiltinToken* builtin = (BuiltinToken*) lvalue;
         if(strcmp(builtin->name, "none") != 0) {
             //TODO handle error condition
             return NULL;
         }
         return (Token*) createCheckNoneToken(loc);
-    } else if(lvalue->type == TOKEN_TUPLE) {
+    } else if(getTokenType(lvalue) == TOKEN_TUPLE) {
         List* stmts = NULL;
         TupleToken* tuple = (TupleToken*) lvalue;
         List* elements = tuple->elements;
@@ -489,7 +489,7 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
-    } else if(lvalue->type == TOKEN_BINARY_OP) {
+    } else if(getTokenType(lvalue) == TOKEN_BINARY_OP) {
         BinaryOpToken* binOp = (BinaryOpToken*) lvalue;
         if(strcmp(binOp->op, "::") != 0) {
             //TODO handle error condition
@@ -518,7 +518,7 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
-    } else if(lvalue->type == TOKEN_OBJECT) {
+    } else if(getTokenType(lvalue) == TOKEN_OBJECT) {
         ObjectToken* object = (ObjectToken*) lvalue;
         List* stmts = NULL;
 
@@ -544,7 +544,7 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
-    } else if(lvalue->type == TOKEN_CALL) {
+    } else if(getTokenType(lvalue) == TOKEN_CALL) {
         CallToken* call = (CallToken*) lvalue;
         uint8_t arity = lengthList(call->children) - 1;
         List* stmts = NULL;
@@ -578,7 +578,7 @@ Token* destructureLValue(Token* lvalue) {
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);
         return ret;
-    } else if(lvalue->type == TOKEN_INT || lvalue->type == TOKEN_LITERAL) {
+    } else if(getTokenType(lvalue) == TOKEN_INT || getTokenType(lvalue) == TOKEN_LITERAL) {
         Token* copy = copyToken(lvalue, destructureVisitor, NULL);
         List* stmts = NULL;
 
@@ -602,16 +602,16 @@ Token* destructureAssignment(Token* token) {
     AssignmentToken* assignment = (AssignmentToken*) token;
     List* stmts = NULL;
     Token* right = copyToken(assignment->right, destructureVisitor, NULL);
-    stmts = consList(createPushToken(assignment->right->location, right), stmts);
+    stmts = consList(createPushToken(tokenLocation(assignment->right), right), stmts);
     stmts = consList(destructureLValue(assignment->left), stmts);
-    Token* ret = (Token*) createBlockToken(token->location, reverseList(stmts));
+    Token* ret = (Token*) createBlockToken(tokenLocation(token), reverseList(stmts));
     destroyShallowList(stmts);
     return ret;
 }
 
 Token* destructureVisitor(Token* token, void* data) {
     UNUSED(data);
-    switch(token->type) {
+    switch(getTokenType(token)) {
     case TOKEN_INT:
     case TOKEN_FLOAT:
     case TOKEN_LITERAL:
@@ -667,11 +667,11 @@ Token* transformFuncAssignToName(Token* module) {
     while(oldStmts != NULL) {
         Token* stmt = (Token*) oldStmts->head;
         Token* copy;
-        if(stmt->type == TOKEN_ASSIGNMENT) {
+        if(getTokenType(stmt) == TOKEN_ASSIGNMENT) {
             AssignmentToken* assignment = (AssignmentToken*) stmt;
             Token* left = assignment->left;
             Token* right = assignment->right;
-            if(left->type == TOKEN_IDENTIFIER && right->type == TOKEN_FUNC) {
+            if(getTokenType(left) == TOKEN_IDENTIFIER && getTokenType(right) == TOKEN_FUNC) {
                 FuncToken* func = (FuncToken*) copyVisitor(right, NULL);
                 destroyToken((Token*) func->name);
                 func->name = (IdentifierToken*) copyVisitor(left, NULL);
@@ -687,7 +687,7 @@ Token* transformFuncAssignToName(Token* module) {
         oldStmts = oldStmts->tail;
     }
 
-    Token* ret = (Token*) createBlockToken(module->location, reverseList(newStmts));
+    Token* ret = (Token*) createBlockToken(tokenLocation(module), reverseList(newStmts));
     destroyShallowList(newStmts);
     return ret;
 }
@@ -705,15 +705,15 @@ Token* closureCreateFunc(Token* token, ClosureData* data) {
     FuncToken* func = (FuncToken*)
             copyToken(token, (CopyVisitor) closureVisitor, data);
     destroyToken((Token*) func->name);
-    func->name = createIdentifierToken(token->location, name);
+    func->name = createIdentifierToken(tokenLocation(token), name);
     data->funcs = consList(func, data->funcs);
 
-    return (Token*) createPushToken(token->location,
-            (Token*) createNewFuncToken(token->location, newStr(name)));
+    return (Token*) createPushToken(tokenLocation(token),
+            (Token*) createNewFuncToken(tokenLocation(token), newStr(name)));
 }
 
 Token* closureVisitor(Token* token, ClosureData* data) {
-    switch(token->type) {
+    switch(getTokenType(token)) {
         case TOKEN_INT:
         case TOKEN_FLOAT:
         case TOKEN_LITERAL:
@@ -757,9 +757,9 @@ Token* transformClosures(Token* module) {
     data.uniqueId = 0;
 
     Token* outside = closureVisitor(module, &data);
-    Token* extracted = (Token*) createBlockToken(module->location, data.funcs);
+    Token* extracted = (Token*) createBlockToken(tokenLocation(module), data.funcs);
 
-    return (Token*) createBlockToken(module->location,
+    return (Token*) createBlockToken(tokenLocation(module),
             consList(outside, consList(extracted, NULL)));
 }
 
@@ -772,7 +772,7 @@ Token* transformInitFunc(Token* module) {
     while(stmts != NULL) {
         Token* stmt = copyToken((Token*) stmts->head, copyVisitor, NULL);
 
-        if(stmt->type == TOKEN_FUNC) {
+        if(getTokenType(stmt) == TOKEN_FUNC) {
             funcs = consList(stmt, funcs);
         } else {
             other = consList(stmt, other);
@@ -791,16 +791,16 @@ Token* transformInitFunc(Token* module) {
     destroyShallowList(oldOther);
 
     List* parts = NULL;
-    parts = consList(createBlockToken(module->location, funcs), NULL);
+    parts = consList(createBlockToken(tokenLocation(module), funcs), NULL);
 
-    IdentifierToken* name = createIdentifierToken(module->location,
+    IdentifierToken* name = createIdentifierToken(tokenLocation(module),
             newStr("$init"));
-    BlockToken* body = createBlockToken(module->location, other);
-    List* args = consList(createIdentifierToken(module->location,
+    BlockToken* body = createBlockToken(tokenLocation(module), other);
+    List* args = consList(createIdentifierToken(tokenLocation(module),
             newStr("$arg")), NULL);
-    parts = consList(createFuncToken(module->location, name, args, body), parts);
+    parts = consList(createFuncToken(tokenLocation(module), name, args, body), parts);
 
-    return (Token*) createBlockToken(module->location, parts);
+    return (Token*) createBlockToken(tokenLocation(module), parts);
 }
 
 BlockToken* transformModule(BlockToken* module1) {

@@ -6,12 +6,12 @@
 #define UNUSED(x) (void)(x)
 
 uint8_t validateOnlyFuncsToplevel(BlockToken* module) {
-    if(module->token.type != TOKEN_BLOCK) {
+    if(getTokenType((Token*) module) != TOKEN_BLOCK) {
         return 0;
     }
     List* node = module->children;
     while(node != NULL) {
-        if(((Token*) node->head)->type != TOKEN_FUNC) {
+        if(getTokenType(((Token*) node->head)) != TOKEN_FUNC) {
             return 0;
         }
         node = node->tail;
@@ -28,17 +28,17 @@ uint8_t containsNoFuncsVoid(void*);
 uint8_t containsNoFuncs(Token* token) {
     if(token == NULL) {
         return 1;
-    } else if(token->type == TOKEN_BLOCK) {
+    } else if(getTokenType(token) == TOKEN_BLOCK) {
         return allList(((BlockToken*) token)->children, containsNoFuncsVoid);
-    } else if(token->type == TOKEN_IF) {
+    } else if(getTokenType(token) == TOKEN_IF) {
         IfToken* ifToken = (IfToken*) token;
         return allList(ifToken->branches, containsNoFuncsBranch) &&
                 containsNoFuncs((Token*) ifToken->elseBranch);
-    } else if(token->type == TOKEN_WHILE) {
+    } else if(getTokenType(token) == TOKEN_WHILE) {
         WhileToken* whileToken = (WhileToken*) token;
         return containsNoFuncs((Token*) whileToken->condition) &&
                 containsNoFuncs((Token*) whileToken->body);
-    } else if(token->type == TOKEN_FUNC) {
+    } else if(getTokenType(token) == TOKEN_FUNC) {
         return 0;
     } else {
         return 1;
@@ -64,7 +64,7 @@ uint8_t containsNoFuncsBranch(void* branch) {
  * function tokens.
  */
 uint8_t noInnerFuncs(Token* token) {
-    if(token->type == TOKEN_FUNC) {
+    if(getTokenType(token) == TOKEN_FUNC) {
         if(!allList(((FuncToken*) token)->body->children,
                 (uint8_t (*)(void*)) containsNoFuncs)) {
             return 0;
