@@ -9,6 +9,46 @@
 #define UNUSED(x) (void)(x)
 #define tokenInstanceFields {0, 0}
 
+Token createLegacyTokenType(LegacyTokenInit init) {
+    LegacyTokenMethods* methods = new LegacyTokenMethods();
+    methods->typeValue = init.type;
+    methods->destroyFunc = init.destroy;
+    methods->printFunc = init.print;
+    methods->equalsFunc = init.equals;
+    methods->copyFunc = init.copy;
+
+    Token token;
+    token.methods = methods;
+    token.location_.line = 0;
+    token.location_.column = 0;
+
+    return token;
+}
+
+LegacyTokenMethods::LegacyTokenMethods() :
+        typeValue(TOKEN_UNDEF), destroyFunc(nullptr), printFunc(nullptr),
+        equalsFunc(nullptr), copyFunc(nullptr) {}
+
+LegacyTokenMethods::~LegacyTokenMethods() {}
+
+TokenType LegacyTokenMethods::type() {
+    return this->typeValue;
+}
+
+void LegacyTokenMethods::destroy(Token* self) {}
+
+void LegacyTokenMethods::print(Token* token, uint8_t indent) {
+    this->printFunc(token, indent);
+}
+
+uint8_t LegacyTokenMethods::equals(Token* self, Token* other) {
+    return this->equalsFunc(self, other);
+}
+
+Token* LegacyTokenMethods::copy(Token* self, CopyVisitor visitor, void* data) {
+    return this->copyFunc(self, visitor, data);
+}
+
 uint8_t tokensEqualVoid(void* a, void* b);
 uint8_t branchesEqual(void* a, void* b);
 
@@ -21,7 +61,7 @@ void setTokenLocation(Token* token, SrcLoc loc) {
 }
 
 TokenType getTokenType(Token* token) {
-    return token->type_;
+    return token->methods->type();
 }
 
 void setTokenType(Token* token, Token type) {
@@ -65,14 +105,15 @@ Token* copyIntToken(Token* token, CopyVisitor visitor, void* data) {
     return (Token*) createIntToken(tokenLocation((Token*) intToken), intToken->value);
 }
 
-Token INT_TYPE = {
+LegacyTokenInit INT_TYPE_INIT = {
         TOKEN_INT,
         destroyIntToken,
         printIntToken,
         equalsIntToken,
-        copyIntToken,
-        tokenInstanceFields
+        copyIntToken
 };
+
+Token INT_TYPE = createLegacyTokenType(INT_TYPE_INIT);
 
 /**
  * constructs a integer token
@@ -109,14 +150,15 @@ void destroyFloatToken(Token* self) {
     UNUSED(self);
 }
 
-Token FLOAT_TYPE = {
+LegacyTokenInit FLOAT_TYPE_INIT = {
         TOKEN_FLOAT,
         destroyFloatToken,
         printFloatToken,
         equalsFloatToken,
-        copyFloatToken,
-        tokenInstanceFields
+        copyFloatToken
 };
+
+Token FLOAT_TYPE = createLegacyTokenType(FLOAT_TYPE_INIT);
 
 FloatToken* createFloatToken(SrcLoc location, float value) {
     FloatToken* token = (FloatToken*) malloc(sizeof(FloatToken));
@@ -147,14 +189,15 @@ Token* copyLiteralToken(Token* token, CopyVisitor visitor, void* data) {
     return (Token*) createLiteralToken(tokenLocation((Token*) literal), copied);
 }
 
-Token LITERAL_TYPE = {
+LegacyTokenInit LITERAL_TYPE_INIT = {
         TOKEN_LITERAL,
         destroyLiteralToken,
         printLiteralToken,
         equalsLiteralToken,
-        copyLiteralToken,
-        tokenInstanceFields
+        copyLiteralToken
 };
+
+Token LITERAL_TYPE = createLegacyTokenType(LITERAL_TYPE_INIT);
 
 /**
  * constructs a literal token
@@ -192,14 +235,15 @@ Token* copyIdentifierToken(Token* token, CopyVisitor visitor, void* data) {
     return (Token*) createIdentifierToken(loc, newStr(identifier->value));
 }
 
-Token IDENTIFIER_TYPE = {
+LegacyTokenInit IDENTIFIER_TYPE_INIT = {
         TOKEN_IDENTIFIER,
         destroyIdentifierToken,
         printIdentifierToken,
         equalsIdentifierToken,
-        copyIdentifierToken,
-        tokenInstanceFields
+        copyIdentifierToken
 };
+
+Token IDENTIFIER_TYPE = createLegacyTokenType(IDENTIFIER_TYPE_INIT);
 
 /**
  * constructs an identifier token
@@ -246,14 +290,15 @@ Token* copyTupleToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createTupleToken(tokenLocation((Token*) tuple), copied);
 }
 
-Token TUPLE_TYPE = {
+LegacyTokenInit TUPLE_TYPE_INIT = {
         TOKEN_TUPLE,
         destroyTupleToken,
         printTupleToken,
         equalsTupleToken,
-        copyTupleToken,
-        tokenInstanceFields
+        copyTupleToken
 };
+
+Token TUPLE_TYPE = createLegacyTokenType(TUPLE_TYPE_INIT);
 
 TupleToken* createTupleToken(SrcLoc location, List* elements) {
     TupleToken* tuple = (TupleToken*) malloc(sizeof(TupleToken));
@@ -295,14 +340,15 @@ Token* copyListToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createListToken(tokenLocation((Token*) list), copied);
 }
 
-Token LIST_TYPE = {
+LegacyTokenInit LIST_TYPE_INIT = {
         TOKEN_LIST,
         destroyListToken,
         printListToken,
         equalsListToken,
-        copyListToken,
-        tokenInstanceFields
+        copyListToken
 };
+
+Token LIST_TYPE = createLegacyTokenType(LIST_TYPE_INIT);
 
 ListToken* createListToken(SrcLoc location, List* elements) {
     ListToken* list = (ListToken*) malloc(sizeof(ListToken));
@@ -398,14 +444,15 @@ Token* copyObjectToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createObjectToken(tokenLocation(self), copied);
 }
 
-Token OBJECT_TYPE = {
+LegacyTokenInit OBJECT_TYPE_INIT = {
         TOKEN_OBJECT,
         destroyObjectToken,
         printObjectToken,
         equalsObjectToken,
-        copyObjectToken,
-        tokenInstanceFields
+        copyObjectToken
 };
+
+Token OBJECT_TYPE = createLegacyTokenType(OBJECT_TYPE_INIT);
 
 ObjectToken* createObjectToken(SrcLoc location, List* elements) {
     ObjectToken* object = (ObjectToken*) malloc(sizeof(ObjectToken));
@@ -453,14 +500,15 @@ Token* copyCallToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createCallToken(tokenLocation((Token*) call), children);
 }
 
-Token CALL_TYPE = {
+LegacyTokenInit CALL_TYPE_INIT = {
         TOKEN_CALL,
         destroyCallToken,
         printCallToken,
         equalsCallToken,
-        copyCallToken,
-        tokenInstanceFields
+        copyCallToken
 };
+
+Token CALL_TYPE = createLegacyTokenType(CALL_TYPE_INIT);
 
 CallToken* createCallToken(SrcLoc location, List* children) {
     CallToken* token = (CallToken*) malloc(sizeof(CallToken));
@@ -500,14 +548,15 @@ Token* copyBinaryOpToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createBinaryOpToken(tokenLocation((Token*) binOp), op, left, right);
 }
 
-Token BINARY_OP_TYPE = {
+LegacyTokenInit BINARY_OP_TYPE_INIT = {
         TOKEN_BINARY_OP,
         destroyBinaryOpToken,
         printBinaryOpToken,
         equalsBinaryOpToken,
-        copyBinaryOpToken,
-        tokenInstanceFields
+        copyBinaryOpToken
 };
+
+Token BINARY_OP_TYPE = createLegacyTokenType(BINARY_OP_TYPE_INIT);
 
 /**
  * constructs a binary operation token
@@ -553,14 +602,15 @@ Token* copyUnaryOpToken(Token* self, CopyVisitor visitor, void* data) {
             visitor(unOp->child, data));
 }
 
-Token UNARY_OP_TYPE = {
+LegacyTokenInit UNARY_OP_TYPE_INIT = {
         TOKEN_UNARY_OP,
         destroyUnaryOpToken,
         printUnaryOpToken,
         equalsUnaryOpToken,
-        copyUnaryOpToken,
-        tokenInstanceFields
+        copyUnaryOpToken
 };
+
+Token UNARY_OP_TYPE = createLegacyTokenType(UNARY_OP_TYPE_INIT);
 
 /**
  * constructs a unary op token
@@ -611,14 +661,15 @@ Token* copyAssignmentToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createAssignmentToken(tokenLocation(self), left, right);
 }
 
-Token ASSIGNMENT_TYPE = {
+LegacyTokenInit ASSIGNMENT_TYPE_INIT = {
         TOKEN_ASSIGNMENT,
         destroyAssignmentToken,
         printAssignmentToken,
         equalsAssignmentToken,
-        copyAssignmentToken,
-        tokenInstanceFields
+        copyAssignmentToken
 };
+
+Token ASSIGNMENT_TYPE = createLegacyTokenType(ASSIGNMENT_TYPE_INIT);
 
 /**
  * constructs an assignment token
@@ -659,14 +710,15 @@ Token* copyBlockToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createBlockToken(location, copied);
 }
 
-Token BLOCK_TYPE = {
+LegacyTokenInit BLOCK_TYPE_INIT = {
         TOKEN_BLOCK,
         destroyBlockToken,
         printBlockToken,
         equalsBlockToken,
-        copyBlockToken,
-        tokenInstanceFields
+        copyBlockToken
 };
+
+Token BLOCK_TYPE = createLegacyTokenType(BLOCK_TYPE_INIT);
 
 BlockToken* createBlockToken(SrcLoc location, List* children) {
     BlockToken* token = (BlockToken*) malloc(sizeof(BlockToken));
@@ -745,14 +797,15 @@ Token* copyIfToken(Token* self, CopyVisitor visitor, void* data) {
             (BlockToken*) elseBranch);
 }
 
-Token IF_TYPE = {
+LegacyTokenInit IF_TYPE_INIT = {
         TOKEN_IF,
         destroyIfToken,
         printIfToken,
         equalsIfToken,
-        copyIfToken,
-        tokenInstanceFields
+        copyIfToken
 };
+
+Token IF_TYPE = createLegacyTokenType(IF_TYPE_INIT);
 
 IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
     IfToken* token = (IfToken*) malloc(sizeof(IfToken));
@@ -796,14 +849,15 @@ Token* copyWhileToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createWhileToken(tokenLocation(self), condition, body);
 }
 
-Token WHILE_TYPE = {
+LegacyTokenInit WHILE_TYPE_INIT = {
         TOKEN_WHILE,
         destroyWhileToken,
         printWhileToken,
         equalsWhileToken,
-        copyWhileToken,
-        tokenInstanceFields
+        copyWhileToken
 };
+
+Token WHILE_TYPE = createLegacyTokenType(WHILE_TYPE_INIT);
 
 WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
     WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
@@ -850,14 +904,15 @@ Token* copyFuncToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createFuncToken(tokenLocation(self), name, args, body);
 }
 
-Token FUNC_TYPE = {
+LegacyTokenInit FUNC_TYPE_INIT = {
         TOKEN_FUNC,
         destroyFuncToken,
         printFuncToken,
         equalsFuncToken,
-        copyFuncToken,
-        tokenInstanceFields
+        copyFuncToken
 };
+
+Token FUNC_TYPE = createLegacyTokenType(FUNC_TYPE_INIT);
 
 FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
         BlockToken* body) {
@@ -889,14 +944,15 @@ Token* copyReturnToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createReturnToken(tokenLocation(self), copied);
 }
 
-Token RETURN_TYPE = {
+LegacyTokenInit RETURN_TYPE_INIT = {
         TOKEN_RETURN,
         destroyReturnToken,
         printReturnToken,
         equalsReturnToken,
-        copyReturnToken,
-        tokenInstanceFields
+        copyReturnToken
 };
+
+Token RETURN_TYPE = createLegacyTokenType(RETURN_TYPE_INIT);
 
 ReturnToken* createReturnToken(SrcLoc location, Token* body) {
     ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
@@ -927,14 +983,15 @@ Token* copyLabelToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createLabelToken(name);
 }
 
-Token LABEL_TYPE = {
+LegacyTokenInit LABEL_TYPE_INIT = {
         TOKEN_LABEL,
         destroyLabelToken,
         printLabelToken,
         equalsLabelToken,
-        copyLabelToken,
-        tokenInstanceFields
+        copyLabelToken
 };
+
+Token LABEL_TYPE = createLegacyTokenType(LABEL_TYPE_INIT);
 
 LabelToken* createLabelToken(const char* name) {
     LabelToken* token = (LabelToken*) malloc(sizeof(LabelToken));
@@ -968,14 +1025,15 @@ Token* copyAbsJumpToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createAbsJumpToken(label);
 }
 
-Token ABS_JUMP_TYPE = {
+LegacyTokenInit ABS_JUMP_TYPE_INIT = {
         TOKEN_ABS_JUMP,
         destroyAbsJumpToken,
         printAbsJumpToken,
         equalsAbsJumpToken,
-        copyAbsJumpToken,
-        tokenInstanceFields
+        copyAbsJumpToken
 };
+
+Token ABS_JUMP_TYPE = createLegacyTokenType(ABS_JUMP_TYPE_INIT);
 
 AbsJumpToken* createAbsJumpToken(const char* label) {
     AbsJumpToken* token = (AbsJumpToken*) malloc(sizeof(AbsJumpToken));
@@ -1015,14 +1073,15 @@ Token* copyCondJumpToken(Token* self, CopyVisitor visitor, void* data) {
             jump->when);
 }
 
-Token COND_JUMP_TYPE = {
+LegacyTokenInit COND_JUMP_TYPE_INIT = {
         TOKEN_COND_JUMP,
         destroyCondJumpToken,
         printCondJumpToken,
         equalsCondJumpToken,
-        copyCondJumpToken,
-        tokenInstanceFields
+        copyCondJumpToken
 };
+
+Token COND_JUMP_TYPE = createLegacyTokenType(COND_JUMP_TYPE_INIT);
 
 CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
         uint8_t when) {
@@ -1059,14 +1118,15 @@ Token* copyPushBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createPushBuiltinToken(tokenLocation(self), newStr(builtin->name));
 }
 
-Token PUSH_BUILTIN_TYPE = {
+LegacyTokenInit PUSH_BUILTIN_TYPE_INIT = {
         TOKEN_PUSH_BUILTIN,
         destroyPushBuiltinToken,
         printPushBuiltinToken,
         equalsPushBuiltinToken,
-        copyPushBuiltinToken,
-        tokenInstanceFields
+        copyPushBuiltinToken
 };
+
+Token PUSH_BUILTIN_TYPE = createLegacyTokenType(PUSH_BUILTIN_TYPE_INIT);
 
 PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
     PushBuiltinToken* builtin = (PushBuiltinToken*) malloc(sizeof(PushBuiltinToken));
@@ -1099,14 +1159,15 @@ Token* copyPushIntToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createPushIntToken(tokenLocation(self), push->value);
 }
 
-Token PUSH_INT_TYPE = {
+LegacyTokenInit PUSH_INT_TYPE_INIT = {
         TOKEN_PUSH_INT,
         destroyPushIntToken,
         printPushIntToken,
         equalsPushIntToken,
-        copyPushIntToken,
-        tokenInstanceFields
+        copyPushIntToken
 };
+
+Token PUSH_INT_TYPE = createLegacyTokenType(PUSH_INT_TYPE_INIT);
 
 PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
     PushIntToken* push = (PushIntToken*) malloc(sizeof(PushIntToken));
@@ -1139,14 +1200,15 @@ Token* copyCallOpToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createCallOpToken(tokenLocation(self), call->arity);
 }
 
-Token CALL_OP_TYPE = {
+LegacyTokenInit CALL_OP_TYPE_INIT = {
         TOKEN_OP_CALL,
         destroyCallOpToken,
         printCallOpToken,
         equalsCallOpToken,
-        copyCallOpToken,
-        tokenInstanceFields
+        copyCallOpToken
 };
+
+Token CALL_OP_TYPE = createLegacyTokenType(CALL_OP_TYPE_INIT);
 
 CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
     CallOpToken* call = (CallOpToken*) malloc(sizeof(CallOpToken));
@@ -1180,14 +1242,15 @@ Token* copyStoreToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createStoreToken(tokenLocation(self), newStr(store->name));
 }
 
-Token STORE_TYPE = {
+LegacyTokenInit STORE_TYPE_INIT = {
         TOKEN_STORE,
         destroyStoreToken,
         printStoreToken,
         equalsStoreToken,
-        copyStoreToken,
-        tokenInstanceFields
+        copyStoreToken
 };
+
+Token STORE_TYPE = createLegacyTokenType(STORE_TYPE_INIT);
 
 StoreToken* createStoreToken(SrcLoc loc, const char* name) {
     StoreToken* store = (StoreToken*) malloc(sizeof(StoreToken));
@@ -1219,14 +1282,15 @@ Token* copyDupToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createDupToken(tokenLocation(self));
 }
 
-Token DUP_TYPE = {
+LegacyTokenInit DUP_TYPE_INIT = {
         TOKEN_DUP,
         destroyDupToken,
         printDupToken,
         equalsDupToken,
-        copyDupToken,
-        tokenInstanceFields
+        copyDupToken
 };
+
+Token DUP_TYPE = createLegacyTokenType(DUP_TYPE_INIT);
 
 DupToken* createDupToken(SrcLoc loc) {
     DupToken* dup = (DupToken*) malloc(sizeof(DupToken));
@@ -1257,14 +1321,15 @@ Token* copyPushToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createPushToken(tokenLocation(self), visitor(push->value, data));
 }
 
-Token PUSH_TYPE = {
+LegacyTokenInit PUSH_TYPE_INIT = {
         TOKEN_PUSH,
         destroyPushToken,
         printPushToken,
         equalsPushToken,
-        copyPushToken,
-        tokenInstanceFields
+        copyPushToken
 };
+
+Token PUSH_TYPE = createLegacyTokenType(PUSH_TYPE_INIT);
 
 PushToken* createPushToken(SrcLoc loc, Token* value) {
     PushToken* push = (PushToken*) malloc(sizeof(PushToken));
@@ -1296,14 +1361,15 @@ Token* copyRot3Token(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createRot3Token(tokenLocation(self));
 }
 
-Token ROT3_TYPE = {
+LegacyTokenInit ROT3_TYPE_INIT = {
         TOKEN_ROT3,
         destroyRot3Token,
         printRot3Token,
         equalsRot3Token,
-        copyRot3Token,
-        tokenInstanceFields
+        copyRot3Token
 };
+
+Token ROT3_TYPE = createLegacyTokenType(ROT3_TYPE_INIT);
 
 Rot3Token* createRot3Token(SrcLoc location) {
     Rot3Token* rot = (Rot3Token*) malloc(sizeof(Rot3Token));
@@ -1336,14 +1402,15 @@ Token* copyBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createBuiltinToken(tokenLocation(self), newStr(builtin->name));
 }
 
-Token BUILTIN_TYPE = {
+LegacyTokenInit BUILTIN_TYPE_INIT = {
         TOKEN_BUILTIN,
         destroyBuiltinToken,
         printBuiltinToken,
         equalsBuiltinToken,
-        copyBuiltinToken,
-        tokenInstanceFields
+        copyBuiltinToken
 };
+
+Token BUILTIN_TYPE = createLegacyTokenType(BUILTIN_TYPE_INIT);
 
 BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
     BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
@@ -1375,14 +1442,15 @@ Token* copySwapToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createSwapToken(tokenLocation(self));
 }
 
-Token SWAP_TYPE = {
+LegacyTokenInit SWAP_TYPE_INIT = {
         TOKEN_SWAP,
         destroySwapToken,
         printSwapToken,
         equalsSwapToken,
-        copySwapToken,
-        tokenInstanceFields
+        copySwapToken
 };
+
+Token SWAP_TYPE = createLegacyTokenType(SWAP_TYPE_INIT);
 
 SwapToken* createSwapToken(SrcLoc loc) {
     SwapToken* swap = (SwapToken*) malloc(sizeof(SwapToken));
@@ -1413,14 +1481,15 @@ Token* copyPopToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createPopToken(tokenLocation(self));
 }
 
-Token POP_TYPE = {
+LegacyTokenInit POP_TYPE_INIT = {
         TOKEN_POP,
         destroyPopToken,
         printPopToken,
         equalsPopToken,
-        copyPopToken,
-        tokenInstanceFields
+        copyPopToken
 };
+
+Token POP_TYPE = createLegacyTokenType(POP_TYPE_INIT);
 
 PopToken* createPopToken(SrcLoc loc) {
     PopToken* pop = (PopToken*) malloc(sizeof(PopToken));
@@ -1451,14 +1520,15 @@ Token* copyCheckNoneToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createCheckNoneToken(tokenLocation(self));
 }
 
-Token CHECK_NONE_TYPE = {
+LegacyTokenInit CHECK_NONE_TYPE_INIT = {
         TOKEN_CHECK_NONE,
         destroyCheckNoneToken,
         printCheckNoneToken,
         equalsCheckNoneToken,
-        copyCheckNoneToken,
-        tokenInstanceFields
+        copyCheckNoneToken
 };
+
+Token CHECK_NONE_TYPE = createLegacyTokenType(CHECK_NONE_TYPE_INIT);
 
 CheckNoneToken* createCheckNoneToken(SrcLoc location) {
     CheckNoneToken* check = (CheckNoneToken*) malloc(sizeof(CheckNoneToken));
@@ -1491,14 +1561,15 @@ Token* copyNewFuncToken(Token* self, CopyVisitor visitor, void* data) {
     return (Token*) createNewFuncToken(tokenLocation(self), newStr(func->name));
 }
 
-Token NEW_FUNC_TYPE = {
+LegacyTokenInit NEW_FUNC_TYPE_INIT = {
         TOKEN_NEW_FUNC,
         destroyNewFuncToken,
         printNewFuncToken,
         equalsNewFuncToken,
-        copyNewFuncToken,
-        tokenInstanceFields
+        copyNewFuncToken
 };
+
+Token NEW_FUNC_TYPE = createLegacyTokenType(NEW_FUNC_TYPE_INIT);
 
 NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
     NewFuncToken* func = (NewFuncToken*) malloc(sizeof(NewFuncToken));
@@ -1515,8 +1586,8 @@ void destroyToken(Token* token) {
     if(token == NULL) {
         return;
     }
-    token->destroy_(token);
-    free(token);
+    //token->destroy_(token);
+    //free(token);
 }
 
 void destroyTokenVoid(void* token) {
@@ -1538,10 +1609,11 @@ void printTokenWithIndent(Token* token, uint8_t indent) {
 
     if(token == NULL) {
         printf("NULL\n");
-    } else if(token->print_ == NULL) {
-        printf("unknown\n");
+    //} else if(token->print == NULL) {
+    //    printf("unknown\n");
     } else {
-        token->print_(token, indent);
+        //token->print(token, indent);
+        token->methods->print(token, indent);
     }
 }
 
@@ -1553,11 +1625,13 @@ void printToken(Token* token) {
  * Determines if two tokens are equal.
  */
 uint8_t tokensEqual(Token* a, Token* b) {
-    if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b) ||
-            a->equals == NULL || b->equals == NULL) {
+    //if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b) ||
+    //        a->equals == NULL || b->equals == NULL) {
+    if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b)) {
         return 0;
     }
-    return a->equals(a, b);
+    //return a->equals(a, b);
+    return a->methods->equals(a, b);
 }
 
 uint8_t tokensEqualVoid(void* a, void* b) {
@@ -1572,5 +1646,6 @@ uint8_t branchesEqual(void* a, void* b) {
 }
 
 Token* copyToken(Token* token, CopyVisitor visitor, void* data) {
-    return token->copy(token, visitor, data);
+    //return token->copy(token, visitor, data);
+    return token->methods->copy(token, visitor, data);
 }

@@ -43,39 +43,68 @@ typedef enum {
     TOKEN_POP,
     TOKEN_BUILTIN,
     TOKEN_CHECK_NONE,
-    TOKEN_NEW_FUNC
+    TOKEN_NEW_FUNC,
+    TOKEN_UNDEF
 } TokenType;
 
 typedef struct Token Token;
 
 typedef struct Token* (*CopyVisitor)(struct Token*, void*);
 
-/*class TokenMethods {
+class TokenMethods {
+public:
+    virtual ~TokenMethods() {} ;
     virtual TokenType type() = 0;
     virtual void destroy(Token*) = 0;
-    virtual void print(Token, uint8_t) = 0;
-    virtual uint8_t equals(Token, Token) = 0;
-    virtual Token copy(Token, CopyVisitor, void*) = 0;
-};*/
+    virtual void print(Token*, uint8_t) = 0;
+    virtual uint8_t equals(Token*, Token*) = 0;
+    virtual Token* copy(Token*, CopyVisitor, void*) = 0;
+};
 
+class LegacyTokenMethods : public TokenMethods {
+public:
+    TokenType typeValue;
+    void (*destroyFunc)(Token*);
+    void (*printFunc)(Token*, uint8_t);
+    uint8_t (*equalsFunc)(Token*, Token*);
+    Token* (*copyFunc)(Token*, CopyVisitor, void*);
+
+    LegacyTokenMethods();
+    ~LegacyTokenMethods();
+    TokenType type();
+    void destroy(Token*);
+    void print(Token*, uint8_t);
+    uint8_t equals(Token*, Token*);
+    Token* copy(Token*, CopyVisitor, void*);
+};
 /**
  * Supertype for all tokens. This should be the first field of all tokens,
  * so tokens can be casted to their subtype and this supertype. All fields of
  * the token must be unique references.
  */
 struct Token {
-    //TokenMethods* methods;
+    TokenMethods* methods;
 
     //class fields
-    TokenType type_;
-    void (*destroy)(struct Token*);
-    void (*print)(struct Token*, uint8_t);
-    uint8_t (*equals)(struct Token*, struct Token*);
-    struct Token* (*copy)(struct Token*, CopyVisitor, void*);
+    //TokenType type_;
+    //void (*destroy)(struct Token*);
+    //void (*print)(struct Token*, uint8_t);
+    //uint8_t (*equals)(struct Token*, struct Token*);
+    //struct Token* (*copy)(struct Token*, CopyVisitor, void*);
 
     //instance fields
     SrcLoc location_;
 };
+
+typedef struct {
+    TokenType type;
+    void (*destroy)(struct Token*);
+    void (*print)(struct Token*, uint8_t);
+    uint8_t (*equals)(struct Token*, struct Token*);
+    struct Token* (*copy)(struct Token*, CopyVisitor, void*);
+} LegacyTokenInit;
+
+Token createLegacyTokenType(LegacyTokenInit);
 
 SrcLoc tokenLocation(Token* token);
 void setTokenLocation(Token* token, SrcLoc loc);
