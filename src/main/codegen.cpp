@@ -320,7 +320,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         Token* token) {
     if(getTokenType(token) == TOKEN_INT) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushInt(builder, ((IntToken*) token)->value);
+        emitPushInt(builder, getIntTokenValue((IntToken*) token));
     } else if(getTokenType(token) == TOKEN_FLOAT) {
         emitSrcLoc(builder, tokenLocation(token));
         emitPushFloat(builder, ((FloatToken*) token)->value);
@@ -401,7 +401,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPushBuiltin(builder, ((PushBuiltinToken*) token)->name);
     } else if(getTokenType(token) == TOKEN_PUSH_INT) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushInt(builder, ((IntToken*) token)->value);
+        emitPushInt(builder, ((PushIntToken*) token)->value);
     } else if(getTokenType(token) == TOKEN_OP_CALL) {
         emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, ((CallOpToken*) token)->arity);

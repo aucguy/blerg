@@ -25,6 +25,15 @@ Token createLegacyTokenType(LegacyTokenInit init) {
     return token;
 }
 
+Token createTokenType(TokenMethods* methods) {
+    Token token;
+    token.methods = methods;
+    token.location_.line = 0;
+    token.location_.column = 0;
+    return token;
+}
+
+
 LegacyTokenMethods::LegacyTokenMethods() :
         typeValue(TOKEN_UNDEF), destroyFunc(nullptr), printFunc(nullptr),
         equalsFunc(nullptr), copyFunc(nullptr) {}
@@ -85,35 +94,43 @@ List* copyTokenList(List* old, CopyVisitor visitor, void* data) {
 }
 
 
-void destroyIntToken(Token* self) {
-    UNUSED(self);
-}
 
-void printIntToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("int: %i\n", ((IntToken*) self)->value);
-}
 
-uint8_t equalsIntToken(Token* self, Token* other) {
-    return ((IntToken*) self)->value == ((IntToken*) other)->value;
-}
+class IntTokenMethods : public TokenMethods {
+public:
+    int32_t value;
 
-Token* copyIntToken(Token* token, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    IntToken* intToken = (IntToken*) token;
-    return (Token*) createIntToken(tokenLocation((Token*) intToken), intToken->value);
-}
+    IntTokenMethods(int32_t value) :
+        value(value) {}
 
-LegacyTokenInit INT_TYPE_INIT = {
-        TOKEN_INT,
-        destroyIntToken,
-        printIntToken,
-        equalsIntToken,
-        copyIntToken
+    TokenType type() {
+        return TOKEN_INT;
+    }
+
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
+
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("int: %i\n", getIntTokenValue((IntToken*) self));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return getIntTokenValue((IntToken*) self) == getIntTokenValue((IntToken*) other);
+    }
+
+    Token* copy(Token* token, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        IntToken* intToken = (IntToken*) token;
+        return (Token*) createIntToken(tokenLocation((Token*) intToken), getIntTokenValue(intToken));
+    }
 };
 
-Token INT_TYPE = createLegacyTokenType(INT_TYPE_INIT);
+int32_t getIntTokenValue(IntToken* token) {
+    return ((IntTokenMethods*) token->token_.methods)->value;
+}
 
 /**
  * constructs a integer token
@@ -123,8 +140,7 @@ Token INT_TYPE = createLegacyTokenType(INT_TYPE_INIT);
  */
 IntToken* createIntToken(SrcLoc loc, int32_t value) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
-    //token->token = INT_TYPE;
-    setTokenType(&token->token_, INT_TYPE);
+    setTokenType(&token->token_, createTokenType(new IntTokenMethods(value)));
     setTokenLocation(&token->token_, loc);
     token->value = value;
     return token;

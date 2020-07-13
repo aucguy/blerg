@@ -19,7 +19,7 @@ const char* testParseInt() {
 
     //assert(token->token.type == TOKEN_INT, "token type is not int");
     assert(getTokenType((Token*) token) == TOKEN_INT, "token type is not int");
-    assert(token->value == 1234, "token value is not 1234");
+    assert(getIntTokenValue(token) == 1234, "token value is not 1234");
 
     parseCleanup(state, (Token*) token);
     return NULL;

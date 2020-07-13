@@ -116,6 +116,8 @@ typedef struct {
     int32_t value;
 } IntToken;
 
+int32_t getIntTokenValue(IntToken* token);
+
 typedef struct {
     Token token_;
     float value;
