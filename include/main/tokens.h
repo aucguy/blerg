@@ -148,8 +148,10 @@ List* getTupleTokenElements(TupleToken* token);
 
 typedef struct {
     Token token_;
-    List* elements;
+    //List* elements_;
 } ListToken;
+
+List* getListTokenElements(ListToken* token);
 
 typedef struct {
     Token* key;

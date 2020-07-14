@@ -334,7 +334,6 @@ List* getTupleTokenElements(TupleToken* token) {
     return ((TupleTokenMethods*) token->token_.methods)->elements;
 }
 
-
 TupleToken* createTupleToken(SrcLoc location, List* elements) {
     TupleToken* tuple = (TupleToken*) malloc(sizeof(TupleToken));
     setTokenType(&tuple->token_, createTokenType(new TupleTokenMethods(elements)));
@@ -342,53 +341,59 @@ TupleToken* createTupleToken(SrcLoc location, List* elements) {
     return tuple;
 }
 
-void destroyListToken(Token* self) {
-    ListToken* list = (ListToken*) self;
-    destroyList(list->elements, destroyTokenVoid);
-}
+class ListTokenMethods : public TokenMethods {
+public:
+    List* elements;
 
-void printListToken(Token* self, uint8_t indent) {
-    printf("list:\n");
-    List* elements = ((ListToken*) self)->elements;
-    uint8_t i = 0;
+    ListTokenMethods(List* elements) :
+        elements(elements) {}
 
-    while(elements != NULL) {
-        //TODO remove this line to fix formating
-        printIndent(indent + 1);
-        printf("%i:\n", i);
-        printTokenWithIndent((Token*) elements->head, indent + 2);
-        elements = elements->tail;
-        i++;
+    TokenType type() {
+        return TOKEN_LIST;
     }
-}
 
-uint8_t equalsListToken(Token* self, Token* other) {
-    ListToken* list1 = (ListToken*) self;
-    ListToken* list2 = (ListToken*) other;
-    return allList2(list1->elements, list2->elements, tokensEqualVoid);
-}
+    void destroy(Token* self) {
+        //ListToken* list = (ListToken*) self;
+        //destroyList(list->elements, destroyTokenVoid);
+    }
 
-Token* copyListToken(Token* self, CopyVisitor visitor, void* data) {
-    ListToken* list = (ListToken*) self;
-    List* copied = copyTokenList(list->elements, visitor, data);
-    return (Token*) createListToken(tokenLocation((Token*) list), copied);
-}
+    void print(Token* self, uint8_t indent) {
+        printf("list:\n");
+        List* elements = getListTokenElements((ListToken*) self);
+        uint8_t i = 0;
 
-LegacyTokenInit LIST_TYPE_INIT = {
-        TOKEN_LIST,
-        destroyListToken,
-        printListToken,
-        equalsListToken,
-        copyListToken
+        while(elements != NULL) {
+            //TODO remove this line to fix formating
+            printIndent(indent + 1);
+            printf("%i:\n", i);
+            printTokenWithIndent((Token*) elements->head, indent + 2);
+            elements = elements->tail;
+            i++;
+        }
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        ListToken* list1 = (ListToken*) self;
+        ListToken* list2 = (ListToken*) other;
+        return allList2(getListTokenElements(list1), getListTokenElements(list2),
+                tokensEqualVoid);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        ListToken* list = (ListToken*) self;
+        List* copied = copyTokenList(getListTokenElements(list), visitor, data);
+        return (Token*) createListToken(tokenLocation((Token*) list), copied);
+    }
 };
 
-Token LIST_TYPE = createLegacyTokenType(LIST_TYPE_INIT);
+List* getListTokenElements(ListToken* token) {
+    return ((ListTokenMethods*) token->token_.methods)->elements;
+}
 
 ListToken* createListToken(SrcLoc location, List* elements) {
     ListToken* list = (ListToken*) malloc(sizeof(ListToken));
-    setTokenType(&list->token_, LIST_TYPE);
+    setTokenType(&list->token_, createTokenType(new ListTokenMethods(elements)));
     setTokenLocation(&list->token_, location);
-    list->elements = elements;
     return list;
 }
 

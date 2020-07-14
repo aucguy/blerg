@@ -340,7 +340,7 @@ Token* listToConsListHelper(List* elements) {
 
 Token* listToConsList(Token* token) {
     ListToken* list = (ListToken*) token;
-    return listToConsListHelper(list->elements);
+    return listToConsListHelper(getListTokenElements(list));
 }
 
 Token* listToConsVisitor(Token* token, void* data) {
