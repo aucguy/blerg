@@ -326,10 +326,10 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPushFloat(builder, (getFloatTokenValue((FloatToken*) token)));
     } else if(getTokenType(token) == TOKEN_LITERAL) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushLiteral(builder, ((LiteralToken*) token)->value);
+        emitPushLiteral(builder, getLiteralTokenValue((LiteralToken*) token));
     } else if(getTokenType(token) == TOKEN_IDENTIFIER) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitLoad(builder, ((IdentifierToken*) token)->value);
+        emitLoad(builder, getIdentifierTokenValue((IdentifierToken*) token));
     } else if(getTokenType(token) == TOKEN_LABEL) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((LabelToken*) token)->name);
         emitLabel(builder, *label);
@@ -349,7 +349,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPushBuiltin(builder, "tuple");
 
         TupleToken* tuple = (TupleToken*) token;
-        List* elements = tuple->elements;
+        List* elements = getTupleTokenElements(tuple);
         uint8_t count = 0;
 
         while(elements != NULL) {
@@ -447,19 +447,19 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
  */
 void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     //record the start of the function
-    emitLabel(builder, *((uint32_t*) getMapStr(globalFuncs, func->name->value)));
+    emitLabel(builder, *((uint32_t*) getMapStr(globalFuncs, getIdentifierTokenValue(func->name))));
 
     //convert the argument list to an array be passed to emitDefFunc
     uint8_t argNum = lengthList(func->args);
     char** args = (char**) malloc(sizeof(char*) * lengthList(func->args));
     List* arg = func->args;
     for(uint8_t i = 0; i < argNum; i++) {
-        args[i] = (char*) ((IdentifierToken*) arg->head)->value;
+        args[i] = (char*) getIdentifierTokenValue((IdentifierToken*) arg->head);
         arg = arg->tail;
     }
     //indicate the beginning of the function
     emitSrcLoc(builder, tokenLocation((Token*) func));
-    uint8_t isInit = strcmp(func->name->value, "$init") == 0;
+    uint8_t isInit = strcmp(getIdentifierTokenValue(func->name), "$init") == 0;
     emitDefFunc(builder, argNum, (const char**) args, isInit);
     free(args);
 
@@ -497,7 +497,7 @@ Module* compileModule(Token* ast) {
         if(getTokenType(token) == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
             uint32_t label = createLabel(builder);
-            putMapStr(globalFuncs, newStr(func->name->value), boxUint32(label));
+            putMapStr(globalFuncs, newStr(getIdentifierTokenValue(func->name)), boxUint32(label));
 
             //emitSrcLoc(builder, func->token.location);
             //emitCreateFunc(builder, label);

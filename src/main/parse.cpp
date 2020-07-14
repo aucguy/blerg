@@ -550,7 +550,7 @@ Token* parseDotAccessHelper(ParseState* state, Token* left) {
             return NULL;
         }
         Token* right = (Token*)
-                createLiteralToken(tokenLocation((Token*) id), newStr(id->value));
+                createLiteralToken(tokenLocation((Token*) id), newStr(getIdentifierTokenValue(id)));
         destroyToken((Token*) id);
 
         Token* access = (Token*)

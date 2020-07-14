@@ -173,7 +173,7 @@ Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     while(oldArgs != NULL) {
         IdentifierToken* oldId = (IdentifierToken*) oldArgs->head;
         SrcLoc location = tokenLocation((Token*) oldId);
-        const char* newName = newStr(oldId->value);
+        const char* newName = newStr(getIdentifierTokenValue(oldId));
         IdentifierToken* newId = createIdentifierToken(location, newName);
         newArgs = consList((void*) newId, newArgs);
         oldArgs = oldArgs->tail;
@@ -460,7 +460,7 @@ Token* destructureLValue(Token* lvalue) {
     SrcLoc loc = tokenLocation(lvalue);
     if(getTokenType(lvalue)== TOKEN_IDENTIFIER) {
         IdentifierToken* identifier = (IdentifierToken*) lvalue;
-        StoreToken* ret = createStoreToken(loc, newStr(identifier->value));
+        StoreToken* ret = createStoreToken(loc, newStr(getIdentifierTokenValue(identifier)));
         return (Token*) ret;
     } else if(getTokenType(lvalue) == TOKEN_BUILTIN) {
         BuiltinToken* builtin = (BuiltinToken*) lvalue;
@@ -472,7 +472,7 @@ Token* destructureLValue(Token* lvalue) {
     } else if(getTokenType(lvalue) == TOKEN_TUPLE) {
         List* stmts = NULL;
         TupleToken* tuple = (TupleToken*) lvalue;
-        List* elements = tuple->elements;
+        List* elements = getTupleTokenElements(tuple);
         uint8_t i = 0;
         while(elements != NULL) {
             if(elements->tail != NULL) {

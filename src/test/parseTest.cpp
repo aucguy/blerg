@@ -30,7 +30,7 @@ const char* testParseLiteral() {
     LiteralToken* token = parseLiteral(state);
 
     assert(getTokenType((Token*) token) == TOKEN_LITERAL, "token type is not literal");
-    assert(strcmp(token->value, "Hello World") == 0, "token value is not 'Hello World'");
+    assert(strcmp(getLiteralTokenValue(token), "Hello World") == 0, "token value is not 'Hello World'");
 
     parseCleanup(state, (Token*) token);
     return NULL;
@@ -41,7 +41,7 @@ const char* testParseIdentifier() {
     IdentifierToken* token = parseIdentifier(state);
 
     assert(getTokenType((Token*) token) == TOKEN_IDENTIFIER, "token type is not identifier");
-    assert(strcmp(token->value, "var") == 0, "token value is not 'Hello'");
+    assert(strcmp(getIdentifierTokenValue(token), "var") == 0, "token value is not 'Hello'");
 
     parseCleanup(state, (Token*) token);
     return NULL;

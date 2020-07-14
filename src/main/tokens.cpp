@@ -185,36 +185,43 @@ FloatToken* createFloatToken(SrcLoc location, float value) {
     return token;
 }
 
-void destroyLiteralToken(Token* self) {
-    free((void*) ((LiteralToken*) self)->value);
-}
+class LiteralTokenMethods : public TokenMethods {
+public:
+    const char* value;
 
-void printLiteralToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("literal: %s\n", ((LiteralToken*) self)->value);
-}
+    LiteralTokenMethods(const char* value) :
+        value(value) {}
 
-uint8_t equalsLiteralToken(Token* self, Token* other) {
-    return strcmp(((LiteralToken*) self)->value, ((LiteralToken*) other)->value) == 0;
-}
+    TokenType type() {
+        return TOKEN_LITERAL;
+    }
 
-Token* copyLiteralToken(Token* token, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    LiteralToken* literal = (LiteralToken*) token;
-    const char* copied = newStr(literal->value);
-    return (Token*) createLiteralToken(tokenLocation((Token*) literal), copied);
-}
+    void destroy(Token* self) {
+        //free((void*) ((LiteralToken*) self)->value);
+    }
 
-LegacyTokenInit LITERAL_TYPE_INIT = {
-        TOKEN_LITERAL,
-        destroyLiteralToken,
-        printLiteralToken,
-        equalsLiteralToken,
-        copyLiteralToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("literal: %s\n", getLiteralTokenValue((LiteralToken*) self));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return strcmp(getLiteralTokenValue((LiteralToken*) self),
+                getLiteralTokenValue((LiteralToken*) other)) == 0;
+    }
+
+    Token* copy(Token* token, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        LiteralToken* literal = (LiteralToken*) token;
+        const char* copied = newStr(getLiteralTokenValue(literal));
+        return (Token*) createLiteralToken(tokenLocation((Token*) literal), copied);
+    }
 };
 
-Token LITERAL_TYPE = createLegacyTokenType(LITERAL_TYPE_INIT);
+const char* getLiteralTokenValue(LiteralToken* token) {
+    return ((LiteralTokenMethods*) token->token_.methods)->value;
+}
 
 /**
  * constructs a literal token
@@ -224,43 +231,48 @@ Token LITERAL_TYPE = createLegacyTokenType(LITERAL_TYPE_INIT);
  */
 LiteralToken* createLiteralToken(SrcLoc loc, const char* value) {
     LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
-    setTokenType(&token->token_, LITERAL_TYPE);
+    setTokenType(&token->token_, createTokenType(new LiteralTokenMethods(value)));
     setTokenLocation(&token->token_, loc);
-    token->value = value;
     return token;
 }
 
-void destroyIdentifierToken(Token* token) {
-    free((void*) ((IdentifierToken*) token)->value);
-}
+class IdentifierTokenMethods : public TokenMethods {
+public:
+    const char* value;
 
-void printIdentifierToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("identifier: %s\n", ((IdentifierToken*) self)->value);
-}
+    IdentifierTokenMethods(const char* value) :
+        value(value) {}
 
-uint8_t equalsIdentifierToken(Token* self, Token* other) {
-    return strcmp(((IdentifierToken*) self)->value,
-            ((IdentifierToken*) other)->value) == 0;
-}
+    TokenType type() {
+        return TOKEN_IDENTIFIER;
+    }
 
-Token* copyIdentifierToken(Token* token, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    IdentifierToken* identifier = (IdentifierToken*) token;
-    SrcLoc loc = tokenLocation((Token*) identifier);
-    return (Token*) createIdentifierToken(loc, newStr(identifier->value));
-}
+    void destroy(Token* token) {
+        //free((void*) ((IdentifierToken*) token)->value);
+    }
 
-LegacyTokenInit IDENTIFIER_TYPE_INIT = {
-        TOKEN_IDENTIFIER,
-        destroyIdentifierToken,
-        printIdentifierToken,
-        equalsIdentifierToken,
-        copyIdentifierToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("identifier: %s\n", (getIdentifierTokenValue((IdentifierToken*) self)));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return strcmp(getIdentifierTokenValue((IdentifierToken*) self),
+                getIdentifierTokenValue((IdentifierToken*) other)) == 0;
+    }
+
+    Token* copy(Token* token, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        IdentifierToken* identifier = (IdentifierToken*) token;
+        SrcLoc loc = tokenLocation((Token*) identifier);
+        return (Token*) createIdentifierToken(loc, newStr(getIdentifierTokenValue(identifier)));
+    }
 };
 
-Token IDENTIFIER_TYPE = createLegacyTokenType(IDENTIFIER_TYPE_INIT);
+const char* getIdentifierTokenValue(IdentifierToken* token) {
+    return ((IdentifierTokenMethods*) token->token_.methods)->value;
+}
 
 /**
  * constructs an identifier token
@@ -270,58 +282,63 @@ Token IDENTIFIER_TYPE = createLegacyTokenType(IDENTIFIER_TYPE_INIT);
  */
 IdentifierToken* createIdentifierToken(SrcLoc loc, const char* value) {
     IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
-    setTokenType(&token->token_, IDENTIFIER_TYPE);
+    setTokenType(&token->token_, createTokenType(new IdentifierTokenMethods(value)));
     setTokenLocation(&token->token_, loc);
-    token->value = value;
     return token;
 }
 
-void destroyTupleToken(Token* self) {
-    TupleToken* tuple = (TupleToken*) self;
-    destroyList(tuple->elements, destroyTokenVoid);
-}
+class TupleTokenMethods : public TokenMethods {
+public:
+    List* elements;
 
-void printTupleToken(Token* self, uint8_t indent) {
-    printf("tuple:\n");
-    List* elements = ((TupleToken*) self)->elements;
-    uint8_t i = 0;
+    TupleTokenMethods(List* elements) :
+        elements(elements) {}
 
-    while(elements != NULL) {
-        printIndent(indent + 1);
-        printf("%i:\n", i);
-        printTokenWithIndent((Token*) elements->head, indent + 2);
-        elements = elements->tail;
-        i++;
+    TokenType type() {
+        return TOKEN_TUPLE;
     }
-}
 
-uint8_t equalsTupleToken(Token* self, Token* other) {
-    TupleToken* tuple1 = (TupleToken*) self;
-    TupleToken* tuple2 = (TupleToken*) other;
-    return allList2(tuple1->elements, tuple2->elements, tokensEqualVoid);
-}
+    void destroy(Token* self) {
+        //TupleToken* tuple = (TupleToken*) self;
+        //destroyList(tuple->elements, destroyTokenVoid);
+    }
 
-Token* copyTupleToken(Token* self, CopyVisitor visitor, void* data) {
-    TupleToken* tuple = (TupleToken*) self;
-    List* copied = copyTokenList(tuple->elements, visitor, data);
-    return (Token*) createTupleToken(tokenLocation((Token*) tuple), copied);
-}
+    void print(Token* self, uint8_t indent) {
+        printf("tuple:\n");
+        List* elements = getTupleTokenElements((TupleToken*) self);
+        uint8_t i = 0;
 
-LegacyTokenInit TUPLE_TYPE_INIT = {
-        TOKEN_TUPLE,
-        destroyTupleToken,
-        printTupleToken,
-        equalsTupleToken,
-        copyTupleToken
+        while(elements != NULL) {
+            printIndent(indent + 1);
+            printf("%i:\n", i);
+            printTokenWithIndent((Token*) elements->head, indent + 2);
+            elements = elements->tail;
+            i++;
+        }
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        TupleToken* tuple1 = (TupleToken*) self;
+        TupleToken* tuple2 = (TupleToken*) other;
+        return allList2(getTupleTokenElements(tuple1), getTupleTokenElements(tuple2), tokensEqualVoid);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        TupleToken* tuple = (TupleToken*) self;
+        List* copied = copyTokenList(getTupleTokenElements(tuple), visitor, data);
+        return (Token*) createTupleToken(tokenLocation((Token*) tuple), copied);
+    }
 };
 
-Token TUPLE_TYPE = createLegacyTokenType(TUPLE_TYPE_INIT);
+List* getTupleTokenElements(TupleToken* token) {
+    return ((TupleTokenMethods*) token->token_.methods)->elements;
+}
+
 
 TupleToken* createTupleToken(SrcLoc location, List* elements) {
     TupleToken* tuple = (TupleToken*) malloc(sizeof(TupleToken));
-    setTokenType(&tuple->token_, TUPLE_TYPE);
+    setTokenType(&tuple->token_, createTokenType(new TupleTokenMethods(elements)));
     setTokenLocation(&tuple->token_, location);
-    tuple->elements = elements;
     return tuple;
 }
 
@@ -352,7 +369,7 @@ uint8_t equalsListToken(Token* self, Token* other) {
 }
 
 Token* copyListToken(Token* self, CopyVisitor visitor, void* data) {
-    TupleToken* list = (TupleToken*) self;
+    ListToken* list = (ListToken*) self;
     List* copied = copyTokenList(list->elements, visitor, data);
     return (Token*) createListToken(tokenLocation((Token*) list), copied);
 }
@@ -894,10 +911,10 @@ void destroyFuncToken(Token* self) {
 
 void printFuncToken(Token* self, uint8_t indent) {
     FuncToken* func = (FuncToken*) self;
-    printf("func: %s", func->name->value);
+    printf("func: %s", getIdentifierTokenValue(func->name));
     List* node = func->args;
     while(node != NULL) {
-        printf(" %s", ((IdentifierToken*) node->head)->value);
+        printf(" %s", getIdentifierTokenValue((IdentifierToken*) node->head));
         node = node->tail;
     }
     printf("\n");

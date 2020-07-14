@@ -127,18 +127,24 @@ float getFloatTokenValue(FloatToken* token);
 
 typedef struct {
     Token token_;
-    const char* value;
+    //const char* value_;
 } LiteralToken;
 
-typedef struct {
-    Token token_;
-    const char* value;
-} IdentifierToken;
+const char* getLiteralTokenValue(LiteralToken* token);
 
 typedef struct {
     Token token_;
-    List* elements;
+    //const char* value_;
+} IdentifierToken;
+
+const char* getIdentifierTokenValue(IdentifierToken* token);
+
+typedef struct {
+    Token token_;
+    //List* elements_;
 } TupleToken;
+
+List* getTupleTokenElements(TupleToken* token);
 
 typedef struct {
     Token token_;
