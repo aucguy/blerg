@@ -113,15 +113,17 @@ void setTokenType(Token* token, Token type);
 
 typedef struct {
     Token token_;
-    int32_t value;
+    //int32_t value;
 } IntToken;
 
 int32_t getIntTokenValue(IntToken* token);
 
 typedef struct {
     Token token_;
-    float value;
+    //float value;
 } FloatToken;
+
+float getFloatTokenValue(FloatToken* token);
 
 typedef struct {
     Token token_;

@@ -323,7 +323,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPushInt(builder, getIntTokenValue((IntToken*) token));
     } else if(getTokenType(token) == TOKEN_FLOAT) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushFloat(builder, ((FloatToken*) token)->value);
+        emitPushFloat(builder, (getFloatTokenValue((FloatToken*) token)));
     } else if(getTokenType(token) == TOKEN_LITERAL) {
         emitSrcLoc(builder, tokenLocation(token));
         emitPushLiteral(builder, ((LiteralToken*) token)->value);

@@ -93,9 +93,6 @@ List* copyTokenList(List* old, CopyVisitor visitor, void* data) {
     }
 }
 
-
-
-
 class IntTokenMethods : public TokenMethods {
 public:
     int32_t value;
@@ -142,45 +139,49 @@ IntToken* createIntToken(SrcLoc loc, int32_t value) {
     IntToken* token = (IntToken*) malloc(sizeof(IntToken));
     setTokenType(&token->token_, createTokenType(new IntTokenMethods(value)));
     setTokenLocation(&token->token_, loc);
-    token->value = value;
     return token;
 }
 
-void printFloatToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("float: %f\n", ((FloatToken*) self)->value);
-}
+class FloatTokenMethods : public TokenMethods {
+public:
+    float value;
 
-uint8_t equalsFloatToken(Token* self, Token* other) {
-    return ((FloatToken*) self)->value == ((FloatToken*) other)->value;
-}
+    FloatTokenMethods(float value) :
+        value(value) {}
 
-Token* copyFloatToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    FloatToken* num = (FloatToken*) self;
-    return (Token*) createFloatToken(tokenLocation(self), num->value);
-}
+    TokenType type() {
+        return TOKEN_FLOAT;
+    }
 
-void destroyFloatToken(Token* self) {
-    UNUSED(self);
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-LegacyTokenInit FLOAT_TYPE_INIT = {
-        TOKEN_FLOAT,
-        destroyFloatToken,
-        printFloatToken,
-        equalsFloatToken,
-        copyFloatToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("float: %f\n", getFloatTokenValue((FloatToken*) self));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return getFloatTokenValue(((FloatToken*) self)) == getFloatTokenValue(((FloatToken*) other));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        FloatToken* num = (FloatToken*) self;
+        return (Token*) createFloatToken(tokenLocation(self), getFloatTokenValue(num));
+    }
 };
 
-Token FLOAT_TYPE = createLegacyTokenType(FLOAT_TYPE_INIT);
+float getFloatTokenValue(FloatToken* token) {
+    return ((FloatTokenMethods*) token->token_.methods)->value;
+}
 
 FloatToken* createFloatToken(SrcLoc location, float value) {
     FloatToken* token = (FloatToken*) malloc(sizeof(FloatToken));
-    setTokenType(&token->token_, FLOAT_TYPE);
+    setTokenType(&token->token_, createTokenType(new FloatTokenMethods(value)));
     setTokenLocation(&token->token_, location);
-    token->value = value;
     return token;
 }
 
