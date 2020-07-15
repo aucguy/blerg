@@ -375,9 +375,9 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
     } else if(getTokenType(token) == TOKEN_UNARY_OP) {
         emitSrcLoc(builder, tokenLocation(token));
         UnaryOpToken* unaryOp = (UnaryOpToken*) token;
-        emitPushBuiltin(builder, unaryOp->op);
+        emitPushBuiltin(builder, getUnaryOpTokenOp(unaryOp));
 
-        compileToken(builder, globalFuncs, labels, unaryOp->child);
+        compileToken(builder, globalFuncs, labels, getUnaryOpTokenChild(unaryOp));
 
         emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, 1);

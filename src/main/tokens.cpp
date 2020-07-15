@@ -641,40 +641,52 @@ BinaryOpToken* createBinaryOpToken(SrcLoc loc, const char* op, Token* left,
     return token;
 }
 
-void destroyUnaryOpToken(Token* self) {
-    UnaryOpToken* unaryOp = (UnaryOpToken*) self;
-    free((void*) unaryOp->op);
-    destroyToken(unaryOp->child);
-}
+class UnaryOpTokenMethods : public TokenMethods {
+public:
+    const char* op;
+    Token* child;
 
-void printUnaryOpToken(Token* self, uint8_t indent) {
-    UnaryOpToken* unaryOp = (UnaryOpToken*) self;
-    printf("unaryOp: %s\n", unaryOp->op);
-    printTokenWithIndent(unaryOp->child, indent + 1);
-}
+    UnaryOpTokenMethods(const char* op, Token* child) :
+        op(op), child(child) {}
 
-uint8_t equalsUnaryOpToken(Token* self, Token* other) {
-    UnaryOpToken* selfUnOp = (UnaryOpToken*) self;
-    UnaryOpToken* otherUnOp = (UnaryOpToken*) other;
-    return strcmp(selfUnOp->op, otherUnOp->op) == 0 &&
-            tokensEqual(selfUnOp->child, otherUnOp->child);
-}
+    TokenType type() {
+        return TOKEN_UNARY_OP;
+    }
 
-Token* copyUnaryOpToken(Token* self, CopyVisitor visitor, void* data) {
-    UnaryOpToken* unOp = (UnaryOpToken*) self;
-    return (Token*) createUnaryOpToken(tokenLocation(self), newStr(unOp->op),
-            visitor(unOp->child, data));
-}
+    void destroy(Token* self) {
+        UnaryOpToken* unaryOp = (UnaryOpToken*) self;
+        free((void*) getUnaryOpTokenOp(unaryOp));
+        destroyToken(getUnaryOpTokenChild(unaryOp));
+    }
 
-LegacyTokenInit UNARY_OP_TYPE_INIT = {
-        TOKEN_UNARY_OP,
-        destroyUnaryOpToken,
-        printUnaryOpToken,
-        equalsUnaryOpToken,
-        copyUnaryOpToken
+    void print(Token* self, uint8_t indent) {
+        UnaryOpToken* unaryOp = (UnaryOpToken*) self;
+        printf("unaryOp: %s\n", getUnaryOpTokenOp(unaryOp));
+        printTokenWithIndent(getUnaryOpTokenChild(unaryOp), indent + 1);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        UnaryOpToken* selfUnOp = (UnaryOpToken*) self;
+        UnaryOpToken* otherUnOp = (UnaryOpToken*) other;
+        return strcmp(getUnaryOpTokenOp(selfUnOp), getUnaryOpTokenOp(otherUnOp)) == 0 &&
+                tokensEqual(getUnaryOpTokenChild(selfUnOp), getUnaryOpTokenChild(otherUnOp));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UnaryOpToken* unOp = (UnaryOpToken*) self;
+        return (Token*) createUnaryOpToken(tokenLocation(self),
+                newStr(getUnaryOpTokenOp(unOp)),
+                visitor(getUnaryOpTokenChild(unOp), data));
+    }
 };
 
-Token UNARY_OP_TYPE = createLegacyTokenType(UNARY_OP_TYPE_INIT);
+const char* getUnaryOpTokenOp(UnaryOpToken* token) {
+    return ((UnaryOpTokenMethods*) token->token_.methods)->op;
+}
+
+Token* getUnaryOpTokenChild(UnaryOpToken* token) {
+    return ((UnaryOpTokenMethods*) token->token_.methods)->child;
+}
 
 /**
  * constructs a unary op token
@@ -685,10 +697,8 @@ Token UNARY_OP_TYPE = createLegacyTokenType(UNARY_OP_TYPE_INIT);
  */
 UnaryOpToken* createUnaryOpToken(SrcLoc loc, const char* op, Token* child) {
     UnaryOpToken* token = (UnaryOpToken*) malloc(sizeof(UnaryOpToken));
-    setTokenType(&token->token_, UNARY_OP_TYPE);
+    setTokenType(&token->token_, createTokenType(new UnaryOpTokenMethods(op, child)));
     setTokenLocation(&token->token_, loc);
-    token->op = op;
-    token->child = child;
     return token;
 }
 
