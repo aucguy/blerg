@@ -466,7 +466,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     //create a label for each LabelToken and map its name to the value
     //associated with the ModuleBuilder
     Map* labels = createMap();
-    for(List* list = func->body->children; list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(func->body); list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
         if(getTokenType(token) == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
@@ -475,7 +475,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     }
 
     //finally, generate each statement / jump
-    for(List* list = func->body->children; list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(func->body); list != NULL; list = list->tail) {
         compileToken(builder, globalFuncs, labels, (Token*) list->head);
     }
 
@@ -492,7 +492,7 @@ Module* compileModule(Token* ast) {
     Map* globalFuncs = createMap();
     BlockToken* block = (BlockToken*) ast;
     //create the module object / global scope as the local scope
-    for(List* list = block->children; list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(block); list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
         if(getTokenType(token) == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
@@ -515,7 +515,7 @@ Module* compileModule(Token* ast) {
     //emitReturn(builder);
 
     //compile each function
-    for(List* list = block->children; list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(block); list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
         if(getTokenType(token) == TOKEN_FUNC) {
             compileFunc(builder, globalFuncs, (FuncToken*) token);

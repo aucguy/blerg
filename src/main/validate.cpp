@@ -9,7 +9,7 @@ uint8_t validateOnlyFuncsToplevel(BlockToken* module) {
     if(getTokenType((Token*) module) != TOKEN_BLOCK) {
         return 0;
     }
-    List* node = module->children;
+    List* node = getBlockTokenChildren(module);
     while(node != NULL) {
         if(getTokenType(((Token*) node->head)) != TOKEN_FUNC) {
             return 0;
@@ -29,7 +29,8 @@ uint8_t containsNoFuncs(Token* token) {
     if(token == NULL) {
         return 1;
     } else if(getTokenType(token) == TOKEN_BLOCK) {
-        return allList(((BlockToken*) token)->children, containsNoFuncsVoid);
+        List* children = getBlockTokenChildren((BlockToken*) token);
+        return allList(children, containsNoFuncsVoid);
     } else if(getTokenType(token) == TOKEN_IF) {
         IfToken* ifToken = (IfToken*) token;
         return allList(ifToken->branches, containsNoFuncsBranch) &&
@@ -65,7 +66,7 @@ uint8_t containsNoFuncsBranch(void* branch) {
  */
 uint8_t noInnerFuncs(Token* token) {
     if(getTokenType(token) == TOKEN_FUNC) {
-        if(!allList(((FuncToken*) token)->body->children,
+        if(!allList(getBlockTokenChildren(((FuncToken*) token)->body),
                 (uint8_t (*)(void*)) containsNoFuncs)) {
             return 0;
         }
@@ -77,7 +78,7 @@ uint8_t noInnerFuncs(Token* token) {
  * Returns true if the module contains no inner functions
  */
 uint8_t validateNoInnerFuncs(BlockToken* module) {
-    return allList(module->children, (uint8_t (*)(void*)) noInnerFuncs);
+    return allList(getBlockTokenChildren(module), (uint8_t (*)(void*)) noInnerFuncs);
 }
 
 uint8_t validateModule(BlockToken* module) {

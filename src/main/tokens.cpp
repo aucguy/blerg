@@ -777,45 +777,50 @@ AssignmentToken* createAssignmentToken(SrcLoc loc, Token* left, Token* right) {
     return token;
 }
 
-void destroyBlockToken(Token* self) {
-    destroyList(((BlockToken*) self)->children, destroyTokenVoid);
-}
+class BlockTokenMethods : public TokenMethods {
+public:
+    List* children;
 
-void printBlockToken(Token* self, uint8_t indent) {
-    BlockToken* block = (BlockToken*) self;
-    printf("block:\n");
-    for(List* node = block->children; node != NULL; node = node->tail) {
-        printTokenWithIndent((Token*) node->head, indent + 1);
+    BlockTokenMethods(List* children) :
+        children(children) {}
+
+    TokenType type() {
+        return TOKEN_BLOCK;
     }
-}
 
-uint8_t equalsBlockToken(Token* self, Token* other) {
-    return allList2(((BlockToken*) self)->children,
-            ((BlockToken*) other)->children, tokensEqualVoid);
-}
+    void destroy(Token* self) {
+        //destroyList(((BlockToken*) self)->children, destroyTokenVoid);
+    }
 
-Token* copyBlockToken(Token* self, CopyVisitor visitor, void* data) {
-    BlockToken* block = (BlockToken*) self;
-    List* copied = copyTokenList(block->children, visitor, data);
-    SrcLoc location = tokenLocation(self);
-    return (Token*) createBlockToken(location, copied);
-}
+    void print(Token* self, uint8_t indent) {
+        BlockToken* block = (BlockToken*) self;
+        printf("block:\n");
+        for(List* node = getBlockTokenChildren(block); node != NULL; node = node->tail) {
+            printTokenWithIndent((Token*) node->head, indent + 1);
+        }
+    }
 
-LegacyTokenInit BLOCK_TYPE_INIT = {
-        TOKEN_BLOCK,
-        destroyBlockToken,
-        printBlockToken,
-        equalsBlockToken,
-        copyBlockToken
+    uint8_t equals(Token* self, Token* other) {
+        return allList2(getBlockTokenChildren((BlockToken*) self),
+                getBlockTokenChildren((BlockToken*) other), tokensEqualVoid);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        BlockToken* block = (BlockToken*) self;
+        List* copied = copyTokenList(getBlockTokenChildren(block), visitor, data);
+        SrcLoc location = tokenLocation(self);
+        return (Token*) createBlockToken(location, copied);
+    }
 };
 
-Token BLOCK_TYPE = createLegacyTokenType(BLOCK_TYPE_INIT);
+List* getBlockTokenChildren(BlockToken* token) {
+    return ((BlockTokenMethods*) token->token_.methods)->children;
+}
 
 BlockToken* createBlockToken(SrcLoc location, List* children) {
     BlockToken* token = (BlockToken*) malloc(sizeof(BlockToken));
-    setTokenType(&token->token_, BLOCK_TYPE);
+    setTokenType(&token->token_, createTokenType(new BlockTokenMethods(children)));
     setTokenLocation(&token->token_, location);
-    token->children = children;
     return token;
 }
 

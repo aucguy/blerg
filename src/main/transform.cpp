@@ -253,7 +253,7 @@ BlockToken* transformControlToJumps(BlockToken* module) {
 Token* flattenBlocksVisitor(Token* token, void* data);
 
 List* flatList(BlockToken* token) {
-    List* list = token->children;
+    List* list = getBlockTokenChildren(token);
     List* flattened = NULL;
 
     while(list != NULL) {
@@ -667,7 +667,7 @@ Token* copyVisitor(Token* token, void* data) {
 Token* transformFuncAssignToName(Token* module) {
     BlockToken* block = (BlockToken*) module;
     List* newStmts = NULL;
-    List* oldStmts = block->children;
+    List* oldStmts = getBlockTokenChildren(block);
 
     while(oldStmts != NULL) {
         Token* stmt = (Token*) oldStmts->head;
@@ -770,7 +770,7 @@ Token* transformClosures(Token* module) {
 
 Token* transformInitFunc(Token* module) {
     BlockToken* block = (BlockToken*) module;
-    List* stmts = block->children;
+    List* stmts = getBlockTokenChildren(block);
     List* funcs = NULL;
     List* other = NULL;
 

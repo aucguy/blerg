@@ -203,8 +203,10 @@ Token* getAssignmentTokenRight(AssignmentToken* token);
 
 typedef struct {
     Token token_;
-    List* children;
+    //List* children_;
 } BlockToken;
+
+List* getBlockTokenChildren(BlockToken* token);
 
 typedef struct {
     Token* condition;
