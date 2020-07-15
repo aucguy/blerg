@@ -546,19 +546,20 @@ Token* destructureLValue(Token* lvalue) {
         return ret;
     } else if(getTokenType(lvalue) == TOKEN_CALL) {
         CallToken* call = (CallToken*) lvalue;
-        uint8_t arity = lengthList(call->children) - 1;
+        uint8_t arity = lengthList(getCallTokenChildren(call)) - 1;
         List* stmts = NULL;
 
         stmts = consList(createDupToken(loc), stmts);
         stmts = consList(createPushBuiltinToken(loc, newStr("unpack_call")), stmts);
         stmts = consList(createSwapToken(loc), stmts);
-        Token* func = copyToken((Token*) call->children->head, destructureVisitor, NULL);
+        Token* func = copyToken((Token*) getCallTokenChildren(call)->head,
+                destructureVisitor, NULL);
         stmts = consList(createPushToken(loc, func), stmts);
         stmts = consList(createSwapToken(loc), stmts);
         stmts = consList(createPushIntToken(loc, arity), stmts);
         stmts = consList(createCallOpToken(loc, 3), stmts);
 
-        List* args = call->children->tail;
+        List* args = getCallTokenChildren(call)->tail;
         uint8_t argNo = 0;
         while(args != NULL) {
             if(args->tail != NULL) {

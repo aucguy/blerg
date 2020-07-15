@@ -506,59 +506,65 @@ ObjectToken* createObjectToken(SrcLoc location, List* elements) {
     return object;
 }
 
-void destroyCallToken(Token* self) {
-    List* children = ((CallToken*) self)->children;
-    while(children != NULL) {
-        destroyToken((Token*) children->head);
-        children = children->tail;
-    }
-    destroyShallowList(((CallToken*) self)->children);
-}
+class CallTokenMethods : public TokenMethods {
+public:
+    List* children;
 
-void printCallToken(Token* self, uint8_t indent) {
-    printf("call:\n");
-    List* children = ((CallToken*) self)->children;
-    while(children != NULL) {
-        printTokenWithIndent((Token*) children->head, indent + 1);
-        children = children->tail;
-    }
-}
-uint8_t equalsCallToken(Token* self, Token* other) {
-    List* childrenA = ((CallToken*) self)->children;
-    List* childrenB = ((CallToken*) other)->children;
+    CallTokenMethods(List* children) :
+        children(children) {}
 
-    while(childrenA != NULL && childrenB != NULL) {
-        if(!tokensEqual((Token*) childrenA->head, (Token*) childrenB->head)) {
-            return 0;
+    TokenType type() {
+        return TOKEN_CALL;
+    }
+
+    void destroy(Token* self) {
+        List* children = getCallTokenChildren((CallToken*) self);
+        while(children != NULL) {
+            destroyToken((Token*) children->head);
+            children = children->tail;
         }
-        childrenA = childrenA->tail;
-        childrenB = childrenB->tail;
+        destroyShallowList(getCallTokenChildren((CallToken*) self));
     }
 
-    return childrenA == NULL && childrenB == NULL;
-}
+    void print(Token* self, uint8_t indent) {
+        printf("call:\n");
+        List* children = getCallTokenChildren((CallToken*) self);
+        while(children != NULL) {
+            printTokenWithIndent((Token*) children->head, indent + 1);
+            children = children->tail;
+        }
+    }
 
-Token* copyCallToken(Token* self, CopyVisitor visitor, void* data) {
-    CallToken* call = (CallToken*) self;
-    List* children = copyTokenList(call->children, visitor, data);
-    return (Token*) createCallToken(tokenLocation((Token*) call), children);
-}
+    uint8_t equals(Token* self, Token* other) {
+        List* childrenA = getCallTokenChildren((CallToken*) self);
+        List* childrenB = getCallTokenChildren((CallToken*) other);
 
-LegacyTokenInit CALL_TYPE_INIT = {
-        TOKEN_CALL,
-        destroyCallToken,
-        printCallToken,
-        equalsCallToken,
-        copyCallToken
+        while(childrenA != NULL && childrenB != NULL) {
+            if(!tokensEqual((Token*) childrenA->head, (Token*) childrenB->head)) {
+                return 0;
+            }
+            childrenA = childrenA->tail;
+            childrenB = childrenB->tail;
+        }
+
+        return childrenA == NULL && childrenB == NULL;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        CallToken* call = (CallToken*) self;
+        List* children = copyTokenList(getCallTokenChildren(call), visitor, data);
+        return (Token*) createCallToken(tokenLocation((Token*) call), children);
+    }
 };
 
-Token CALL_TYPE = createLegacyTokenType(CALL_TYPE_INIT);
+List* getCallTokenChildren(CallToken* token) {
+    return ((CallTokenMethods*) token->token_.methods)->children;
+}
 
 CallToken* createCallToken(SrcLoc location, List* children) {
     CallToken* token = (CallToken*) malloc(sizeof(CallToken));
-    setTokenType(&token->token_, CALL_TYPE);
+    setTokenType(&token->token_, createTokenType(new CallTokenMethods(children)));
     setTokenLocation(&token->token_, location);
-    token->children = children;
     return token;
 }
 

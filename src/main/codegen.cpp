@@ -362,7 +362,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitCall(builder, count);
     } else if(getTokenType(token) == TOKEN_CALL) {
         CallToken* call = (CallToken*) token;
-        List* children = call->children;
+        List* children = getCallTokenChildren(call);
         uint32_t count = 0;
         while(children != NULL) {
             compileToken(builder, globalFuncs, labels, (Token*) children->head);

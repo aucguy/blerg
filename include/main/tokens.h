@@ -167,8 +167,10 @@ List* getObjectTokenElements(ObjectToken* token);
 
 typedef struct {
     Token token_;
-    List* children;
+    //List* children_;
 } CallToken;
+
+List* getCallTokenChildren(CallToken* token);
 
 typedef struct {
     Token token_;
