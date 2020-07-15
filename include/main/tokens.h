@@ -215,9 +215,12 @@ typedef struct {
 
 typedef struct {
     Token token_;
-    List* branches;
-    BlockToken* elseBranch;
+    //List* branches_;
+    //BlockToken* elseBranch_;
 } IfToken;
+
+List* getIfTokenBranches(IfToken* token);
+BlockToken* getIfTokenElseBranch(IfToken* token);
 
 typedef struct {
     Token token_;

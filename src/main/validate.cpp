@@ -33,8 +33,8 @@ uint8_t containsNoFuncs(Token* token) {
         return allList(children, containsNoFuncsVoid);
     } else if(getTokenType(token) == TOKEN_IF) {
         IfToken* ifToken = (IfToken*) token;
-        return allList(ifToken->branches, containsNoFuncsBranch) &&
-                containsNoFuncs((Token*) ifToken->elseBranch);
+        return allList(getIfTokenBranches(ifToken), containsNoFuncsBranch) &&
+                containsNoFuncs((Token*) getIfTokenElseBranch(ifToken));
     } else if(getTokenType(token) == TOKEN_WHILE) {
         WhileToken* whileToken = (WhileToken*) token;
         return containsNoFuncs((Token*) whileToken->condition) &&

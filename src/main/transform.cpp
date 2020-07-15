@@ -70,7 +70,7 @@ Token* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     //computed lazily to preserve the names of label and conditions
     const char* endLabel = NULL;
 
-    for(List* node = token->branches; node != NULL; node = node->tail) {
+    for(List* node = getIfTokenBranches(token); node != NULL; node = node->tail) {
         IfBranch* branch = (IfBranch*) node->head;
 
         //jump to the next branch if the above condition is false
@@ -98,8 +98,8 @@ Token* toJumpsIf(IfToken* token, uint8_t* uniqueId) {
     }
 
     //output the else branch
-    if(token->elseBranch != NULL) {
-        Token* stmt = toJumpsVisitor((Token*) token->elseBranch, uniqueId);
+    if(getIfTokenElseBranch(token) != NULL) {
+        Token* stmt = toJumpsVisitor((Token*) getIfTokenElseBranch(token), uniqueId);
         stmts = consList(stmt, stmts);
     }
 

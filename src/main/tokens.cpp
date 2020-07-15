@@ -831,42 +831,6 @@ IfBranch* createIfBranch(Token* condition, BlockToken* block) {
     return branch;
 }
 
-void destroyIfToken(Token* self) {
-    IfToken* ifToken = (IfToken*) self;
-    destroyList(ifToken->branches, destroyIfBranch);
-    destroyToken((Token*) ifToken->elseBranch);
-}
-
-void printIfToken(Token* self, uint8_t indent) {
-    IfToken* ifStmt = (IfToken*) self;
-    printf("if:\n");
-    for(List* node = ifStmt->branches; node != NULL; node = node->tail) {
-        IfBranch* branch = (IfBranch*) node->head;
-        printIndent(indent + 1);
-        printf("condition:\n");
-        printTokenWithIndent((Token*) branch->condition, indent + 2);
-        printIndent(indent + 1);
-        printf("body:\n");
-        printTokenWithIndent((Token*) branch->block, indent + 2);
-    }
-    printIndent(indent + 1);
-    printf("else:\n");
-    printTokenWithIndent((Token*) ifStmt->elseBranch, indent + 2);
-}
-
-uint8_t equalsIfToken(Token* self, Token* other) {
-    IfToken* selfIf = (IfToken*) self;
-    IfToken* otherIf = (IfToken*) other;
-
-    if(!allList2(selfIf->branches, otherIf->branches, branchesEqual)) {
-        return 0;
-    }
-    if(selfIf->elseBranch == NULL && otherIf->elseBranch == NULL) {
-        return 1;
-    }
-    return tokensEqual((Token*) selfIf->elseBranch, (Token*) otherIf->elseBranch);
-}
-
 List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
     if(branches == NULL) {
         return NULL;
@@ -880,35 +844,84 @@ List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
     }
 }
 
-Token* copyIfToken(Token* self, CopyVisitor visitor, void* data) {
-    IfToken* ifToken = (IfToken*) self;
-    List* branches = copyIfBranches(ifToken->branches, visitor, data);
-    Token* elseBranch;
-    if(ifToken->elseBranch == NULL) {
-        elseBranch = NULL;
-    } else {
-        elseBranch = visitor((Token*) ifToken->elseBranch, data);
-    }
-    return (Token*) createIfToken(tokenLocation(self), branches,
-            (BlockToken*) elseBranch);
-}
+class IfTokenMethods : public TokenMethods {
+public:
+    List* branches;
+    BlockToken* elseBranch;
 
-LegacyTokenInit IF_TYPE_INIT = {
-        TOKEN_IF,
-        destroyIfToken,
-        printIfToken,
-        equalsIfToken,
-        copyIfToken
+    IfTokenMethods(List* branches, BlockToken* elseBranch) :
+        branches(branches), elseBranch(elseBranch) {}
+
+    TokenType type() {
+        return TOKEN_IF;
+    }
+
+    void destroy(Token* self) {
+        //IfToken* ifToken = (IfToken*) self;
+        //destroyList(ifToken->branches, destroyIfBranch);
+        //destroyToken((Token*) ifToken->elseBranch);
+    }
+
+    void print(Token* self, uint8_t indent) {
+        IfToken* ifStmt = (IfToken*) self;
+        printf("if:\n");
+        for(List* node = getIfTokenBranches(ifStmt); node != NULL; node = node->tail) {
+            IfBranch* branch = (IfBranch*) node->head;
+            printIndent(indent + 1);
+            printf("condition:\n");
+            printTokenWithIndent((Token*) branch->condition, indent + 2);
+            printIndent(indent + 1);
+            printf("body:\n");
+            printTokenWithIndent((Token*) branch->block, indent + 2);
+        }
+        printIndent(indent + 1);
+        printf("else:\n");
+        printTokenWithIndent((Token*) getIfTokenElseBranch(ifStmt), indent + 2);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        IfToken* selfIf = (IfToken*) self;
+        IfToken* otherIf = (IfToken*) other;
+
+        if(!allList2(getIfTokenBranches(selfIf),
+                getIfTokenBranches(otherIf), branchesEqual)) {
+            return 0;
+        }
+        if(getIfTokenElseBranch(selfIf) == NULL &&
+                getIfTokenElseBranch(otherIf) == NULL) {
+            return 1;
+        }
+        return tokensEqual((Token*) getIfTokenElseBranch(selfIf),
+                (Token*) getIfTokenElseBranch(otherIf));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        IfToken* ifToken = (IfToken*) self;
+        List* branches = copyIfBranches(getIfTokenBranches(ifToken), visitor, data);
+        Token* elseBranch;
+        if(getIfTokenElseBranch(ifToken) == NULL) {
+            elseBranch = NULL;
+        } else {
+            elseBranch = visitor((Token*) getIfTokenElseBranch(ifToken), data);
+        }
+        return (Token*) createIfToken(tokenLocation(self), branches,
+                (BlockToken*) elseBranch);
+    }
 };
 
-Token IF_TYPE = createLegacyTokenType(IF_TYPE_INIT);
+List* getIfTokenBranches(IfToken* token) {
+    return ((IfTokenMethods*) token->token_.methods)->branches;
+}
+
+BlockToken* getIfTokenElseBranch(IfToken* token) {
+    return ((IfTokenMethods*) token->token_.methods)->elseBranch;
+}
 
 IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
     IfToken* token = (IfToken*) malloc(sizeof(IfToken));
-    setTokenType(&token->token_, IF_TYPE);
+    setTokenType(&token->token_,
+            createTokenType(new IfTokenMethods(branches, elseBranch)));
     setTokenLocation(&token->token_, loc);
-    token->branches = branches;
-    token->elseBranch = elseBranch;
     return token;
 }
 
