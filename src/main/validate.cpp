@@ -37,8 +37,8 @@ uint8_t containsNoFuncs(Token* token) {
                 containsNoFuncs((Token*) getIfTokenElseBranch(ifToken));
     } else if(getTokenType(token) == TOKEN_WHILE) {
         WhileToken* whileToken = (WhileToken*) token;
-        return containsNoFuncs((Token*) whileToken->condition) &&
-                containsNoFuncs((Token*) whileToken->body);
+        return containsNoFuncs((Token*) getWhileTokenCondition(whileToken)) &&
+                containsNoFuncs((Token*) getWhileTokenBody(whileToken));
     } else if(getTokenType(token) == TOKEN_FUNC) {
         return 0;
     } else {

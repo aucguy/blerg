@@ -925,55 +925,71 @@ IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
     return token;
 }
 
-void destroyWhileToken(Token* self) {
-    WhileToken* whileToken = (WhileToken*) self;
-    destroyToken((Token*) whileToken->condition);
-    destroyToken((Token*) whileToken->body);
-}
+class WhileTokenMethods : public TokenMethods {
+public:
+    Token* condition;
+    BlockToken* body;
 
-void printWhileToken(Token* self, uint8_t indent) {
-    WhileToken* whileStmt = (WhileToken*) self;
-    printf("while:\n");
+    WhileTokenMethods(Token* condition, BlockToken* body) :
+        condition(condition), body(body) {}
 
-    printIndent(indent + 1);
-    printf("condition:\n");
-    printTokenWithIndent((Token*) whileStmt->condition, indent + 2);
+    TokenType type() {
+        return TOKEN_WHILE;
+    }
 
-    printIndent(indent + 1);
-    printf("body:\n");
-    printTokenWithIndent((Token*) whileStmt->body, indent + 2);
-}
+    void destroy(Token* self) {
+        WhileToken* whileToken = (WhileToken*) self;
+        destroyToken((Token*) getWhileTokenCondition(whileToken));
+        destroyToken((Token*) getWhileTokenBody(whileToken));
+    }
 
-uint8_t equalsWhileToken(Token* self, Token* other) {
-    WhileToken* selfWhile = (WhileToken*) self;
-    WhileToken* otherWhile = (WhileToken*) other;
-    return tokensEqual((Token*) selfWhile->condition, (Token*) otherWhile->condition) &&
-            tokensEqual((Token*) selfWhile->body, (Token*) otherWhile->body);
-}
+    void print(Token* self, uint8_t indent) {
+        WhileToken* whileStmt = (WhileToken*) self;
+        printf("while:\n");
 
-Token* copyWhileToken(Token* self, CopyVisitor visitor, void* data) {
-    WhileToken* whileToken = (WhileToken*) self;
-    Token* condition = visitor(whileToken->condition, data);
-    BlockToken* body = (BlockToken*) visitor((Token*) whileToken->body, data);
-    return (Token*) createWhileToken(tokenLocation(self), condition, body);
-}
+        printIndent(indent + 1);
+        printf("condition:\n");
+        printTokenWithIndent((Token*) getWhileTokenCondition(whileStmt), indent + 2);
 
-LegacyTokenInit WHILE_TYPE_INIT = {
-        TOKEN_WHILE,
-        destroyWhileToken,
-        printWhileToken,
-        equalsWhileToken,
-        copyWhileToken
+        printIndent(indent + 1);
+        printf("body:\n");
+        printTokenWithIndent((Token*) getWhileTokenBody(whileStmt), indent + 2);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        WhileToken* selfWhile = (WhileToken*) self;
+        WhileToken* otherWhile = (WhileToken*) other;
+
+        Token* selfCondition = getWhileTokenCondition(selfWhile);
+        Token* selfBody = (Token*) getWhileTokenBody(selfWhile);
+
+        Token* otherCondition = getWhileTokenCondition(otherWhile);
+        Token* otherBody = (Token*) getWhileTokenBody(otherWhile);
+
+        return tokensEqual(selfCondition, otherCondition) &&
+                tokensEqual(selfBody, otherBody);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        WhileToken* whileToken = (WhileToken*) self;
+        Token* condition = visitor(getWhileTokenCondition(whileToken), data);
+        BlockToken* body = (BlockToken*) visitor((Token*) getWhileTokenBody(whileToken), data);
+        return (Token*) createWhileToken(tokenLocation(self), condition, body);
+    }
 };
 
-Token WHILE_TYPE = createLegacyTokenType(WHILE_TYPE_INIT);
+Token* getWhileTokenCondition(WhileToken* token) {
+    return ((WhileTokenMethods*) token->token_.methods)->condition;
+}
+
+BlockToken* getWhileTokenBody(WhileToken* token) {
+    return ((WhileTokenMethods*) token->token_.methods)->body;
+}
 
 WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
     WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
-    setTokenType(&token->token_, WHILE_TYPE);
+    setTokenType(&token->token_, createTokenType(new WhileTokenMethods(condition, body)));
     setTokenLocation(&token->token_, loc);
-    token->condition = condition;
-    token->body = body;
     return token;
 }
 

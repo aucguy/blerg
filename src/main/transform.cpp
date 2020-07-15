@@ -142,13 +142,13 @@ Token* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
     //jump to the end if the condition is false
     const char* endLabel = uniqueName(uniqueId);
     CondJumpToken* condJump = createCondJumpToken(
-            tokenLocation(token->condition),
-            toJumpsVisitor(token->condition, uniqueId),
+            tokenLocation(getWhileTokenCondition(token)),
+            toJumpsVisitor(getWhileTokenCondition(token), uniqueId),
             newStr(endLabel), 0);
     stmts = consList(condJump, stmts);
 
     //output the body
-    stmts = consList(toJumpsVisitor((Token*) token->body, uniqueId), stmts);
+    stmts = consList(toJumpsVisitor((Token*) getWhileTokenBody(token), uniqueId), stmts);
 
     //end of the loop
     stmts = consList(createAbsJumpToken(newStr(startLabel)), stmts);

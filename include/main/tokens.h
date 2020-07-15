@@ -224,9 +224,12 @@ BlockToken* getIfTokenElseBranch(IfToken* token);
 
 typedef struct {
     Token token_;
-    Token* condition;
-    BlockToken* body;
+    //Token* condition_;
+    //BlockToken* body_;
 } WhileToken;
+
+Token* getWhileTokenCondition(WhileToken* token);
+BlockToken* getWhileTokenBody(WhileToken* token);
 
 typedef struct {
     Token token_;
