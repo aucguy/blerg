@@ -602,9 +602,13 @@ Token* destructureLValue(Token* lvalue) {
 Token* destructureAssignment(Token* token) {
     AssignmentToken* assignment = (AssignmentToken*) token;
     List* stmts = NULL;
-    Token* right = copyToken(assignment->right, destructureVisitor, NULL);
-    stmts = consList(createPushToken(tokenLocation(assignment->right), right), stmts);
-    stmts = consList(destructureLValue(assignment->left), stmts);
+
+    Token* left = getAssignmentTokenLeft(assignment);
+    Token* rightOld = getAssignmentTokenRight(assignment);
+
+    Token* right = copyToken(rightOld, destructureVisitor, NULL);
+    stmts = consList(createPushToken(tokenLocation(rightOld), right), stmts);
+    stmts = consList(destructureLValue(left), stmts);
     Token* ret = (Token*) createBlockToken(tokenLocation(token), reverseList(stmts));
     destroyShallowList(stmts);
     return ret;
@@ -670,8 +674,8 @@ Token* transformFuncAssignToName(Token* module) {
         Token* copy;
         if(getTokenType(stmt) == TOKEN_ASSIGNMENT) {
             AssignmentToken* assignment = (AssignmentToken*) stmt;
-            Token* left = assignment->left;
-            Token* right = assignment->right;
+            Token* left = getAssignmentTokenLeft(assignment);
+            Token* right = getAssignmentTokenRight(assignment);
             if(getTokenType(left) == TOKEN_IDENTIFIER && getTokenType(right) == TOKEN_FUNC) {
                 FuncToken* func = (FuncToken*) copyVisitor(right, NULL);
                 destroyToken((Token*) func->name);

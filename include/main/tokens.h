@@ -194,9 +194,12 @@ Token* getUnaryOpTokenChild(UnaryOpToken* token);
 
 typedef struct {
     Token token_;
-    Token* left;
-    Token* right;
+    //Token* left_;
+    //Token* right_;
 } AssignmentToken;
+
+Token* getAssignmentTokenLeft(AssignmentToken* token);
+Token* getAssignmentTokenRight(AssignmentToken* token);
 
 typedef struct {
     Token token_;

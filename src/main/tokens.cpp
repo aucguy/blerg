@@ -702,48 +702,66 @@ UnaryOpToken* createUnaryOpToken(SrcLoc loc, const char* op, Token* child) {
     return token;
 }
 
-void destroyAssignmentToken(Token* self) {
-    AssignmentToken* assignment = (AssignmentToken*) self;
-    destroyToken((Token*) assignment->left);
-    destroyToken(assignment->right);
-}
+class AssignmentTokenMethods : public TokenMethods {
+public:
+    Token* left;
+    Token* right;
 
-void printAssignmentToken(Token* self, uint8_t indent) {
-    AssignmentToken* assignment = (AssignmentToken*) self;
-    printf("assignment:\n");
+    AssignmentTokenMethods(Token* left, Token* right) :
+        left(left), right(right) {}
 
-    printIndent(indent + 1);
-    printf("lvalue:\n");
-    printTokenWithIndent(assignment->left, indent + 2);
+    TokenType type() {
+        return TOKEN_ASSIGNMENT;
+    }
 
-    printIndent(indent + 1);
-    printf("rvalue:\n");
-    printTokenWithIndent(assignment->right, indent + 2);
-}
+    void destroy(Token* self) {
+        //AssignmentToken* assignment = (AssignmentToken*) self;
+        //destroyToken((Token*) assignment->left);
+        //destroyToken(assignment->right);
+    }
 
-uint8_t equalsAssignmentToken(Token* self, Token* other) {
-    AssignmentToken* selfAssign = (AssignmentToken*) self;
-    AssignmentToken* otherAssign = (AssignmentToken*) other;
-    return tokensEqual((Token*) selfAssign->left, (Token*) otherAssign->left) &&
-            tokensEqual(selfAssign->right, otherAssign->right);
-}
+    void print(Token* self, uint8_t indent) {
+        AssignmentToken* assignment = (AssignmentToken*) self;
+        printf("assignment:\n");
 
-Token* copyAssignmentToken(Token* self, CopyVisitor visitor, void* data) {
-    AssignmentToken* assign = (AssignmentToken*) self;
-    Token* left = visitor((Token*) assign->left, data);
-    Token* right = visitor(assign->right, data);
-    return (Token*) createAssignmentToken(tokenLocation(self), left, right);
-}
+        printIndent(indent + 1);
+        printf("lvalue:\n");
+        printTokenWithIndent(getAssignmentTokenLeft(assignment), indent + 2);
 
-LegacyTokenInit ASSIGNMENT_TYPE_INIT = {
-        TOKEN_ASSIGNMENT,
-        destroyAssignmentToken,
-        printAssignmentToken,
-        equalsAssignmentToken,
-        copyAssignmentToken
+        printIndent(indent + 1);
+        printf("rvalue:\n");
+        printTokenWithIndent(getAssignmentTokenRight(assignment), indent + 2);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        AssignmentToken* selfAssign = (AssignmentToken*) self;
+        AssignmentToken* otherAssign = (AssignmentToken*) other;
+
+        Token* selfLeft = getAssignmentTokenLeft(selfAssign);
+        Token* selfRight = getAssignmentTokenRight(otherAssign);
+
+        Token* otherLeft = getAssignmentTokenLeft(otherAssign);
+        Token* otherRight = getAssignmentTokenRight(otherAssign);
+
+        return tokensEqual(selfLeft, otherLeft) &&
+                tokensEqual(selfRight, otherRight);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        AssignmentToken* assign = (AssignmentToken*) self;
+        Token* left = visitor((Token*) getAssignmentTokenLeft(assign), data);
+        Token* right = visitor(getAssignmentTokenRight(assign), data);
+        return (Token*) createAssignmentToken(tokenLocation(self), left, right);
+    }
 };
 
-Token ASSIGNMENT_TYPE = createLegacyTokenType(ASSIGNMENT_TYPE_INIT);
+Token* getAssignmentTokenLeft(AssignmentToken* token) {
+    return ((AssignmentTokenMethods*) token->token_.methods)->left;
+}
+
+Token* getAssignmentTokenRight(AssignmentToken* token) {
+    return ((AssignmentTokenMethods*) token->token_.methods)->right;
+}
 
 /**
  * constructs an assignment token
@@ -753,10 +771,9 @@ Token ASSIGNMENT_TYPE = createLegacyTokenType(ASSIGNMENT_TYPE_INIT);
  */
 AssignmentToken* createAssignmentToken(SrcLoc loc, Token* left, Token* right) {
     AssignmentToken* token = (AssignmentToken*) malloc(sizeof(AssignmentToken));
-    setTokenType(&token->token_, ASSIGNMENT_TYPE);
+    setTokenType(&token->token_,
+            createTokenType(new AssignmentTokenMethods(left, right)));
     setTokenLocation(&token->token_, loc);
-    token->left = left;
-    token->right = right;
     return token;
 }
 
