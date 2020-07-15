@@ -404,66 +404,6 @@ ObjectPair* createObjectPair(Token* key, Token* value) {
     return pair;
 }
 
-void destroyObjectToken(Token* self) {
-    ObjectToken* object = (ObjectToken*) self;
-    List* elements = object->elements;
-
-    while(elements != NULL) {
-        ObjectPair* pair = (ObjectPair*) elements->head;
-        destroyToken(pair->key);
-        destroyToken(pair->value);
-        free(pair);
-        elements = elements->tail;
-    }
-    destroyShallowList(object->elements);
-}
-
-void printObjectToken(Token* self, uint8_t indent) {
-    ObjectToken* object = (ObjectToken*) self;
-    printf("object:\n");
-
-    List* elements = object->elements;
-    uint8_t count = 0;
-    while(elements != NULL) {
-        ObjectPair* pair = (ObjectPair*) elements->head;
-
-        printIndent(indent + 1);
-        printf("%i:\n", count);
-
-        printIndent(indent + 2);
-        printf("key:\n");
-        printTokenWithIndent(pair->key, indent + 3);
-
-        printIndent(indent + 2);
-        printf("value:\n");
-        printTokenWithIndent(pair->value, indent + 3);
-
-        count++;
-        elements = elements->tail;
-    }
-}
-
-uint8_t equalsObjectToken(Token* self, Token* other) {
-    ObjectToken* object1 = (ObjectToken*) self;
-    ObjectToken* object2 = (ObjectToken*) other;
-
-    List* elements1 = object1->elements;
-    List* elements2 = object2->elements;
-
-    while(elements1 != NULL && elements2 != NULL) {
-        ObjectPair* pair1 = (ObjectPair*) elements1->head;
-        ObjectPair* pair2 = (ObjectPair*) elements2->head;
-        if(!tokensEqual(pair1->key, pair2->key) ||
-                !tokensEqual(pair1->value, pair2->value)) {
-            return 0;
-        }
-        elements1 = elements1->tail;
-        elements2 = elements2->tail;
-    }
-
-    return elements1 == NULL && elements2 == NULL;
-}
-
 List* copyObjectPairs(List* list, CopyVisitor visitor, void* data) {
     if(list == NULL) {
         return NULL;
@@ -477,27 +417,92 @@ List* copyObjectPairs(List* list, CopyVisitor visitor, void* data) {
     }
 }
 
-Token* copyObjectToken(Token* self, CopyVisitor visitor, void* data) {
-    ObjectToken* object = (ObjectToken*) self;
-    List* copied = copyObjectPairs(object->elements, visitor, data);
-    return (Token*) createObjectToken(tokenLocation(self), copied);
-}
+class ObjectTokenMethods : public TokenMethods {
+public:
+    List* elements;
 
-LegacyTokenInit OBJECT_TYPE_INIT = {
-        TOKEN_OBJECT,
-        destroyObjectToken,
-        printObjectToken,
-        equalsObjectToken,
-        copyObjectToken
+    ObjectTokenMethods(List* elements) :
+        elements(elements) {}
+
+    TokenType type() {
+        return TOKEN_OBJECT;
+    }
+
+    void destroy(Token* self) {
+        ObjectToken* object = (ObjectToken*) self;
+        List* elements = getObjectTokenElements(object);
+
+        while(elements != NULL) {
+            ObjectPair* pair = (ObjectPair*) elements->head;
+            destroyToken(pair->key);
+            destroyToken(pair->value);
+            free(pair);
+            elements = elements->tail;
+        }
+        destroyShallowList(getObjectTokenElements(object));
+    }
+
+    void print(Token* self, uint8_t indent) {
+        ObjectToken* object = (ObjectToken*) self;
+        printf("object:\n");
+
+        List* elements = getObjectTokenElements(object);
+        uint8_t count = 0;
+        while(elements != NULL) {
+            ObjectPair* pair = (ObjectPair*) elements->head;
+
+            printIndent(indent + 1);
+            printf("%i:\n", count);
+
+            printIndent(indent + 2);
+            printf("key:\n");
+            printTokenWithIndent(pair->key, indent + 3);
+
+            printIndent(indent + 2);
+            printf("value:\n");
+            printTokenWithIndent(pair->value, indent + 3);
+
+            count++;
+            elements = elements->tail;
+        }
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        ObjectToken* object1 = (ObjectToken*) self;
+        ObjectToken* object2 = (ObjectToken*) other;
+
+        List* elements1 = getObjectTokenElements(object1);
+        List* elements2 = getObjectTokenElements(object2);
+
+        while(elements1 != NULL && elements2 != NULL) {
+            ObjectPair* pair1 = (ObjectPair*) elements1->head;
+            ObjectPair* pair2 = (ObjectPair*) elements2->head;
+            if(!tokensEqual(pair1->key, pair2->key) ||
+                    !tokensEqual(pair1->value, pair2->value)) {
+                return 0;
+            }
+            elements1 = elements1->tail;
+            elements2 = elements2->tail;
+        }
+
+        return elements1 == NULL && elements2 == NULL;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        ObjectToken* object = (ObjectToken*) self;
+        List* copied = copyObjectPairs(getObjectTokenElements(object), visitor, data);
+        return (Token*) createObjectToken(tokenLocation(self), copied);
+    }
 };
 
-Token OBJECT_TYPE = createLegacyTokenType(OBJECT_TYPE_INIT);
+List* getObjectTokenElements(ObjectToken* token) {
+    return ((ObjectTokenMethods*) token->token_.methods)->elements;
+}
 
 ObjectToken* createObjectToken(SrcLoc location, List* elements) {
     ObjectToken* object = (ObjectToken*) malloc(sizeof(ObjectToken));
-    setTokenType(&object->token_, OBJECT_TYPE);
+    setTokenType(&object->token_, createTokenType(new ObjectTokenMethods(elements)));
     setTokenLocation(&object->token_, location);
-    object->elements = elements;
     return object;
 }
 

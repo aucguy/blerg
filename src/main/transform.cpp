@@ -392,7 +392,7 @@ Token* objectDesugarVisitor(Token* token, void* data);
 Token* objectDesugarObject(Token* token) {
     ObjectToken* object = (ObjectToken*) token;
     List* tuples = NULL;
-    List* elements = object->elements;
+    List* elements = getObjectTokenElements(object);
     SrcLoc loc = tokenLocation(token);
 
     while(elements != NULL) {
@@ -522,7 +522,7 @@ Token* destructureLValue(Token* lvalue) {
         ObjectToken* object = (ObjectToken*) lvalue;
         List* stmts = NULL;
 
-        List* pairs = object->elements;
+        List* pairs = getObjectTokenElements(object);
 
         while(pairs != NULL) {
             ObjectPair* pair = (ObjectPair*) pairs->head;

@@ -160,8 +160,10 @@ typedef struct {
 
 typedef struct {
     Token token_;
-    List* elements;
+    //List* elements_;
 } ObjectToken;
+
+List* getObjectTokenElements(ObjectToken* token);
 
 typedef struct {
     Token token_;
