@@ -384,9 +384,9 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
     } else if(getTokenType(token) == TOKEN_BINARY_OP) {
         emitSrcLoc(builder, tokenLocation(token));
         BinaryOpToken* binaryOp = (BinaryOpToken*) token;
-        emitPushBuiltin(builder, binaryOp->op);
-        compileToken(builder, globalFuncs, labels, binaryOp->left);
-        compileToken(builder, globalFuncs, labels, binaryOp->right);
+        emitPushBuiltin(builder, getBinaryOpTokenOp(binaryOp));
+        compileToken(builder, globalFuncs, labels, getBinaryOpTokenLeft(binaryOp));
+        compileToken(builder, globalFuncs, labels, getBinaryOpTokenRight(binaryOp));
 
         emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, 2);

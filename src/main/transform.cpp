@@ -491,7 +491,7 @@ Token* destructureLValue(Token* lvalue) {
         return ret;
     } else if(getTokenType(lvalue) == TOKEN_BINARY_OP) {
         BinaryOpToken* binOp = (BinaryOpToken*) lvalue;
-        if(strcmp(binOp->op, "::") != 0) {
+        if(strcmp(getBinaryOpTokenOp(binOp), "::") != 0) {
             //TODO handle error condition
             return NULL;
         }
@@ -507,13 +507,13 @@ Token* destructureLValue(Token* lvalue) {
         stmts = consList(createPushIntToken(loc, 0), stmts);
         stmts = consList(createRot3Token(loc), stmts);
         stmts = consList(createCallOpToken(loc, 2), stmts);
-        stmts = consList(destructureLValue(binOp->left), stmts);
+        stmts = consList(destructureLValue(getBinaryOpTokenLeft(binOp)), stmts);
 
         stmts = consList(createPushBuiltinToken(loc, newStr("get")), stmts);
         stmts = consList(createPushIntToken(loc, 1), stmts);
         stmts = consList(createRot3Token(loc), stmts);
         stmts = consList(createCallOpToken(loc, 2), stmts);
-        stmts = consList(destructureLValue(binOp->right), stmts);
+        stmts = consList(destructureLValue(getBinaryOpTokenRight(binOp)), stmts);
 
         Token* ret = (Token*) createBlockToken(loc, reverseList(stmts));
         destroyShallowList(stmts);

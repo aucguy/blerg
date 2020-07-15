@@ -174,10 +174,14 @@ List* getCallTokenChildren(CallToken* token);
 
 typedef struct {
     Token token_;
-    const char* op;
-    Token* left;
-    Token* right;
+    const char* op_;
+    Token* left_;
+    Token* right_;
 } BinaryOpToken;
+
+const char* getBinaryOpTokenOp(BinaryOpToken* token);
+Token* getBinaryOpTokenLeft(BinaryOpToken* token);
+Token* getBinaryOpTokenRight(BinaryOpToken* token);
 
 typedef struct {
     Token token_;

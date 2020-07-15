@@ -568,45 +568,61 @@ CallToken* createCallToken(SrcLoc location, List* children) {
     return token;
 }
 
-void destroyBinaryOpToken(Token* self) {
-    BinaryOpToken* binaryOp = (BinaryOpToken*) self;
-    free((void*) binaryOp->op);
-    destroyToken(binaryOp->left);
-    destroyToken(binaryOp->right);
-}
+class BinaryOpTokenMethods : public TokenMethods {
+public:
+    const char* op;
+    Token* left;
+    Token* right;
 
-void printBinaryOpToken(Token* self, uint8_t indent) {
-    BinaryOpToken* binaryOp = (BinaryOpToken*) self;
-    printf("binaryOp: '%s'\n", binaryOp->op);
-    printTokenWithIndent(binaryOp->left, indent + 1);
-    printTokenWithIndent(binaryOp->right, indent + 1);
-}
+    BinaryOpTokenMethods(const char* op, Token* left, Token* right) :
+        op(op), left(left), right(right) {}
 
-uint8_t equalsBinaryOpToken(Token* self, Token* other) {
-    BinaryOpToken* selfBinOp = (BinaryOpToken*) self;
-    BinaryOpToken* otherBinOp = (BinaryOpToken*) other;
-    return strcmp(selfBinOp->op, otherBinOp->op) == 0 &&
-            tokensEqual(selfBinOp->left, otherBinOp->left) &&
-            tokensEqual(selfBinOp->right, otherBinOp->right);
-}
+    TokenType type() {
+        return TOKEN_BINARY_OP;
+    }
 
-Token* copyBinaryOpToken(Token* self, CopyVisitor visitor, void* data) {
-    BinaryOpToken* binOp = (BinaryOpToken*) self;
-    const char* op = newStr(binOp->op);
-    Token* left = visitor(binOp->left, data);
-    Token* right = visitor(binOp->right, data);
-    return (Token*) createBinaryOpToken(tokenLocation((Token*) binOp), op, left, right);
-}
+    void destroy(Token* self) {
+        BinaryOpToken* binaryOp = (BinaryOpToken*) self;
+        free((void*) getBinaryOpTokenOp(binaryOp));
+        destroyToken(getBinaryOpTokenLeft(binaryOp));
+        destroyToken(getBinaryOpTokenRight(binaryOp));
+    }
 
-LegacyTokenInit BINARY_OP_TYPE_INIT = {
-        TOKEN_BINARY_OP,
-        destroyBinaryOpToken,
-        printBinaryOpToken,
-        equalsBinaryOpToken,
-        copyBinaryOpToken
+    void print(Token* self, uint8_t indent) {
+        BinaryOpToken* binaryOp = (BinaryOpToken*) self;
+        printf("binaryOp: '%s'\n", getBinaryOpTokenOp(binaryOp));
+        printTokenWithIndent(getBinaryOpTokenLeft(binaryOp), indent + 1);
+        printTokenWithIndent(getBinaryOpTokenRight(binaryOp), indent + 1);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        BinaryOpToken* selfBinOp = (BinaryOpToken*) self;
+        BinaryOpToken* otherBinOp = (BinaryOpToken*) other;
+        return strcmp(getBinaryOpTokenOp(selfBinOp), getBinaryOpTokenOp(otherBinOp)) == 0 &&
+                tokensEqual(getBinaryOpTokenLeft(selfBinOp), getBinaryOpTokenLeft(otherBinOp)) &&
+                tokensEqual(getBinaryOpTokenRight(selfBinOp), getBinaryOpTokenRight(otherBinOp));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        BinaryOpToken* binOp = (BinaryOpToken*) self;
+        const char* op = newStr(getBinaryOpTokenOp(binOp));
+        Token* left = visitor(getBinaryOpTokenLeft(binOp), data);
+        Token* right = visitor(getBinaryOpTokenRight(binOp), data);
+        return (Token*) createBinaryOpToken(tokenLocation((Token*) binOp), op, left, right);
+    }
 };
 
-Token BINARY_OP_TYPE = createLegacyTokenType(BINARY_OP_TYPE_INIT);
+const char* getBinaryOpTokenOp(BinaryOpToken* token) {
+    return ((BinaryOpTokenMethods*) token->token_.methods)->op;
+}
+
+Token* getBinaryOpTokenLeft(BinaryOpToken* token) {
+    return ((BinaryOpTokenMethods*) token->token_.methods)->left;
+}
+
+Token* getBinaryOpTokenRight(BinaryOpToken* token) {
+    return ((BinaryOpTokenMethods*) token->token_.methods)->right;
+}
 
 /**
  * constructs a binary operation token
@@ -619,11 +635,9 @@ Token BINARY_OP_TYPE = createLegacyTokenType(BINARY_OP_TYPE_INIT);
 BinaryOpToken* createBinaryOpToken(SrcLoc loc, const char* op, Token* left,
         Token* right) {
     BinaryOpToken* token = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
-    setTokenType(&token->token_, BINARY_OP_TYPE);
+    setTokenType(&token->token_,
+            createTokenType(new BinaryOpTokenMethods(op, left, right)));
     setTokenLocation(&token->token_, loc);
-    token->op = op;
-    token->left = left;
-    token->right = right;
     return token;
 }
 
