@@ -169,7 +169,7 @@ Token* toJumpsWhile(WhileToken* token, uint8_t* uniqueId) {
 Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
     //copy the arguments since each token holds a unique reference
     List* newArgs = NULL;
-    List* oldArgs = token->args;
+    List* oldArgs = getFuncTokenArgs(token);
     while(oldArgs != NULL) {
         IdentifierToken* oldId = (IdentifierToken*) oldArgs->head;
         SrcLoc location = tokenLocation((Token*) oldId);
@@ -181,11 +181,12 @@ Token* toJumpsFunc(FuncToken* token, uint8_t* uniqueId) {
 
     SrcLoc location = tokenLocation((Token*) token);
     IdentifierToken* name = (IdentifierToken*)
-            copyToken((Token*) token->name, (CopyVisitor) toJumpsVisitor, uniqueId);
+            copyToken((Token*) getFuncTokenName(token),
+                    (CopyVisitor) toJumpsVisitor, uniqueId);
 
     List* args = reverseList(newArgs);
     BlockToken* body = (BlockToken*)
-            toJumpsVisitor((Token*) token->body, uniqueId);
+            toJumpsVisitor((Token*) getFuncTokenBody(token), uniqueId);
 
     FuncToken* ret = createFuncToken(location, name, args, body);
 
@@ -664,7 +665,7 @@ Token* copyVisitor(Token* token, void* data) {
 }
 
 //this is a temporary transformation
-Token* transformFuncAssignToName(Token* module) {
+/*Token* transformFuncAssignToName(Token* module) {
     BlockToken* block = (BlockToken*) module;
     List* newStmts = NULL;
     List* oldStmts = getBlockTokenChildren(block);
@@ -678,7 +679,7 @@ Token* transformFuncAssignToName(Token* module) {
             Token* right = getAssignmentTokenRight(assignment);
             if(getTokenType(left) == TOKEN_IDENTIFIER && getTokenType(right) == TOKEN_FUNC) {
                 FuncToken* func = (FuncToken*) copyVisitor(right, NULL);
-                destroyToken((Token*) func->name);
+                destroyToken((Token*) getFuncTokenName(func));
                 func->name = (IdentifierToken*) copyVisitor(left, NULL);
                 copy = (Token*) func;
             } else {
@@ -695,7 +696,7 @@ Token* transformFuncAssignToName(Token* module) {
     Token* ret = (Token*) createBlockToken(tokenLocation(module), reverseList(newStmts));
     destroyShallowList(newStmts);
     return ret;
-}
+}*/
 
 typedef struct {
     List* funcs;
@@ -709,8 +710,8 @@ Token* closureCreateFunc(Token* token, ClosureData* data) {
     const char* name = uniqueName(&data->uniqueId);
     FuncToken* func = (FuncToken*)
             copyToken(token, (CopyVisitor) closureVisitor, data);
-    destroyToken((Token*) func->name);
-    func->name = createIdentifierToken(tokenLocation(token), name);
+    destroyToken((Token*) getFuncTokenName(func));
+    setFuncTokenName(func, createIdentifierToken(tokenLocation(token), name));
     data->funcs = consList(func, data->funcs);
 
     return (Token*) createPushToken(tokenLocation(token),

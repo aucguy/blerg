@@ -233,10 +233,15 @@ BlockToken* getWhileTokenBody(WhileToken* token);
 
 typedef struct {
     Token token_;
-    IdentifierToken* name;
-    List* args;
-    BlockToken* body;
+    //IdentifierToken* name_;
+    //List* args_;
+    //BlockToken* body_;
 } FuncToken;
+
+IdentifierToken* getFuncTokenName(FuncToken* token);
+void setFuncTokenName(FuncToken* token, IdentifierToken* name);
+List* getFuncTokenArgs(FuncToken* token);
+BlockToken* getFuncTokenBody(FuncToken* token);
 
 typedef struct {
     Token token_;

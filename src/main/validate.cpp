@@ -66,7 +66,7 @@ uint8_t containsNoFuncsBranch(void* branch) {
  */
 uint8_t noInnerFuncs(Token* token) {
     if(getTokenType(token) == TOKEN_FUNC) {
-        if(!allList(getBlockTokenChildren(((FuncToken*) token)->body),
+        if(!allList(getBlockTokenChildren(getFuncTokenBody((FuncToken*) token)),
                 (uint8_t (*)(void*)) containsNoFuncs)) {
             return 0;
         }

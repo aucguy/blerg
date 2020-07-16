@@ -993,60 +993,88 @@ WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
     return token;
 }
 
-void destroyFuncToken(Token* self) {
-    FuncToken* funcToken = (FuncToken*) self;
-    destroyToken((Token*) funcToken->name);
-    destroyList(funcToken->args, destroyTokenVoid);
-    destroyToken((Token*) funcToken->body);
-}
+class FuncTokenMethods : public TokenMethods {
+public:
+    IdentifierToken* name;
+    List* args;
+    BlockToken* body;
 
-void printFuncToken(Token* self, uint8_t indent) {
-    FuncToken* func = (FuncToken*) self;
-    printf("func: %s", getIdentifierTokenValue(func->name));
-    List* node = func->args;
-    while(node != NULL) {
-        printf(" %s", getIdentifierTokenValue((IdentifierToken*) node->head));
-        node = node->tail;
+    FuncTokenMethods(IdentifierToken* name, List* args, BlockToken* body) :
+        name(name), args(args), body(body) {}
+
+    TokenType type() {
+        return TOKEN_FUNC;
     }
-    printf("\n");
-    printTokenWithIndent((Token*) func->body, indent + 1);
-}
 
-uint8_t equalsFuncToken(Token* self, Token* other) {
-    FuncToken* selfFunc = (FuncToken*) self;
-    FuncToken* otherFunc = (FuncToken*) other;
-    return tokensEqual((Token*) selfFunc->name, (Token*) otherFunc->name) &&
-            allList2(selfFunc->args, otherFunc->args, tokensEqualVoid) &&
-            tokensEqual((Token*) selfFunc->body, (Token*) otherFunc->body);
-}
+    void destroy(Token* self) {
+        //FuncToken* funcToken = (FuncToken*) self;
+        //destroyToken((Token*) funcToken->name);
+        //destroyList(funcToken->args, destroyTokenVoid);
+        //destroyToken((Token*) funcToken->body);
+    }
 
-Token* copyFuncToken(Token* self, CopyVisitor visitor, void* data) {
-    FuncToken* func = (FuncToken*) self;
-    IdentifierToken* name = (IdentifierToken*) visitor((Token*) func->name, data);
-    List* args = copyTokenList(func->args, visitor, data);
-    BlockToken* body = (BlockToken*) visitor((Token*) func->body, data);
+    void print(Token* self, uint8_t indent) {
+        FuncToken* func = (FuncToken*) self;
+        printf("func: %s", getIdentifierTokenValue(getFuncTokenName(func)));
+        List* node = getFuncTokenArgs(func);
+        while(node != NULL) {
+            printf(" %s", getIdentifierTokenValue((IdentifierToken*) node->head));
+            node = node->tail;
+        }
+        printf("\n");
+        printTokenWithIndent((Token*) getFuncTokenBody(func), indent + 1);
+    }
 
-    return (Token*) createFuncToken(tokenLocation(self), name, args, body);
-}
+    uint8_t equals(Token* self, Token* other) {
+        FuncToken* selfFunc = (FuncToken*) self;
+        FuncToken* otherFunc = (FuncToken*) other;
 
-LegacyTokenInit FUNC_TYPE_INIT = {
-        TOKEN_FUNC,
-        destroyFuncToken,
-        printFuncToken,
-        equalsFuncToken,
-        copyFuncToken
+        Token* selfName = (Token*) getFuncTokenName(selfFunc);
+        List* selfArgs = getFuncTokenArgs(selfFunc);
+        Token* selfBody = (Token*) getFuncTokenBody(selfFunc);
+
+        Token* otherName = (Token*) getFuncTokenName(otherFunc);
+        List* otherArgs = getFuncTokenArgs(otherFunc);
+        Token* otherBody = (Token*) getFuncTokenBody(otherFunc);
+
+        return tokensEqual(selfName, otherName) &&
+                allList2(selfArgs, otherArgs, tokensEqualVoid) &&
+                tokensEqual(selfBody, otherBody);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        FuncToken* func = (FuncToken*) self;
+        IdentifierToken* name = (IdentifierToken*)
+                visitor((Token*) getFuncTokenName(func), data);
+        List* args = copyTokenList(getFuncTokenArgs(func), visitor, data);
+        BlockToken* body = (BlockToken*) visitor((Token*) getFuncTokenBody(func), data);
+
+        return (Token*) createFuncToken(tokenLocation(self), name, args, body);
+    }
 };
 
-Token FUNC_TYPE = createLegacyTokenType(FUNC_TYPE_INIT);
+IdentifierToken* getFuncTokenName(FuncToken* token) {
+    return ((FuncTokenMethods*) token->token_.methods)->name;
+}
+
+void setFuncTokenName(FuncToken* token, IdentifierToken* name) {
+    ((FuncTokenMethods*) token->token_.methods)->name = name;
+}
+
+List* getFuncTokenArgs(FuncToken* token) {
+    return ((FuncTokenMethods*) token->token_.methods)->args;
+}
+
+BlockToken* getFuncTokenBody(FuncToken* token) {
+    return ((FuncTokenMethods*) token->token_.methods)->body;
+}
 
 FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
         BlockToken* body) {
     FuncToken* token = (FuncToken*) malloc(sizeof(FuncToken));
-    setTokenType(&token->token_, FUNC_TYPE);
+    setTokenType(&token->token_,
+            createTokenType(new FuncTokenMethods(name, args, body)));
     setTokenLocation(&token->token_, loc);
-    token->name = name;
-    token->args = args;
-    token->body = body;
     return token;
 }
 

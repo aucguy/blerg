@@ -447,26 +447,27 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
  */
 void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     //record the start of the function
-    emitLabel(builder, *((uint32_t*) getMapStr(globalFuncs, getIdentifierTokenValue(func->name))));
+    emitLabel(builder, *((uint32_t*) getMapStr(globalFuncs,
+            getIdentifierTokenValue(getFuncTokenName(func)))));
 
     //convert the argument list to an array be passed to emitDefFunc
-    uint8_t argNum = lengthList(func->args);
-    char** args = (char**) malloc(sizeof(char*) * lengthList(func->args));
-    List* arg = func->args;
+    uint8_t argNum = lengthList(getFuncTokenArgs(func));
+    char** args = (char**) malloc(sizeof(char*) * lengthList(getFuncTokenArgs(func)));
+    List* arg = getFuncTokenArgs(func);
     for(uint8_t i = 0; i < argNum; i++) {
         args[i] = (char*) getIdentifierTokenValue((IdentifierToken*) arg->head);
         arg = arg->tail;
     }
     //indicate the beginning of the function
     emitSrcLoc(builder, tokenLocation((Token*) func));
-    uint8_t isInit = strcmp(getIdentifierTokenValue(func->name), "$init") == 0;
+    uint8_t isInit = strcmp(getIdentifierTokenValue(getFuncTokenName(func)), "$init") == 0;
     emitDefFunc(builder, argNum, (const char**) args, isInit);
     free(args);
 
     //create a label for each LabelToken and map its name to the value
     //associated with the ModuleBuilder
     Map* labels = createMap();
-    for(List* list = getBlockTokenChildren(func->body); list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(getFuncTokenBody(func)); list != NULL; list = list->tail) {
         Token* token = (Token*) list->head;
         if(getTokenType(token) == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
@@ -475,7 +476,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
     }
 
     //finally, generate each statement / jump
-    for(List* list = getBlockTokenChildren(func->body); list != NULL; list = list->tail) {
+    for(List* list = getBlockTokenChildren(getFuncTokenBody(func)); list != NULL; list = list->tail) {
         compileToken(builder, globalFuncs, labels, (Token*) list->head);
     }
 
@@ -497,7 +498,9 @@ Module* compileModule(Token* ast) {
         if(getTokenType(token) == TOKEN_FUNC) {
             FuncToken* func = (FuncToken*) token;
             uint32_t label = createLabel(builder);
-            putMapStr(globalFuncs, newStr(getIdentifierTokenValue(func->name)), boxUint32(label));
+            putMapStr(globalFuncs,
+                    newStr(getIdentifierTokenValue(getFuncTokenName(func))),
+                    boxUint32(label));
 
             //emitSrcLoc(builder, func->token.location);
             //emitCreateFunc(builder, label);
