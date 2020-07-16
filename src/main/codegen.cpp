@@ -335,7 +335,8 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
                 getLabelTokenName((LabelToken*) token));
         emitLabel(builder, *label);
     } else if(getTokenType(token) == TOKEN_ABS_JUMP) {
-        uint32_t* label = (uint32_t*) getMapStr(labels, ((AbsJumpToken*) token)->label);
+        uint32_t* label = (uint32_t*) getMapStr(labels,
+                getAbsJumpTokenLabel((AbsJumpToken*) token));
         emitSrcLoc(builder, tokenLocation(token));
         emitAbsJump(builder, *label);
     } else if(getTokenType(token) == TOKEN_COND_JUMP) {

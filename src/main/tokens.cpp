@@ -1169,45 +1169,51 @@ LabelToken* createLabelToken(const char* name) {
     return token;
 }
 
-void destroyAbsJumpToken(Token* self) {
-    free((void*) ((AbsJumpToken*) self)->label);
-}
+class AbsJumpTokenMethods : public TokenMethods {
+public:
+    const char* label;
 
-void printAbsJumpToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("absJump: %s\n", ((AbsJumpToken*) self)->label);
-}
+    AbsJumpTokenMethods(const char* label) :
+        label(label) {}
 
-uint8_t equalsAbsJumpToken(Token* self, Token* other) {
-    return strcmp(((AbsJumpToken*) self)->label, ((AbsJumpToken*) other)->label) == 0;
-}
+    TokenType type() {
+        return TOKEN_ABS_JUMP;
+    }
 
-Token* copyAbsJumpToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    AbsJumpToken* jump = (AbsJumpToken*) self;
-    const char* label = newStr(jump->label);
-    return (Token*) createAbsJumpToken(label);
-}
+    void destroy(Token* self) {
+        //free((void*) ((AbsJumpToken*) self)->label);
+    }
 
-LegacyTokenInit ABS_JUMP_TYPE_INIT = {
-        TOKEN_ABS_JUMP,
-        destroyAbsJumpToken,
-        printAbsJumpToken,
-        equalsAbsJumpToken,
-        copyAbsJumpToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("absJump: %s\n", getAbsJumpTokenLabel((AbsJumpToken*) self));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return strcmp(getAbsJumpTokenLabel((AbsJumpToken*) self),
+                getAbsJumpTokenLabel((AbsJumpToken*) other)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        AbsJumpToken* jump = (AbsJumpToken*) self;
+        const char* label = newStr(getAbsJumpTokenLabel(jump));
+        return (Token*) createAbsJumpToken(label);
+    }
 };
 
-Token ABS_JUMP_TYPE = createLegacyTokenType(ABS_JUMP_TYPE_INIT);
+const char* getAbsJumpTokenLabel(AbsJumpToken* token) {
+    return ((AbsJumpTokenMethods*) token->token_.methods)->label;
+}
 
 AbsJumpToken* createAbsJumpToken(const char* label) {
     AbsJumpToken* token = (AbsJumpToken*) malloc(sizeof(AbsJumpToken));
-    setTokenType(&token->token_, ABS_JUMP_TYPE);
+    setTokenType(&token->token_, createTokenType(new AbsJumpTokenMethods(label)));
     SrcLoc loc;
     loc.line = 0;
     loc.column = 0;
     setTokenLocation(&token->token_, loc);
-    token->label = label;
     return token;
 }
 

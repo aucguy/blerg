@@ -259,8 +259,10 @@ const char* getLabelTokenName(LabelToken* token);
 
 typedef struct {
     Token token_;
-    const char* label;
+    //const char* label_;
 } AbsJumpToken;
+
+const char* getAbsJumpTokenLabel(AbsJumpToken* token);
 
 typedef struct {
     Token token_;
