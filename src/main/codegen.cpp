@@ -403,7 +403,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPushBuiltin(builder, getPushBuiltinTokenName((PushBuiltinToken*) token));
     } else if(getTokenType(token) == TOKEN_PUSH_INT) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushInt(builder, ((PushIntToken*) token)->value);
+        emitPushInt(builder, getPushIntTokenValue((PushIntToken*) token));
     } else if(getTokenType(token) == TOKEN_OP_CALL) {
         emitSrcLoc(builder, tokenLocation(token));
         emitCall(builder, ((CallOpToken*) token)->arity);
