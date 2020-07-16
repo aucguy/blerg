@@ -279,8 +279,10 @@ uint8_t getCondJumpTokenWhen(CondJumpToken* token);
 
 typedef struct {
     Token token_;
-    const char* name;
+    const char* name_;
 } PushBuiltinToken;
+
+const char* getPushBuiltinTokenName(PushBuiltinToken* token);
 
 typedef struct {
     Token token_;

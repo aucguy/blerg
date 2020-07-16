@@ -400,7 +400,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitReturn(builder);
     } else if(getTokenType(token) == TOKEN_PUSH_BUILTIN) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushBuiltin(builder, ((PushBuiltinToken*) token)->name);
+        emitPushBuiltin(builder, getPushBuiltinTokenName((PushBuiltinToken*) token));
     } else if(getTokenType(token) == TOKEN_PUSH_INT) {
         emitSrcLoc(builder, tokenLocation(token));
         emitPushInt(builder, ((PushIntToken*) token)->value);

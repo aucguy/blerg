@@ -1284,45 +1284,53 @@ CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
     return token;
 }
 
-void destroyPushBuiltinToken(Token* self) {
-    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    free((char*) builtin->name);
-}
+class PushBuiltinTokenMethods : public TokenMethods {
+public:
+    const char* name;
 
-void printPushBuiltinToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    printf("push_builtin: %s\n", builtin->name);
-}
+    PushBuiltinTokenMethods(const char* name) :
+        name(name) {}
 
-uint8_t equalsPushBuiltinToken(Token* self, Token* other) {
-    PushBuiltinToken* builtin1 = (PushBuiltinToken*) self;
-    PushBuiltinToken* builtin2 = (PushBuiltinToken*) other;
-    return strcmp(builtin1->name, builtin2->name) == 0;
-}
+    TokenType type() {
+        return TOKEN_PUSH_BUILTIN;
+    }
 
-Token* copyPushBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    return (Token*) createPushBuiltinToken(tokenLocation(self), newStr(builtin->name));
-}
+    void destroy(Token* self) {
+        //PushBuiltinToken* builtin = (PushBuiltinToken*) self;
+        //free((char*) builtin->name);
+    }
 
-LegacyTokenInit PUSH_BUILTIN_TYPE_INIT = {
-        TOKEN_PUSH_BUILTIN,
-        destroyPushBuiltinToken,
-        printPushBuiltinToken,
-        equalsPushBuiltinToken,
-        copyPushBuiltinToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        PushBuiltinToken* builtin = (PushBuiltinToken*) self;
+        printf("push_builtin: %s\n", getPushBuiltinTokenName(builtin));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        PushBuiltinToken* builtin1 = (PushBuiltinToken*) self;
+        PushBuiltinToken* builtin2 = (PushBuiltinToken*) other;
+        return strcmp(getPushBuiltinTokenName(builtin1),
+                getPushBuiltinTokenName(builtin2)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        PushBuiltinToken* builtin = (PushBuiltinToken*) self;
+        return (Token*) createPushBuiltinToken(tokenLocation(self),
+                newStr(getPushBuiltinTokenName(builtin)));
+    }
 };
 
-Token PUSH_BUILTIN_TYPE = createLegacyTokenType(PUSH_BUILTIN_TYPE_INIT);
+const char* getPushBuiltinTokenName(PushBuiltinToken* token) {
+    return ((PushBuiltinTokenMethods*) token->token_.methods)->name;
+}
 
 PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
     PushBuiltinToken* builtin = (PushBuiltinToken*) malloc(sizeof(PushBuiltinToken));
-    setTokenType(&builtin->token_, PUSH_BUILTIN_TYPE);
+    setTokenType(&builtin->token_, createTokenType(new PushBuiltinTokenMethods(name)));
     setTokenLocation(&builtin->token_, loc);
-    builtin->name = name;
+    builtin->name_ = name;
     return builtin;
 }
 
