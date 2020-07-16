@@ -392,7 +392,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitCall(builder, 2);
     } else if(getTokenType(token) == TOKEN_RETURN) {
         ReturnToken* ret = (ReturnToken*) token;
-        compileToken(builder, globalFuncs, labels, ret->body);
+        compileToken(builder, globalFuncs, labels, getReturnTokenBody(ret));
 
         emitSrcLoc(builder, tokenLocation(token));
         emitReturn(builder);

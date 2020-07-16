@@ -245,8 +245,10 @@ BlockToken* getFuncTokenBody(FuncToken* token);
 
 typedef struct {
     Token token_;
-    Token* body;
+    //Token* body_;
 } ReturnToken;
+
+Token* getReturnTokenBody(ReturnToken* token);
 
 typedef struct {
     Token token_;

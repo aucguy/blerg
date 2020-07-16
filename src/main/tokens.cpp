@@ -1078,40 +1078,46 @@ FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
     return token;
 }
 
-void destroyReturnToken(Token* self) {
-    destroyToken(((ReturnToken*) self)->body);
-}
+class ReturnTokenMethods : public TokenMethods {
+public:
+    Token* body;
 
-void printReturnToken(Token* self, uint8_t indent) {
-    printf("return:\n");
-    printTokenWithIndent(((ReturnToken*) self)->body, indent + 1);
-}
+    ReturnTokenMethods(Token* body) :
+        body(body) {}
 
-uint8_t equalsReturnToken(Token* self, Token* other) {
-    return tokensEqual(((ReturnToken*) self)->body, ((ReturnToken*) other)->body);
-}
+    TokenType type() {
+        return TOKEN_RETURN;
+    }
 
-Token* copyReturnToken(Token* self, CopyVisitor visitor, void* data) {
-    ReturnToken* token = (ReturnToken*) self;
-    Token* copied = visitor(token->body, data);
-    return (Token*) createReturnToken(tokenLocation(self), copied);
-}
+    void destroy(Token* self) {
+        //destroyToken(((ReturnToken*) self)->body);
+    }
 
-LegacyTokenInit RETURN_TYPE_INIT = {
-        TOKEN_RETURN,
-        destroyReturnToken,
-        printReturnToken,
-        equalsReturnToken,
-        copyReturnToken
+    void print(Token* self, uint8_t indent) {
+        printf("return:\n");
+        printTokenWithIndent(getReturnTokenBody((ReturnToken*) self), indent + 1);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return tokensEqual(getReturnTokenBody((ReturnToken*) self),
+                getReturnTokenBody((ReturnToken*) other));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        ReturnToken* token = (ReturnToken*) self;
+        Token* copied = visitor(getReturnTokenBody(token), data);
+        return (Token*) createReturnToken(tokenLocation(self), copied);
+    }
 };
 
-Token RETURN_TYPE = createLegacyTokenType(RETURN_TYPE_INIT);
+Token* getReturnTokenBody(ReturnToken* token) {
+    return ((ReturnTokenMethods*) token->token_.methods)->body;
+}
 
 ReturnToken* createReturnToken(SrcLoc location, Token* body) {
     ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
-    setTokenType(&token->token_, RETURN_TYPE);
+    setTokenType(&token->token_, createTokenType(new ReturnTokenMethods(body)));
     setTokenLocation(&token->token_, location);
-    token->body = body;
     return token;
 }
 
