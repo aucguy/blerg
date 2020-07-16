@@ -331,7 +331,8 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitSrcLoc(builder, tokenLocation(token));
         emitLoad(builder, getIdentifierTokenValue((IdentifierToken*) token));
     } else if(getTokenType(token) == TOKEN_LABEL) {
-        uint32_t* label = (uint32_t*) getMapStr(labels, ((LabelToken*) token)->name);
+        uint32_t* label = (uint32_t*) getMapStr(labels,
+                getLabelTokenName((LabelToken*) token));
         emitLabel(builder, *label);
     } else if(getTokenType(token) == TOKEN_ABS_JUMP) {
         uint32_t* label = (uint32_t*) getMapStr(labels, ((AbsJumpToken*) token)->label);
@@ -471,7 +472,7 @@ void compileFunc(ModuleBuilder* builder, Map* globalFuncs, FuncToken* func) {
         Token* token = (Token*) list->head;
         if(getTokenType(token) == TOKEN_LABEL) {
             LabelToken* label = (LabelToken*) token;
-            putMapStr(labels, label->name, boxUint32(createLabel(builder)));
+            putMapStr(labels, getLabelTokenName(label), boxUint32(createLabel(builder)));
         }
     }
 

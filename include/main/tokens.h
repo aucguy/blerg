@@ -252,8 +252,10 @@ Token* getReturnTokenBody(ReturnToken* token);
 
 typedef struct {
     Token token_;
-    const char* name;
+    //const char* name_;
 } LabelToken;
+
+const char* getLabelTokenName(LabelToken* token);
 
 typedef struct {
     Token token_;

@@ -1121,45 +1121,51 @@ ReturnToken* createReturnToken(SrcLoc location, Token* body) {
     return token;
 }
 
-void destroyLabelToken(Token* self) {
-    free((void*) ((LabelToken*) self)->name);
-}
+class LabelTokenMethods : public TokenMethods {
+public:
+    const char* name;
 
-void printLabelToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    printf("label: %s \n", ((LabelToken*) self)->name);
-}
+    LabelTokenMethods(const char* name) :
+        name(name) {}
 
-uint8_t equalsLabelToken(Token* self, Token* other) {
-    return strcmp(((LabelToken*) self)->name, ((LabelToken*) other)->name) == 0;
-}
+    TokenType type() {
+        return TOKEN_LABEL;
+    }
 
-Token* copyLabelToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    LabelToken* label = (LabelToken*) self;
-    const char* name = newStr(label->name);
-    return (Token*) createLabelToken(name);
-}
+    void destroy(Token* self) {
+        //free((void*) ((LabelToken*) self)->name);
+    }
 
-LegacyTokenInit LABEL_TYPE_INIT = {
-        TOKEN_LABEL,
-        destroyLabelToken,
-        printLabelToken,
-        equalsLabelToken,
-        copyLabelToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        printf("label: %s \n", getLabelTokenName((LabelToken*) self));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        return strcmp(getLabelTokenName((LabelToken*) self),
+                getLabelTokenName((LabelToken*) other)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        LabelToken* label = (LabelToken*) self;
+        const char* name = newStr(getLabelTokenName(label));
+        return (Token*) createLabelToken(name);
+    }
 };
 
-Token LABEL_TYPE = createLegacyTokenType(LABEL_TYPE_INIT);
+const char* getLabelTokenName(LabelToken* token) {
+    return ((LabelTokenMethods*) token->token_.methods)->name;
+}
 
 LabelToken* createLabelToken(const char* name) {
     LabelToken* token = (LabelToken*) malloc(sizeof(LabelToken));
-    setTokenType(&token->token_, LABEL_TYPE);
+    setTokenType(&token->token_, createTokenType(new LabelTokenMethods(name)));
     SrcLoc loc;
     loc.line = 0;
     loc.column = 0;
     setTokenLocation(&token->token_, loc);
-    token->name = name;
     return token;
 }
 
