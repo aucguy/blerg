@@ -341,11 +341,11 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitAbsJump(builder, *label);
     } else if(getTokenType(token) == TOKEN_COND_JUMP) {
         CondJumpToken* condJump = (CondJumpToken*) token;
-        compileToken(builder, globalFuncs, labels, condJump->condition);
+        compileToken(builder, globalFuncs, labels, getCondJumpTokenCondition(condJump));
 
-        uint32_t* label = (uint32_t*) getMapStr(labels, condJump->label);
+        uint32_t* label = (uint32_t*) getMapStr(labels, getCondJumpTokenLabel(condJump));
         emitSrcLoc(builder, tokenLocation(token));
-        emitCondJump(builder, *label, condJump->when);
+        emitCondJump(builder, *label, getCondJumpTokenWhen(condJump));
     } else if(getTokenType(token) == TOKEN_TUPLE) {
         emitSrcLoc(builder, tokenLocation(token));
         emitPushBuiltin(builder, "tuple");

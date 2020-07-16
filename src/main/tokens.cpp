@@ -1217,51 +1217,70 @@ AbsJumpToken* createAbsJumpToken(const char* label) {
     return token;
 }
 
-void destroyCondJumpToken(Token* self) {
-    CondJumpToken* token = (CondJumpToken*) self;
-    destroyToken(token->condition);
-    free((void*) token->label);
-}
+class CondJumpTokenMethods : public TokenMethods {
+public:
+    Token* condition;
+    const char* label;
+    //if the condition is false and when is 0 then the jump is taken
+    //if the condition is true and when is 1 then the jump is taken
+    uint8_t when;
 
-void printCondJumpToken(Token* self, uint8_t indent) {
-    CondJumpToken* token = (CondJumpToken*) self;
-    printf("condJump: %s, %i\n", token->label, token->when);
-    printTokenWithIndent(token->condition, indent + 1);
-}
+    CondJumpTokenMethods(Token* condition, const char* label, uint8_t when) :
+        condition(condition), label(label), when(when) {}
 
-uint8_t equalsCondJumpToken(Token* self, Token* other) {
-    CondJumpToken* a = (CondJumpToken*) self;
-    CondJumpToken* b = (CondJumpToken*) other;
-    return tokensEqual(a->condition, b->condition) && strcmp(a->label, b->label) == 0 &&
-            a->when == b->when;
-}
+    TokenType type() {
+        return TOKEN_COND_JUMP;
+    }
 
-Token* copyCondJumpToken(Token* self, CopyVisitor visitor, void* data) {
-    CondJumpToken* jump = (CondJumpToken*) self;
-    Token* condition = visitor(jump->condition, data);
-    const char* label = newStr(jump->label);
-    return (Token*) createCondJumpToken(tokenLocation(self), condition, label,
-            jump->when);
-}
+    void destroy(Token* self) {
+        //CondJumpToken* token = (CondJumpToken*) self;
+        //destroyToken(token->condition);
+        //free((void*) token->label);
+    }
 
-LegacyTokenInit COND_JUMP_TYPE_INIT = {
-        TOKEN_COND_JUMP,
-        destroyCondJumpToken,
-        printCondJumpToken,
-        equalsCondJumpToken,
-        copyCondJumpToken
+    void print(Token* self, uint8_t indent) {
+        CondJumpToken* token = (CondJumpToken*) self;
+        printf("condJump: %s, %i\n", getCondJumpTokenLabel(token),
+                getCondJumpTokenWhen(token));
+        printTokenWithIndent(getCondJumpTokenCondition(token), indent + 1);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        CondJumpToken* a = (CondJumpToken*) self;
+        CondJumpToken* b = (CondJumpToken*) other;
+
+        return tokensEqual(getCondJumpTokenCondition(a), getCondJumpTokenCondition(b)) &&
+                strcmp(getCondJumpTokenLabel(a), getCondJumpTokenLabel(b)) == 0 &&
+                getCondJumpTokenWhen(a) == getCondJumpTokenWhen(b);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        CondJumpToken* jump = (CondJumpToken*) self;
+        Token* condition = visitor(getCondJumpTokenCondition(jump), data);
+        const char* label = newStr(getCondJumpTokenLabel(jump));
+        return (Token*) createCondJumpToken(tokenLocation(self), condition, label,
+                getCondJumpTokenWhen(jump));
+    }
 };
 
-Token COND_JUMP_TYPE = createLegacyTokenType(COND_JUMP_TYPE_INIT);
+Token* getCondJumpTokenCondition(CondJumpToken* token) {
+    return ((CondJumpTokenMethods*) token->token_.methods)->condition;
+}
+
+const char* getCondJumpTokenLabel(CondJumpToken* token) {
+    return ((CondJumpTokenMethods*) token->token_.methods)->label;
+}
+
+uint8_t getCondJumpTokenWhen(CondJumpToken* token) {
+    return ((CondJumpTokenMethods*) token->token_.methods)->when;
+}
 
 CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
         uint8_t when) {
     CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
-    setTokenType(&token->token_, COND_JUMP_TYPE);
+    setTokenType(&token->token_,
+            createTokenType(new CondJumpTokenMethods(cond, label, when)));
     setTokenLocation(&token->token_, loc);
-    token->condition = cond;
-    token->label = label;
-    token->when = when;
     return token;
 }
 

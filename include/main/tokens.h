@@ -266,12 +266,16 @@ const char* getAbsJumpTokenLabel(AbsJumpToken* token);
 
 typedef struct {
     Token token_;
-    Token* condition;
-    const char* label;
+    //Token* condition_;
+    //const char* label_;
     //if the condition is false and when is 0 then the jump is taken
     //if the condition is true and when is 1 then the jump is taken
-    uint8_t when;
+    //uint8_t when_;
 } CondJumpToken;
+
+Token* getCondJumpTokenCondition(CondJumpToken* token);
+const char* getCondJumpTokenLabel(CondJumpToken* token);
+uint8_t getCondJumpTokenWhen(CondJumpToken* token);
 
 typedef struct {
     Token token_;
