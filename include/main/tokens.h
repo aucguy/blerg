@@ -293,8 +293,10 @@ int32_t getPushIntTokenValue(PushIntToken* token);
 
 typedef struct {
     Token token_;
-    uint8_t arity;
+    //uint8_t arity_;
 } CallOpToken;
+
+uint8_t getCallOpTokenArity(CallOpToken* token);
 
 typedef struct {
     Token token_;

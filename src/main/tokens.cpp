@@ -1379,44 +1379,49 @@ PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
     return push;
 }
 
-void destroyCallOpToken(Token* self) {
-    UNUSED(self);
-}
+class CallOpTokenMethods : public TokenMethods {
+public:
+    uint8_t arity;
 
-void printCallOpToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    CallOpToken* call = (CallOpToken*) self;
-    printf("op_call: %i\n", call->arity);
-}
+    CallOpTokenMethods(uint8_t arity) :
+        arity(arity) {}
 
-uint8_t equalsCallOpToken(Token* self, Token* other) {
-    CallOpToken* call1 = (CallOpToken*) self;
-    CallOpToken* call2 = (CallOpToken*) other;
-    return call1->arity == call2->arity;
-}
+    TokenType type() {
+        return TOKEN_OP_CALL;
+    }
 
-Token* copyCallOpToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    CallOpToken* call = (CallOpToken*) self;
-    return (Token*) createCallOpToken(tokenLocation(self), call->arity);
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-LegacyTokenInit CALL_OP_TYPE_INIT = {
-        TOKEN_OP_CALL,
-        destroyCallOpToken,
-        printCallOpToken,
-        equalsCallOpToken,
-        copyCallOpToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        CallOpToken* call = (CallOpToken*) self;
+        printf("op_call: %i\n", getCallOpTokenArity(call));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        CallOpToken* call1 = (CallOpToken*) self;
+        CallOpToken* call2 = (CallOpToken*) other;
+        return getCallOpTokenArity(call1) == getCallOpTokenArity(call2);
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        CallOpToken* call = (CallOpToken*) self;
+        return (Token*) createCallOpToken(tokenLocation(self), getCallOpTokenArity(call));
+    }
 };
 
-Token CALL_OP_TYPE = createLegacyTokenType(CALL_OP_TYPE_INIT);
+uint8_t getCallOpTokenArity(CallOpToken* token) {
+    return ((CallOpTokenMethods*) token->token_.methods)->arity;
+}
 
 CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
     CallOpToken* call = (CallOpToken*) malloc(sizeof(CallOpToken));
-    setTokenType(&call->token_, CALL_OP_TYPE);
+    setTokenType(&call->token_, createTokenType(new CallOpTokenMethods(arity)));
     setTokenLocation(&call->token_, loc);
-    call->arity = arity;
     return call;
 }
 
