@@ -9,31 +9,20 @@
 #define UNUSED(x) (void)(x)
 #define tokenInstanceFields {0, 0}
 
-Token createTokenType(TokenMethods* methods) {
-    Token token;
-    token.methods = methods;
-    token.location_.line = 0;
-    token.location_.column = 0;
-    return token;
-}
-
 uint8_t tokensEqualVoid(void* a, void* b);
 uint8_t branchesEqual(void* a, void* b);
 
 SrcLoc tokenLocation(Token* token) {
-    return token->location_;
+    return token->location;
 }
 
 void setTokenLocation(Token* token, SrcLoc loc) {
-    token->location_ = loc;
+    token->location = loc;
 }
 
 TokenType getTokenType(Token* token) {
-    return token->methods->type();
-}
-
-void setTokenType(Token* token, Token type) {
-    *token = type;
+    //return token->methods->type();
+    return token->type();
 }
 
 void printIndent(uint8_t indent) {
@@ -52,12 +41,12 @@ List* copyTokenList(List* old, CopyVisitor visitor, void* data) {
     }
 }
 
-class IntTokenMethods : public TokenMethods {
+class IntTokenMethods : public Token {
 public:
     int32_t value;
 
-    IntTokenMethods(int32_t value) :
-        value(value) {}
+    IntTokenMethods(SrcLoc location, int32_t value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_INT;
@@ -85,7 +74,7 @@ public:
 };
 
 int32_t getIntTokenValue(IntToken* token) {
-    return ((IntTokenMethods*) token->token_.methods)->value;
+    return ((IntTokenMethods*) token)->value;
 }
 
 /**
@@ -95,18 +84,15 @@ int32_t getIntTokenValue(IntToken* token) {
  * @return the newly created token
  */
 IntToken* createIntToken(SrcLoc loc, int32_t value) {
-    IntToken* token = (IntToken*) malloc(sizeof(IntToken));
-    setTokenType(&token->token_, createTokenType(new IntTokenMethods(value)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (IntToken*) new IntTokenMethods(loc, value);
 }
 
-class FloatTokenMethods : public TokenMethods {
+class FloatTokenMethods : public Token {
 public:
     float value;
 
-    FloatTokenMethods(float value) :
-        value(value) {}
+    FloatTokenMethods(SrcLoc location, float value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_FLOAT;
@@ -134,22 +120,19 @@ public:
 };
 
 float getFloatTokenValue(FloatToken* token) {
-    return ((FloatTokenMethods*) token->token_.methods)->value;
+    return ((FloatTokenMethods*) token)->value;
 }
 
 FloatToken* createFloatToken(SrcLoc location, float value) {
-    FloatToken* token = (FloatToken*) malloc(sizeof(FloatToken));
-    setTokenType(&token->token_, createTokenType(new FloatTokenMethods(value)));
-    setTokenLocation(&token->token_, location);
-    return token;
+    return (FloatToken*) new FloatTokenMethods(location, value);
 }
 
-class LiteralTokenMethods : public TokenMethods {
+class LiteralTokenMethods : public Token {
 public:
     const char* value;
 
-    LiteralTokenMethods(const char* value) :
-        value(value) {}
+    LiteralTokenMethods(SrcLoc location, const char* value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_LITERAL;
@@ -179,7 +162,7 @@ public:
 };
 
 const char* getLiteralTokenValue(LiteralToken* token) {
-    return ((LiteralTokenMethods*) token->token_.methods)->value;
+    return ((LiteralTokenMethods*) token)->value;
 }
 
 /**
@@ -189,18 +172,15 @@ const char* getLiteralTokenValue(LiteralToken* token) {
  * @return the newly created token
  */
 LiteralToken* createLiteralToken(SrcLoc loc, const char* value) {
-    LiteralToken* token = (LiteralToken*) malloc(sizeof(LiteralToken));
-    setTokenType(&token->token_, createTokenType(new LiteralTokenMethods(value)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (LiteralToken*) new LiteralTokenMethods(loc, value);
 }
 
-class IdentifierTokenMethods : public TokenMethods {
+class IdentifierTokenMethods : public Token {
 public:
     const char* value;
 
-    IdentifierTokenMethods(const char* value) :
-        value(value) {}
+    IdentifierTokenMethods(SrcLoc location, const char* value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_IDENTIFIER;
@@ -230,7 +210,7 @@ public:
 };
 
 const char* getIdentifierTokenValue(IdentifierToken* token) {
-    return ((IdentifierTokenMethods*) token->token_.methods)->value;
+    return ((IdentifierTokenMethods*) token)->value;
 }
 
 /**
@@ -240,18 +220,15 @@ const char* getIdentifierTokenValue(IdentifierToken* token) {
  * @return the newly created token
  */
 IdentifierToken* createIdentifierToken(SrcLoc loc, const char* value) {
-    IdentifierToken* token = (IdentifierToken*) malloc(sizeof(IdentifierToken));
-    setTokenType(&token->token_, createTokenType(new IdentifierTokenMethods(value)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (IdentifierToken*) new IdentifierTokenMethods(loc, value);
 }
 
-class TupleTokenMethods : public TokenMethods {
+class TupleTokenMethods : public Token {
 public:
     List* elements;
 
-    TupleTokenMethods(List* elements) :
-        elements(elements) {}
+    TupleTokenMethods(SrcLoc location, List* elements) :
+        Token(location), elements(elements) {}
 
     TokenType type() {
         return TOKEN_TUPLE;
@@ -290,22 +267,19 @@ public:
 };
 
 List* getTupleTokenElements(TupleToken* token) {
-    return ((TupleTokenMethods*) token->token_.methods)->elements;
+    return ((TupleTokenMethods*) token)->elements;
 }
 
 TupleToken* createTupleToken(SrcLoc location, List* elements) {
-    TupleToken* tuple = (TupleToken*) malloc(sizeof(TupleToken));
-    setTokenType(&tuple->token_, createTokenType(new TupleTokenMethods(elements)));
-    setTokenLocation(&tuple->token_, location);
-    return tuple;
+    return (TupleToken*) new TupleTokenMethods(location, elements);
 }
 
-class ListTokenMethods : public TokenMethods {
+class ListTokenMethods : public Token {
 public:
     List* elements;
 
-    ListTokenMethods(List* elements) :
-        elements(elements) {}
+    ListTokenMethods(SrcLoc location, List* elements) :
+        Token(location), elements(elements) {}
 
     TokenType type() {
         return TOKEN_LIST;
@@ -346,14 +320,11 @@ public:
 };
 
 List* getListTokenElements(ListToken* token) {
-    return ((ListTokenMethods*) token->token_.methods)->elements;
+    return ((ListTokenMethods*) token)->elements;
 }
 
 ListToken* createListToken(SrcLoc location, List* elements) {
-    ListToken* list = (ListToken*) malloc(sizeof(ListToken));
-    setTokenType(&list->token_, createTokenType(new ListTokenMethods(elements)));
-    setTokenLocation(&list->token_, location);
-    return list;
+    return (ListToken*) new ListTokenMethods(location, elements);
 }
 
 ObjectPair* createObjectPair(Token* key, Token* value) {
@@ -376,12 +347,12 @@ List* copyObjectPairs(List* list, CopyVisitor visitor, void* data) {
     }
 }
 
-class ObjectTokenMethods : public TokenMethods {
+class ObjectTokenMethods : public Token {
 public:
     List* elements;
 
-    ObjectTokenMethods(List* elements) :
-        elements(elements) {}
+    ObjectTokenMethods(SrcLoc location, List* elements) :
+        Token(location), elements(elements) {}
 
     TokenType type() {
         return TOKEN_OBJECT;
@@ -455,22 +426,19 @@ public:
 };
 
 List* getObjectTokenElements(ObjectToken* token) {
-    return ((ObjectTokenMethods*) token->token_.methods)->elements;
+    return ((ObjectTokenMethods*) token)->elements;
 }
 
 ObjectToken* createObjectToken(SrcLoc location, List* elements) {
-    ObjectToken* object = (ObjectToken*) malloc(sizeof(ObjectToken));
-    setTokenType(&object->token_, createTokenType(new ObjectTokenMethods(elements)));
-    setTokenLocation(&object->token_, location);
-    return object;
+    return (ObjectToken*) new ObjectTokenMethods(location, elements);
 }
 
-class CallTokenMethods : public TokenMethods {
+class CallTokenMethods : public Token {
 public:
     List* children;
 
-    CallTokenMethods(List* children) :
-        children(children) {}
+    CallTokenMethods(SrcLoc location, List* children) :
+        Token(location), children(children) {}
 
     TokenType type() {
         return TOKEN_CALL;
@@ -517,24 +485,21 @@ public:
 };
 
 List* getCallTokenChildren(CallToken* token) {
-    return ((CallTokenMethods*) token->token_.methods)->children;
+    return ((CallTokenMethods*) token)->children;
 }
 
 CallToken* createCallToken(SrcLoc location, List* children) {
-    CallToken* token = (CallToken*) malloc(sizeof(CallToken));
-    setTokenType(&token->token_, createTokenType(new CallTokenMethods(children)));
-    setTokenLocation(&token->token_, location);
-    return token;
+    return (CallToken*) new CallTokenMethods(location, children);
 }
 
-class BinaryOpTokenMethods : public TokenMethods {
+class BinaryOpTokenMethods : public Token {
 public:
     const char* op;
     Token* left;
     Token* right;
 
-    BinaryOpTokenMethods(const char* op, Token* left, Token* right) :
-        op(op), left(left), right(right) {}
+    BinaryOpTokenMethods(SrcLoc location, const char* op, Token* left, Token* right) :
+        Token(location), op(op), left(left), right(right) {}
 
     TokenType type() {
         return TOKEN_BINARY_OP;
@@ -572,15 +537,15 @@ public:
 };
 
 const char* getBinaryOpTokenOp(BinaryOpToken* token) {
-    return ((BinaryOpTokenMethods*) token->token_.methods)->op;
+    return ((BinaryOpTokenMethods*) token)->op;
 }
 
 Token* getBinaryOpTokenLeft(BinaryOpToken* token) {
-    return ((BinaryOpTokenMethods*) token->token_.methods)->left;
+    return ((BinaryOpTokenMethods*) token)->left;
 }
 
 Token* getBinaryOpTokenRight(BinaryOpToken* token) {
-    return ((BinaryOpTokenMethods*) token->token_.methods)->right;
+    return ((BinaryOpTokenMethods*) token)->right;
 }
 
 /**
@@ -593,20 +558,16 @@ Token* getBinaryOpTokenRight(BinaryOpToken* token) {
  */
 BinaryOpToken* createBinaryOpToken(SrcLoc loc, const char* op, Token* left,
         Token* right) {
-    BinaryOpToken* token = (BinaryOpToken*) malloc(sizeof(BinaryOpToken));
-    setTokenType(&token->token_,
-            createTokenType(new BinaryOpTokenMethods(op, left, right)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (BinaryOpToken*) new BinaryOpTokenMethods(loc, op, left, right);
 }
 
-class UnaryOpTokenMethods : public TokenMethods {
+class UnaryOpTokenMethods : public Token {
 public:
     const char* op;
     Token* child;
 
-    UnaryOpTokenMethods(const char* op, Token* child) :
-        op(op), child(child) {}
+    UnaryOpTokenMethods(SrcLoc location, const char* op, Token* child) :
+        Token(location), op(op), child(child) {}
 
     TokenType type() {
         return TOKEN_UNARY_OP;
@@ -640,11 +601,11 @@ public:
 };
 
 const char* getUnaryOpTokenOp(UnaryOpToken* token) {
-    return ((UnaryOpTokenMethods*) token->token_.methods)->op;
+    return ((UnaryOpTokenMethods*) token)->op;
 }
 
 Token* getUnaryOpTokenChild(UnaryOpToken* token) {
-    return ((UnaryOpTokenMethods*) token->token_.methods)->child;
+    return ((UnaryOpTokenMethods*) token)->child;
 }
 
 /**
@@ -655,19 +616,16 @@ Token* getUnaryOpTokenChild(UnaryOpToken* token) {
  * @return the newly created token
  */
 UnaryOpToken* createUnaryOpToken(SrcLoc loc, const char* op, Token* child) {
-    UnaryOpToken* token = (UnaryOpToken*) malloc(sizeof(UnaryOpToken));
-    setTokenType(&token->token_, createTokenType(new UnaryOpTokenMethods(op, child)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (UnaryOpToken*) new UnaryOpTokenMethods(loc, op, child);
 }
 
-class AssignmentTokenMethods : public TokenMethods {
+class AssignmentTokenMethods : public Token {
 public:
     Token* left;
     Token* right;
 
-    AssignmentTokenMethods(Token* left, Token* right) :
-        left(left), right(right) {}
+    AssignmentTokenMethods(SrcLoc location, Token* left, Token* right) :
+        Token(location), left(left), right(right) {}
 
     TokenType type() {
         return TOKEN_ASSIGNMENT;
@@ -715,11 +673,11 @@ public:
 };
 
 Token* getAssignmentTokenLeft(AssignmentToken* token) {
-    return ((AssignmentTokenMethods*) token->token_.methods)->left;
+    return ((AssignmentTokenMethods*) token)->left;
 }
 
 Token* getAssignmentTokenRight(AssignmentToken* token) {
-    return ((AssignmentTokenMethods*) token->token_.methods)->right;
+    return ((AssignmentTokenMethods*) token)->right;
 }
 
 /**
@@ -729,19 +687,15 @@ Token* getAssignmentTokenRight(AssignmentToken* token) {
  * @param right a unique reference to the token's rvalue.
  */
 AssignmentToken* createAssignmentToken(SrcLoc loc, Token* left, Token* right) {
-    AssignmentToken* token = (AssignmentToken*) malloc(sizeof(AssignmentToken));
-    setTokenType(&token->token_,
-            createTokenType(new AssignmentTokenMethods(left, right)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (AssignmentToken*) new AssignmentTokenMethods(loc, left, right);
 }
 
-class BlockTokenMethods : public TokenMethods {
+class BlockTokenMethods : public Token {
 public:
     List* children;
 
-    BlockTokenMethods(List* children) :
-        children(children) {}
+    BlockTokenMethods(SrcLoc location, List* children) :
+        Token(location), children(children) {}
 
     TokenType type() {
         return TOKEN_BLOCK;
@@ -773,14 +727,11 @@ public:
 };
 
 List* getBlockTokenChildren(BlockToken* token) {
-    return ((BlockTokenMethods*) token->token_.methods)->children;
+    return ((BlockTokenMethods*) token)->children;
 }
 
 BlockToken* createBlockToken(SrcLoc location, List* children) {
-    BlockToken* token = (BlockToken*) malloc(sizeof(BlockToken));
-    setTokenType(&token->token_, createTokenType(new BlockTokenMethods(children)));
-    setTokenLocation(&token->token_, location);
-    return token;
+    return (BlockToken*) new BlockTokenMethods(location, children);
 }
 
 IfBranch* createIfBranch(Token* condition, BlockToken* block) {
@@ -803,13 +754,13 @@ List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
     }
 }
 
-class IfTokenMethods : public TokenMethods {
+class IfTokenMethods : public Token {
 public:
     List* branches;
     BlockToken* elseBranch;
 
-    IfTokenMethods(List* branches, BlockToken* elseBranch) :
-        branches(branches), elseBranch(elseBranch) {}
+    IfTokenMethods(SrcLoc location, List* branches, BlockToken* elseBranch) :
+        Token(location), branches(branches), elseBranch(elseBranch) {}
 
     TokenType type() {
         return TOKEN_IF;
@@ -869,28 +820,24 @@ public:
 };
 
 List* getIfTokenBranches(IfToken* token) {
-    return ((IfTokenMethods*) token->token_.methods)->branches;
+    return ((IfTokenMethods*) token)->branches;
 }
 
 BlockToken* getIfTokenElseBranch(IfToken* token) {
-    return ((IfTokenMethods*) token->token_.methods)->elseBranch;
+    return ((IfTokenMethods*) token)->elseBranch;
 }
 
 IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
-    IfToken* token = (IfToken*) malloc(sizeof(IfToken));
-    setTokenType(&token->token_,
-            createTokenType(new IfTokenMethods(branches, elseBranch)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (IfToken*) new IfTokenMethods(loc, branches, elseBranch);
 }
 
-class WhileTokenMethods : public TokenMethods {
+class WhileTokenMethods : public Token {
 public:
     Token* condition;
     BlockToken* body;
 
-    WhileTokenMethods(Token* condition, BlockToken* body) :
-        condition(condition), body(body) {}
+    WhileTokenMethods(SrcLoc location, Token* condition, BlockToken* body) :
+        Token(location), condition(condition), body(body) {}
 
     TokenType type() {
         return TOKEN_WHILE;
@@ -938,28 +885,25 @@ public:
 };
 
 Token* getWhileTokenCondition(WhileToken* token) {
-    return ((WhileTokenMethods*) token->token_.methods)->condition;
+    return ((WhileTokenMethods*) token)->condition;
 }
 
 BlockToken* getWhileTokenBody(WhileToken* token) {
-    return ((WhileTokenMethods*) token->token_.methods)->body;
+    return ((WhileTokenMethods*) token)->body;
 }
 
 WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
-    WhileToken* token = (WhileToken*) malloc(sizeof(WhileToken));
-    setTokenType(&token->token_, createTokenType(new WhileTokenMethods(condition, body)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (WhileToken*) new WhileTokenMethods(loc, condition, body);
 }
 
-class FuncTokenMethods : public TokenMethods {
+class FuncTokenMethods : public Token {
 public:
     IdentifierToken* name;
     List* args;
     BlockToken* body;
 
-    FuncTokenMethods(IdentifierToken* name, List* args, BlockToken* body) :
-        name(name), args(args), body(body) {}
+    FuncTokenMethods(SrcLoc loc, IdentifierToken* name, List* args, BlockToken* body) :
+        Token(loc), name(name), args(args), body(body) {}
 
     TokenType type() {
         return TOKEN_FUNC;
@@ -1013,36 +957,32 @@ public:
 };
 
 IdentifierToken* getFuncTokenName(FuncToken* token) {
-    return ((FuncTokenMethods*) token->token_.methods)->name;
+    return ((FuncTokenMethods*) token)->name;
 }
 
 void setFuncTokenName(FuncToken* token, IdentifierToken* name) {
-    ((FuncTokenMethods*) token->token_.methods)->name = name;
+    ((FuncTokenMethods*) token)->name = name;
 }
 
 List* getFuncTokenArgs(FuncToken* token) {
-    return ((FuncTokenMethods*) token->token_.methods)->args;
+    return ((FuncTokenMethods*) token)->args;
 }
 
 BlockToken* getFuncTokenBody(FuncToken* token) {
-    return ((FuncTokenMethods*) token->token_.methods)->body;
+    return ((FuncTokenMethods*) token)->body;
 }
 
 FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
         BlockToken* body) {
-    FuncToken* token = (FuncToken*) malloc(sizeof(FuncToken));
-    setTokenType(&token->token_,
-            createTokenType(new FuncTokenMethods(name, args, body)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (FuncToken*) new FuncTokenMethods(loc, name, args, body);
 }
 
-class ReturnTokenMethods : public TokenMethods {
+class ReturnTokenMethods : public Token {
 public:
     Token* body;
 
-    ReturnTokenMethods(Token* body) :
-        body(body) {}
+    ReturnTokenMethods(SrcLoc location, Token* body) :
+        Token(location), body(body) {}
 
     TokenType type() {
         return TOKEN_RETURN;
@@ -1070,22 +1010,19 @@ public:
 };
 
 Token* getReturnTokenBody(ReturnToken* token) {
-    return ((ReturnTokenMethods*) token->token_.methods)->body;
+    return ((ReturnTokenMethods*) token)->body;
 }
 
 ReturnToken* createReturnToken(SrcLoc location, Token* body) {
-    ReturnToken* token = (ReturnToken*) malloc(sizeof(ReturnToken));
-    setTokenType(&token->token_, createTokenType(new ReturnTokenMethods(body)));
-    setTokenLocation(&token->token_, location);
-    return token;
+    return (ReturnToken*) new ReturnTokenMethods(location, body);
 }
 
-class LabelTokenMethods : public TokenMethods {
+class LabelTokenMethods : public Token {
 public:
     const char* name;
 
-    LabelTokenMethods(const char* name) :
-        name(name) {}
+    LabelTokenMethods(SrcLoc location, const char* name) :
+        Token(location), name(name) {}
 
     TokenType type() {
         return TOKEN_LABEL;
@@ -1115,25 +1052,22 @@ public:
 };
 
 const char* getLabelTokenName(LabelToken* token) {
-    return ((LabelTokenMethods*) token->token_.methods)->name;
+    return ((LabelTokenMethods*) token)->name;
 }
 
 LabelToken* createLabelToken(const char* name) {
-    LabelToken* token = (LabelToken*) malloc(sizeof(LabelToken));
-    setTokenType(&token->token_, createTokenType(new LabelTokenMethods(name)));
     SrcLoc loc;
     loc.line = 0;
     loc.column = 0;
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (LabelToken*) new LabelTokenMethods(loc, name);
 }
 
-class AbsJumpTokenMethods : public TokenMethods {
+class AbsJumpTokenMethods : public Token {
 public:
     const char* label;
 
-    AbsJumpTokenMethods(const char* label) :
-        label(label) {}
+    AbsJumpTokenMethods(SrcLoc location, const char* label) :
+        Token(location), label(label) {}
 
     TokenType type() {
         return TOKEN_ABS_JUMP;
@@ -1163,20 +1097,17 @@ public:
 };
 
 const char* getAbsJumpTokenLabel(AbsJumpToken* token) {
-    return ((AbsJumpTokenMethods*) token->token_.methods)->label;
+    return ((AbsJumpTokenMethods*) token)->label;
 }
 
 AbsJumpToken* createAbsJumpToken(const char* label) {
-    AbsJumpToken* token = (AbsJumpToken*) malloc(sizeof(AbsJumpToken));
-    setTokenType(&token->token_, createTokenType(new AbsJumpTokenMethods(label)));
     SrcLoc loc;
     loc.line = 0;
     loc.column = 0;
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (AbsJumpToken*) new AbsJumpTokenMethods(loc, label);
 }
 
-class CondJumpTokenMethods : public TokenMethods {
+class CondJumpTokenMethods : public Token {
 public:
     Token* condition;
     const char* label;
@@ -1184,8 +1115,8 @@ public:
     //if the condition is true and when is 1 then the jump is taken
     uint8_t when;
 
-    CondJumpTokenMethods(Token* condition, const char* label, uint8_t when) :
-        condition(condition), label(label), when(when) {}
+    CondJumpTokenMethods(SrcLoc loc, Token* condition, const char* label, uint8_t when) :
+        Token(loc), condition(condition), label(label), when(when) {}
 
     TokenType type() {
         return TOKEN_COND_JUMP;
@@ -1223,32 +1154,28 @@ public:
 };
 
 Token* getCondJumpTokenCondition(CondJumpToken* token) {
-    return ((CondJumpTokenMethods*) token->token_.methods)->condition;
+    return ((CondJumpTokenMethods*) token)->condition;
 }
 
 const char* getCondJumpTokenLabel(CondJumpToken* token) {
-    return ((CondJumpTokenMethods*) token->token_.methods)->label;
+    return ((CondJumpTokenMethods*) token)->label;
 }
 
 uint8_t getCondJumpTokenWhen(CondJumpToken* token) {
-    return ((CondJumpTokenMethods*) token->token_.methods)->when;
+    return ((CondJumpTokenMethods*) token)->when;
 }
 
 CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
         uint8_t when) {
-    CondJumpToken* token = (CondJumpToken*) malloc(sizeof(CondJumpToken));
-    setTokenType(&token->token_,
-            createTokenType(new CondJumpTokenMethods(cond, label, when)));
-    setTokenLocation(&token->token_, loc);
-    return token;
+    return (CondJumpToken*) new CondJumpTokenMethods(loc, cond, label, when);
 }
 
-class PushBuiltinTokenMethods : public TokenMethods {
+class PushBuiltinTokenMethods : public Token {
 public:
     const char* name;
 
-    PushBuiltinTokenMethods(const char* name) :
-        name(name) {}
+    PushBuiltinTokenMethods(SrcLoc location, const char* name) :
+        Token(location), name(name) {}
 
     TokenType type() {
         return TOKEN_PUSH_BUILTIN;
@@ -1282,22 +1209,19 @@ public:
 };
 
 const char* getPushBuiltinTokenName(PushBuiltinToken* token) {
-    return ((PushBuiltinTokenMethods*) token->token_.methods)->name;
+    return ((PushBuiltinTokenMethods*) token)->name;
 }
 
 PushBuiltinToken* createPushBuiltinToken(SrcLoc loc, const char* name) {
-    PushBuiltinToken* builtin = (PushBuiltinToken*) malloc(sizeof(PushBuiltinToken));
-    setTokenType(&builtin->token_, createTokenType(new PushBuiltinTokenMethods(name)));
-    setTokenLocation(&builtin->token_, loc);
-    return builtin;
+    return (PushBuiltinToken*) new PushBuiltinTokenMethods(loc, name);
 }
 
-class PushIntTokenMethods : public TokenMethods {
+class PushIntTokenMethods : public Token {
 public:
     int32_t value;
 
-    PushIntTokenMethods(int32_t value) :
-        value(value) {}
+    PushIntTokenMethods(SrcLoc location, int32_t value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_PUSH_INT;
@@ -1328,22 +1252,19 @@ public:
 };
 
 int32_t getPushIntTokenValue(PushIntToken* token) {
-    return ((PushIntTokenMethods*) token->token_.methods)->value;
+    return ((PushIntTokenMethods*) token)->value;
 }
 
 PushIntToken* createPushIntToken(SrcLoc loc, int32_t value) {
-    PushIntToken* push = (PushIntToken*) malloc(sizeof(PushIntToken));
-    setTokenType(&push->token_, createTokenType(new PushIntTokenMethods(value)));
-    setTokenLocation(&push->token_, loc);
-    return push;
+    return (PushIntToken*) new PushIntTokenMethods(loc, value);
 }
 
-class CallOpTokenMethods : public TokenMethods {
+class CallOpTokenMethods : public Token {
 public:
     uint8_t arity;
 
-    CallOpTokenMethods(uint8_t arity) :
-        arity(arity) {}
+    CallOpTokenMethods(SrcLoc location, uint8_t arity) :
+        Token(location), arity(arity) {}
 
     TokenType type() {
         return TOKEN_OP_CALL;
@@ -1374,22 +1295,19 @@ public:
 };
 
 uint8_t getCallOpTokenArity(CallOpToken* token) {
-    return ((CallOpTokenMethods*) token->token_.methods)->arity;
+    return ((CallOpTokenMethods*) token)->arity;
 }
 
 CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
-    CallOpToken* call = (CallOpToken*) malloc(sizeof(CallOpToken));
-    setTokenType(&call->token_, createTokenType(new CallOpTokenMethods(arity)));
-    setTokenLocation(&call->token_, loc);
-    return call;
+    return (CallOpToken*) new CallOpTokenMethods(loc, arity);
 }
 
-class StoreTokenMethods : public TokenMethods {
+class StoreTokenMethods : public Token {
 public:
     const char* name;
 
-    StoreTokenMethods(const char* name) :
-        name(name) {}
+    StoreTokenMethods(SrcLoc location, const char* name) :
+        Token(location), name(name) {}
 
     TokenType type() {
         return TOKEN_STORE;
@@ -1422,19 +1340,17 @@ public:
 };
 
 const char* getStoreTokenName(StoreToken* token) {
-    return ((StoreTokenMethods*) token->token_.methods)->name;
+    return ((StoreTokenMethods*) token)->name;
 }
 
 StoreToken* createStoreToken(SrcLoc loc, const char* name) {
-    StoreToken* store = (StoreToken*) malloc(sizeof(StoreToken));
-    setTokenType(&store->token_, createTokenType(new StoreTokenMethods(name)));
-    setTokenLocation(&store->token_, loc);
-    return store;
+    return (StoreToken*) new StoreTokenMethods(loc, name);
 }
 
-class DupTokenMethods : public TokenMethods {
+class DupTokenMethods : public Token {
 public:
-    DupTokenMethods() {}
+    DupTokenMethods(SrcLoc location) :
+        Token(location) {}
 
     TokenType type() {
         return TOKEN_DUP;
@@ -1464,18 +1380,15 @@ public:
 };
 
 DupToken* createDupToken(SrcLoc loc) {
-    DupToken* dup = (DupToken*) malloc(sizeof(DupToken));
-    setTokenType(&dup->token_, createTokenType(new DupTokenMethods()));
-    setTokenLocation(&dup->token_, loc);
-    return dup;
+    return (DupToken*) new DupTokenMethods(loc);
 }
 
-class PushTokenMethods : public TokenMethods {
+class PushTokenMethods : public Token {
 public:
     Token* value;
 
-    PushTokenMethods(Token* value) :
-        value(value) {}
+    PushTokenMethods(SrcLoc location, Token* value) :
+        Token(location), value(value) {}
 
     TokenType type() {
         return TOKEN_PUSH;
@@ -1506,19 +1419,17 @@ public:
 };
 
 Token* getPushTokenValue(PushToken* token) {
-    return ((PushTokenMethods*) token->token_.methods)->value;
+    return ((PushTokenMethods*) token)->value;
 }
 
 PushToken* createPushToken(SrcLoc loc, Token* value) {
-    PushToken* push = (PushToken*) malloc(sizeof(PushToken));
-    setTokenType(&push->token_, createTokenType(new PushTokenMethods(value)));
-    setTokenLocation(&push->token_, loc);
-    return push;
+    return (PushToken*) new PushTokenMethods(loc, value);
 }
 
-class Rot3TokenMethods : public TokenMethods {
+class Rot3TokenMethods : public Token {
 public:
-    Rot3TokenMethods() {}
+    Rot3TokenMethods(SrcLoc location) :
+        Token(location) {}
 
     TokenType type() {
         return TOKEN_ROT3;
@@ -1548,15 +1459,13 @@ public:
 };
 
 Rot3Token* createRot3Token(SrcLoc location) {
-    Rot3Token* rot = (Rot3Token*) malloc(sizeof(Rot3Token));
-    setTokenType(&rot->token_, createTokenType(new Rot3TokenMethods()));
-    setTokenLocation(&rot->token_, location);
-    return rot;
+    return (Rot3Token*) new Rot3TokenMethods(location);
 }
 
-class SwapTokenMethods : public TokenMethods {
+class SwapTokenMethods : public Token {
 public:
-    SwapTokenMethods() {}
+    SwapTokenMethods(SrcLoc location) :
+        Token(location) {}
 
     TokenType type() {
         return TOKEN_SWAP;
@@ -1586,15 +1495,13 @@ public:
 };
 
 SwapToken* createSwapToken(SrcLoc loc) {
-    SwapToken* swap = (SwapToken*) malloc(sizeof(SwapToken));
-    setTokenType(&swap->token_, createTokenType(new SwapTokenMethods()));
-    setTokenLocation(&swap->token_, loc);
-    return swap;
+    return (SwapToken*) new SwapTokenMethods(loc);
 }
 
-class PopTokenMethods : public TokenMethods {
+class PopTokenMethods : public Token {
 public:
-    PopTokenMethods() {}
+    PopTokenMethods(SrcLoc location) :
+        Token(location) {}
 
     TokenType type() {
         return TOKEN_POP;
@@ -1624,18 +1531,15 @@ public:
 };
 
 PopToken* createPopToken(SrcLoc loc) {
-    PopToken* pop = (PopToken*) malloc(sizeof(PopToken));
-    setTokenType(&pop->token_, createTokenType(new PopTokenMethods()));
-    setTokenLocation(&pop->token_, loc);
-    return pop;
+    return (PopToken*) new PopTokenMethods(loc);
 }
 
-class BuiltinTokenMethods : public TokenMethods {
+class BuiltinTokenMethods : public Token {
 public:
     const char* name;
 
-    BuiltinTokenMethods(const char* name) :
-        name(name) {}
+    BuiltinTokenMethods(SrcLoc location, const char* name) :
+        Token(location), name(name) {}
 
     TokenType type() {
         return TOKEN_BUILTIN;
@@ -1668,19 +1572,17 @@ public:
 };
 
 const char* getBuiltinTokenName(BuiltinToken* token) {
-    return ((BuiltinTokenMethods*) token->token_.methods)->name;
+    return ((BuiltinTokenMethods*) token)->name;
 }
 
 BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
-    BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
-    setTokenType(&builtin->token_, createTokenType(new BuiltinTokenMethods(name)));
-    setTokenLocation(&builtin->token_, loc);
-    return builtin;
+    return (BuiltinToken*) new BuiltinTokenMethods(loc, name);
 }
 
-class CheckNoneTokenMethods : public TokenMethods {
+class CheckNoneTokenMethods : public Token {
 public:
-    CheckNoneTokenMethods() {}
+    CheckNoneTokenMethods(SrcLoc location) :
+        Token(location) {}
 
     TokenType type() {
         return TOKEN_CHECK_NONE;
@@ -1710,18 +1612,15 @@ public:
 };
 
 CheckNoneToken* createCheckNoneToken(SrcLoc location) {
-    CheckNoneToken* check = (CheckNoneToken*) malloc(sizeof(CheckNoneToken));
-    setTokenType(&check->token_, createTokenType(new CheckNoneTokenMethods()));
-    setTokenLocation(&check->token_, location);
-    return check;
+    return (CheckNoneToken*) new CheckNoneTokenMethods(location);
 }
 
-class NewFuncTokenMethods : public TokenMethods {
+class NewFuncTokenMethods : public Token {
 public:
     const char* name;
 
-    NewFuncTokenMethods(const char* name) :
-        name(name) {}
+    NewFuncTokenMethods(SrcLoc location, const char* name) :
+        Token(location), name(name) {}
 
     TokenType type() {
         return TOKEN_NEW_FUNC;
@@ -1754,14 +1653,11 @@ public:
 };
 
 const char* getNewFuncTokenName(NewFuncToken* token) {
-    return ((NewFuncTokenMethods*) token->token_.methods)->name;
+    return ((NewFuncTokenMethods*) token)->name;
 }
 
 NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
-    NewFuncToken* func = (NewFuncToken*) malloc(sizeof(NewFuncToken));
-    setTokenType(&func->token_, createTokenType(new NewFuncTokenMethods(name)));
-    setTokenLocation(&func->token_, location);
-    return func;
+    return (NewFuncToken*) new NewFuncTokenMethods(location, name);
 }
 
 /**
@@ -1797,8 +1693,8 @@ void printTokenWithIndent(Token* token, uint8_t indent) {
     //} else if(token->print == NULL) {
     //    printf("unknown\n");
     } else {
-        //token->print(token, indent);
-        token->methods->print(token, indent);
+        token->print(token, indent);
+        //token->methods->print(token, indent);
     }
 }
 
@@ -1815,8 +1711,8 @@ uint8_t tokensEqual(Token* a, Token* b) {
     if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b)) {
         return 0;
     }
-    //return a->equals(a, b);
-    return a->methods->equals(a, b);
+    return a->equals(a, b);
+    //return a->methods->equals(a, b);
 }
 
 uint8_t tokensEqualVoid(void* a, void* b) {
@@ -1831,6 +1727,6 @@ uint8_t branchesEqual(void* a, void* b) {
 }
 
 Token* copyToken(Token* token, CopyVisitor visitor, void* data) {
-    //return token->copy(token, visitor, data);
-    return token->methods->copy(token, visitor, data);
+    return token->copy(token, visitor, data);
+    //return token->methods->copy(token, visitor, data);
 }

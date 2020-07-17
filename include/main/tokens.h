@@ -66,18 +66,29 @@ public:
  * so tokens can be casted to their subtype and this supertype. All fields of
  * the token must be unique references.
  */
-struct Token {
-    TokenMethods* methods;
+class Token : public TokenMethods {
+public:
+    SrcLoc location;
+    //TokenMethods* methods;
 
-    //class fields
-    //TokenType type_;
-    //void (*destroy)(struct Token*);
-    //void (*print)(struct Token*, uint8_t);
-    //uint8_t (*equals)(struct Token*, struct Token*);
-    //struct Token* (*copy)(struct Token*, CopyVisitor, void*);
+    //Token(SrcLoc location) : location(location), methods(this) {}
+    Token(SrcLoc location) : location(location) {}
 
-    //instance fields
-    SrcLoc location_;
+    virtual TokenType type() {
+        return TOKEN_UNDEF;
+    }
+
+    virtual void destroy(Token*) {}
+
+    virtual void print(Token*, uint8_t) {};
+
+    virtual uint8_t equals(Token*, Token*) {
+        return 0;
+    }
+
+    virtual Token* copy(Token*, CopyVisitor, void*) {
+        return nullptr;
+    }
 };
 
 SrcLoc tokenLocation(Token* token);
