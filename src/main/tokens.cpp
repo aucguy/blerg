@@ -1557,41 +1557,40 @@ PushToken* createPushToken(SrcLoc loc, Token* value) {
     return push;
 }
 
-void destroyRot3Token(Token* self) {
-    UNUSED(self);
-}
+class Rot3TokenMethods : public TokenMethods {
+public:
+    Rot3TokenMethods() {}
 
-void printRot3Token(Token* self, uint8_t indent) {
-    UNUSED(self);
-    UNUSED(indent);
-    printf("rot3\n");
-}
+    TokenType type() {
+        return TOKEN_ROT3;
+    }
 
-uint8_t equalsRot3Token(Token* self, Token* other) {
-    UNUSED(self);
-    UNUSED(other);
-    return 1;
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-Token* copyRot3Token(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    return (Token*) createRot3Token(tokenLocation(self));
-}
+    void print(Token* self, uint8_t indent) {
+        UNUSED(self);
+        UNUSED(indent);
+        printf("rot3\n");
+    }
 
-LegacyTokenInit ROT3_TYPE_INIT = {
-        TOKEN_ROT3,
-        destroyRot3Token,
-        printRot3Token,
-        equalsRot3Token,
-        copyRot3Token
+    uint8_t equals(Token* self, Token* other) {
+        UNUSED(self);
+        UNUSED(other);
+        return 1;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        return (Token*) createRot3Token(tokenLocation(self));
+    }
 };
-
-Token ROT3_TYPE = createLegacyTokenType(ROT3_TYPE_INIT);
 
 Rot3Token* createRot3Token(SrcLoc location) {
     Rot3Token* rot = (Rot3Token*) malloc(sizeof(Rot3Token));
-    setTokenType(&rot->token_, ROT3_TYPE);
+    setTokenType(&rot->token_, createTokenType(new Rot3TokenMethods()));
     setTokenLocation(&rot->token_, location);
     return rot;
 }
