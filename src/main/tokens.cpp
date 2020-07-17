@@ -1473,41 +1473,40 @@ StoreToken* createStoreToken(SrcLoc loc, const char* name) {
     return store;
 }
 
-void destroyDupToken(Token* self) {
-    UNUSED(self);
-}
+class DupTokenMethods : public TokenMethods {
+public:
+    DupTokenMethods() {}
 
-void printDupToken(Token* self, uint8_t indent) {
-    UNUSED(self);
-    UNUSED(indent);
-    printf("dup\n");
-}
+    TokenType type() {
+        return TOKEN_DUP;
+    }
 
-uint8_t equalsDupToken(Token* self, Token* other) {
-    UNUSED(self);
-    UNUSED(other);
-    return 1;
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-Token* copyDupToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    return (Token*) createDupToken(tokenLocation(self));
-}
+    void print(Token* self, uint8_t indent) {
+        UNUSED(self);
+        UNUSED(indent);
+        printf("dup\n");
+    }
 
-LegacyTokenInit DUP_TYPE_INIT = {
-        TOKEN_DUP,
-        destroyDupToken,
-        printDupToken,
-        equalsDupToken,
-        copyDupToken
+    uint8_t equals(Token* self, Token* other) {
+        UNUSED(self);
+        UNUSED(other);
+        return 1;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        return (Token*) createDupToken(tokenLocation(self));
+    }
 };
-
-Token DUP_TYPE = createLegacyTokenType(DUP_TYPE_INIT);
 
 DupToken* createDupToken(SrcLoc loc) {
     DupToken* dup = (DupToken*) malloc(sizeof(DupToken));
-    setTokenType(&dup->token_, DUP_TYPE);
+    setTokenType(&dup->token_, createTokenType(new DupTokenMethods()));
     setTokenLocation(&dup->token_, loc);
     return dup;
 }
