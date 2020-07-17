@@ -1633,41 +1633,40 @@ SwapToken* createSwapToken(SrcLoc loc) {
     return swap;
 }
 
-void destroyPopToken(Token* self) {
-    UNUSED(self);
-}
+class PopTokenMethods : public TokenMethods {
+public:
+    PopTokenMethods() {}
 
-void printPopToken(Token* self, uint8_t indent) {
-    UNUSED(self);
-    UNUSED(indent);
-    printf("pop\n");
-}
+    TokenType type() {
+        return TOKEN_POP;
+    }
 
-uint8_t equalsPopToken(Token* self, Token* other) {
-    UNUSED(self);
-    UNUSED(other);
-    return 1;
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-Token* copyPopToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    return (Token*) createPopToken(tokenLocation(self));
-}
+    void print(Token* self, uint8_t indent) {
+        UNUSED(self);
+        UNUSED(indent);
+        printf("pop\n");
+    }
 
-LegacyTokenInit POP_TYPE_INIT = {
-        TOKEN_POP,
-        destroyPopToken,
-        printPopToken,
-        equalsPopToken,
-        copyPopToken
+    uint8_t equals(Token* self, Token* other) {
+        UNUSED(self);
+        UNUSED(other);
+        return 1;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        return (Token*) createPopToken(tokenLocation(self));
+    }
 };
-
-Token POP_TYPE = createLegacyTokenType(POP_TYPE_INIT);
 
 PopToken* createPopToken(SrcLoc loc) {
     PopToken* pop = (PopToken*) malloc(sizeof(PopToken));
-    setTokenType(&pop->token_, POP_TYPE);
+    setTokenType(&pop->token_, createTokenType(new PopTokenMethods()));
     setTokenLocation(&pop->token_, loc);
     return pop;
 }
