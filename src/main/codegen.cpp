@@ -433,7 +433,8 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitCheckNone(builder);
     } else if(getTokenType(token) == TOKEN_NEW_FUNC) {
         emitSrcLoc(builder, tokenLocation(token));
-        uint32_t* label = (uint32_t*) getMapStr(globalFuncs, ((NewFuncToken*) token)->name);
+        uint32_t* label = (uint32_t*) getMapStr(globalFuncs,
+                getNewFuncTokenName((NewFuncToken*) token));
         emitCreateFunc(builder, *label);
     } else {
         printf("warning: unknown token type\n");

@@ -341,8 +341,10 @@ typedef struct {
 
 typedef struct {
     Token token_;
-    const char* name;
+    //const char* name_;
 } NewFuncToken;
+
+const char* getNewFuncTokenName(NewFuncToken* token);
 
 void printTokenWithIndent(Token* token, uint8_t indent);
 void printToken(Token* token);

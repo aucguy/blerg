@@ -1757,45 +1757,51 @@ CheckNoneToken* createCheckNoneToken(SrcLoc location) {
     return check;
 }
 
-void destroyNewFuncToken(Token* self) {
-    NewFuncToken* func = (NewFuncToken*) self;
-    free((char*) func->name);
-}
+class NewFuncTokenMethods : public TokenMethods {
+public:
+    const char* name;
 
-void printNewFuncToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    NewFuncToken* func = (NewFuncToken*) self;
-    printf("new_func: %s\n", func->name);
-}
+    NewFuncTokenMethods(const char* name) :
+        name(name) {}
 
-uint8_t equalsNewFuncToken(Token* self, Token* other) {
-    NewFuncToken* func1 = (NewFuncToken*) self;
-    NewFuncToken* func2 = (NewFuncToken*) other;
-    return strcmp(func1->name, func2->name) == 0;
-}
+    TokenType type() {
+        return TOKEN_NEW_FUNC;
+    }
 
-Token* copyNewFuncToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    NewFuncToken* func = (NewFuncToken*) self;
-    return (Token*) createNewFuncToken(tokenLocation(self), newStr(func->name));
-}
+    void destroy(Token* self) {
+        //NewFuncToken* func = (NewFuncToken*) self;
+        //free((char*) func->name);
+    }
 
-LegacyTokenInit NEW_FUNC_TYPE_INIT = {
-        TOKEN_NEW_FUNC,
-        destroyNewFuncToken,
-        printNewFuncToken,
-        equalsNewFuncToken,
-        copyNewFuncToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        NewFuncToken* func = (NewFuncToken*) self;
+        printf("new_func: %s\n", getNewFuncTokenName(func));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        NewFuncToken* func1 = (NewFuncToken*) self;
+        NewFuncToken* func2 = (NewFuncToken*) other;
+        return strcmp(getNewFuncTokenName(func1), getNewFuncTokenName(func2)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        NewFuncToken* func = (NewFuncToken*) self;
+        return (Token*) createNewFuncToken(tokenLocation(self),
+                newStr(getNewFuncTokenName(func)));
+    }
 };
 
-Token NEW_FUNC_TYPE = createLegacyTokenType(NEW_FUNC_TYPE_INIT);
+const char* getNewFuncTokenName(NewFuncToken* token) {
+    return ((NewFuncTokenMethods*) token->token_.methods)->name;
+}
 
 NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
     NewFuncToken* func = (NewFuncToken*) malloc(sizeof(NewFuncToken));
-    setTokenType(&func->token_, NEW_FUNC_TYPE);
+    setTokenType(&func->token_, createTokenType(new NewFuncTokenMethods(name)));
     setTokenLocation(&func->token_, location);
-    func->name = name;
     return func;
 }
 
