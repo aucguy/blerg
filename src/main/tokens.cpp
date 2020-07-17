@@ -1719,41 +1719,40 @@ BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
     return builtin;
 }
 
-void destroyCheckNoneToken(Token* self) {
-    UNUSED(self);
-}
+class CheckNoneTokenMethods : public TokenMethods {
+public:
+    CheckNoneTokenMethods() {}
 
-void printCheckNoneToken(Token* self, uint8_t indent) {
-    UNUSED(self);
-    UNUSED(indent);
-    printf("check_none\n");
-}
+    TokenType type() {
+        return TOKEN_CHECK_NONE;
+    }
 
-uint8_t equalsCheckNoneToken(Token* self, Token* other) {
-    UNUSED(self);
-    UNUSED(other);
-    return 1;
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-Token* copyCheckNoneToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    return (Token*) createCheckNoneToken(tokenLocation(self));
-}
+    void print(Token* self, uint8_t indent) {
+        UNUSED(self);
+        UNUSED(indent);
+        printf("check_none\n");
+    }
 
-LegacyTokenInit CHECK_NONE_TYPE_INIT = {
-        TOKEN_CHECK_NONE,
-        destroyCheckNoneToken,
-        printCheckNoneToken,
-        equalsCheckNoneToken,
-        copyCheckNoneToken
+    uint8_t equals(Token* self, Token* other) {
+        UNUSED(self);
+        UNUSED(other);
+        return 1;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        return (Token*) createCheckNoneToken(tokenLocation(self));
+    }
 };
-
-Token CHECK_NONE_TYPE = createLegacyTokenType(CHECK_NONE_TYPE_INIT);
 
 CheckNoneToken* createCheckNoneToken(SrcLoc location) {
     CheckNoneToken* check = (CheckNoneToken*) malloc(sizeof(CheckNoneToken));
-    setTokenType(&check->token_, CHECK_NONE_TYPE);
+    setTokenType(&check->token_, createTokenType(new CheckNoneTokenMethods()));
     setTokenLocation(&check->token_, location);
     return check;
 }
