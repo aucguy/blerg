@@ -311,8 +311,10 @@ typedef struct {
 
 typedef struct {
     Token token_;
-    Token* value;
+    //Token* value_;
 } PushToken;
+
+Token* getPushTokenValue(PushToken* token);
 
 typedef struct {
     Token token_;

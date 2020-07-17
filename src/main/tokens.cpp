@@ -1511,43 +1511,49 @@ DupToken* createDupToken(SrcLoc loc) {
     return dup;
 }
 
-void destroyPushToken(Token* self) {
-    PushToken* push = (PushToken*) self;
-    destroyToken(push->value);
-}
+class PushTokenMethods : public TokenMethods {
+public:
+    Token* value;
 
-void printPushToken(Token* self, uint8_t ident) {
-    PushToken* push = (PushToken*) self;
-    printf("push:\n");
-    printTokenWithIndent(push->value, ident + 1);
-}
+    PushTokenMethods(Token* value) :
+        value(value) {}
 
-uint8_t equalsPushToken(Token* self, Token* other) {
-    PushToken* push1 = (PushToken*) self;
-    PushToken* push2 = (PushToken*) other;
-    return tokensEqual(push1->value, push2->value);
-}
+    TokenType type() {
+        return TOKEN_PUSH;
+    }
 
-Token* copyPushToken(Token* self, CopyVisitor visitor, void* data) {
-    PushToken* push = (PushToken*) self;
-    return (Token*) createPushToken(tokenLocation(self), visitor(push->value, data));
-}
+    void destroy(Token* self) {
+        //PushToken* push = (PushToken*) self;
+        //destroyToken(push->value);
+    }
 
-LegacyTokenInit PUSH_TYPE_INIT = {
-        TOKEN_PUSH,
-        destroyPushToken,
-        printPushToken,
-        equalsPushToken,
-        copyPushToken
+    void print(Token* self, uint8_t ident) {
+        PushToken* push = (PushToken*) self;
+        printf("push:\n");
+        printTokenWithIndent(getPushTokenValue(push), ident + 1);
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        PushToken* push1 = (PushToken*) self;
+        PushToken* push2 = (PushToken*) other;
+        return tokensEqual(getPushTokenValue(push1), getPushTokenValue(push2));
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        PushToken* push = (PushToken*) self;
+        return (Token*) createPushToken(tokenLocation(self),
+                visitor(getPushTokenValue(push), data));
+    }
 };
 
-Token PUSH_TYPE = createLegacyTokenType(PUSH_TYPE_INIT);
+Token* getPushTokenValue(PushToken* token) {
+    return ((PushTokenMethods*) token->token_.methods)->value;
+}
 
 PushToken* createPushToken(SrcLoc loc, Token* value) {
     PushToken* push = (PushToken*) malloc(sizeof(PushToken));
-    setTokenType(&push->token_, PUSH_TYPE);
+    setTokenType(&push->token_, createTokenType(new PushTokenMethods(value)));
     setTokenLocation(&push->token_, loc);
-    push->value = value;
     return push;
 }
 

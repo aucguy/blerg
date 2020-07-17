@@ -415,7 +415,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitDup(builder);
     } else if(getTokenType(token) == TOKEN_PUSH) {
         emitSrcLoc(builder, tokenLocation(token));
-        compileToken(builder, globalFuncs, labels, ((PushToken*) token)->value);
+        compileToken(builder, globalFuncs, labels, getPushTokenValue((PushToken*) token));
     } else if(getTokenType(token) == TOKEN_ROT3) {
         emitSrcLoc(builder, tokenLocation(token));
         emitRot3(builder);
