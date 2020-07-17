@@ -1671,45 +1671,51 @@ PopToken* createPopToken(SrcLoc loc) {
     return pop;
 }
 
-void destroyBuiltinToken(Token* self) {
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    free((char*) builtin->name);
-}
+class BuiltinTokenMethods : public TokenMethods {
+public:
+    const char* name;
 
-void printBuiltinToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    printf("builtin: %s\n", builtin->name);
-}
+    BuiltinTokenMethods(const char* name) :
+        name(name) {}
 
-uint8_t equalsBuiltinToken(Token* self, Token* other) {
-    BuiltinToken* builtin1 = (BuiltinToken*) self;
-    BuiltinToken* builtin2 = (BuiltinToken*) other;
-    return strcmp(builtin1->name, builtin2->name) == 0;
-}
+    TokenType type() {
+        return TOKEN_BUILTIN;
+    }
 
-Token* copyBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    return (Token*) createBuiltinToken(tokenLocation(self), newStr(builtin->name));
-}
+    void destroy(Token* self) {
+        //BuiltinToken* builtin = (BuiltinToken*) self;
+        //free((char*) builtin->name);
+    }
 
-LegacyTokenInit BUILTIN_TYPE_INIT = {
-        TOKEN_BUILTIN,
-        destroyBuiltinToken,
-        printBuiltinToken,
-        equalsBuiltinToken,
-        copyBuiltinToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        BuiltinToken* builtin = (BuiltinToken*) self;
+        printf("builtin: %s\n", getBuiltinTokenName(builtin));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        BuiltinToken* builtin1 = (BuiltinToken*) self;
+        BuiltinToken* builtin2 = (BuiltinToken*) other;
+        return strcmp(getBuiltinTokenName(builtin1), getBuiltinTokenName(builtin2)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        BuiltinToken* builtin = (BuiltinToken*) self;
+        return (Token*) createBuiltinToken(tokenLocation(self),
+                newStr(getBuiltinTokenName(builtin)));
+    }
 };
 
-Token BUILTIN_TYPE = createLegacyTokenType(BUILTIN_TYPE_INIT);
+const char* getBuiltinTokenName(BuiltinToken* token) {
+    return ((BuiltinTokenMethods*) token->token_.methods)->name;
+}
 
 BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
     BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
-    setTokenType(&builtin->token_, BUILTIN_TYPE);
+    setTokenType(&builtin->token_, createTokenType(new BuiltinTokenMethods(name)));
     setTokenLocation(&builtin->token_, loc);
-    builtin->name = name;
     return builtin;
 }
 

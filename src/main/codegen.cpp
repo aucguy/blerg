@@ -427,7 +427,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitPop(builder);
     } else if(getTokenType(token) == TOKEN_BUILTIN) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitPushBuiltin(builder, ((BuiltinToken*) token)->name);
+        emitPushBuiltin(builder, getBuiltinTokenName((BuiltinToken*) token));
     } else if(getTokenType(token) == TOKEN_CHECK_NONE) {
         emitSrcLoc(builder, tokenLocation(token));
         emitCheckNone(builder);

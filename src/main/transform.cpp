@@ -465,7 +465,7 @@ Token* destructureLValue(Token* lvalue) {
         return (Token*) ret;
     } else if(getTokenType(lvalue) == TOKEN_BUILTIN) {
         BuiltinToken* builtin = (BuiltinToken*) lvalue;
-        if(strcmp(builtin->name, "none") != 0) {
+        if(strcmp(getBuiltinTokenName(builtin), "none") != 0) {
             //TODO handle error condition
             return NULL;
         }

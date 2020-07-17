@@ -330,8 +330,10 @@ typedef struct {
 
 typedef struct {
     Token token_;
-    const char* name;
+    //const char* name_;
 } BuiltinToken;
+
+const char* getBuiltinTokenName(BuiltinToken* token);
 
 typedef struct {
     Token token_;
