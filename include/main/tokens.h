@@ -61,22 +61,6 @@ public:
     virtual Token* copy(Token*, CopyVisitor, void*) = 0;
 };
 
-class LegacyTokenMethods : public TokenMethods {
-public:
-    TokenType typeValue;
-    void (*destroyFunc)(Token*);
-    void (*printFunc)(Token*, uint8_t);
-    uint8_t (*equalsFunc)(Token*, Token*);
-    Token* (*copyFunc)(Token*, CopyVisitor, void*);
-
-    LegacyTokenMethods();
-    ~LegacyTokenMethods();
-    TokenType type();
-    void destroy(Token*);
-    void print(Token*, uint8_t);
-    uint8_t equals(Token*, Token*);
-    Token* copy(Token*, CopyVisitor, void*);
-};
 /**
  * Supertype for all tokens. This should be the first field of all tokens,
  * so tokens can be casted to their subtype and this supertype. All fields of
@@ -95,16 +79,6 @@ struct Token {
     //instance fields
     SrcLoc location_;
 };
-
-typedef struct {
-    TokenType type;
-    void (*destroy)(struct Token*);
-    void (*print)(struct Token*, uint8_t);
-    uint8_t (*equals)(struct Token*, struct Token*);
-    struct Token* (*copy)(struct Token*, CopyVisitor, void*);
-} LegacyTokenInit;
-
-Token createLegacyTokenType(LegacyTokenInit);
 
 SrcLoc tokenLocation(Token* token);
 void setTokenLocation(Token* token, SrcLoc loc);

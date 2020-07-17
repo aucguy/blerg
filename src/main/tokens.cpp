@@ -9,53 +9,12 @@
 #define UNUSED(x) (void)(x)
 #define tokenInstanceFields {0, 0}
 
-Token createLegacyTokenType(LegacyTokenInit init) {
-    LegacyTokenMethods* methods = new LegacyTokenMethods();
-    methods->typeValue = init.type;
-    methods->destroyFunc = init.destroy;
-    methods->printFunc = init.print;
-    methods->equalsFunc = init.equals;
-    methods->copyFunc = init.copy;
-
-    Token token;
-    token.methods = methods;
-    token.location_.line = 0;
-    token.location_.column = 0;
-
-    return token;
-}
-
 Token createTokenType(TokenMethods* methods) {
     Token token;
     token.methods = methods;
     token.location_.line = 0;
     token.location_.column = 0;
     return token;
-}
-
-
-LegacyTokenMethods::LegacyTokenMethods() :
-        typeValue(TOKEN_UNDEF), destroyFunc(nullptr), printFunc(nullptr),
-        equalsFunc(nullptr), copyFunc(nullptr) {}
-
-LegacyTokenMethods::~LegacyTokenMethods() {}
-
-TokenType LegacyTokenMethods::type() {
-    return this->typeValue;
-}
-
-void LegacyTokenMethods::destroy(Token* self) {}
-
-void LegacyTokenMethods::print(Token* token, uint8_t indent) {
-    this->printFunc(token, indent);
-}
-
-uint8_t LegacyTokenMethods::equals(Token* self, Token* other) {
-    return this->equalsFunc(self, other);
-}
-
-Token* LegacyTokenMethods::copy(Token* self, CopyVisitor visitor, void* data) {
-    return this->copyFunc(self, visitor, data);
 }
 
 uint8_t tokensEqualVoid(void* a, void* b);
