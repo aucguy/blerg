@@ -1595,83 +1595,40 @@ Rot3Token* createRot3Token(SrcLoc location) {
     return rot;
 }
 
-void destroyBuiltinToken(Token* self) {
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    free((char*) builtin->name);
-}
+class SwapTokenMethods : public TokenMethods {
+public:
+    SwapTokenMethods() {}
 
-void printBuiltinToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    printf("builtin: %s\n", builtin->name);
-}
+    TokenType type() {
+        return TOKEN_SWAP;
+    }
 
-uint8_t equalsBuiltinToken(Token* self, Token* other) {
-    BuiltinToken* builtin1 = (BuiltinToken*) self;
-    BuiltinToken* builtin2 = (BuiltinToken*) other;
-    return strcmp(builtin1->name, builtin2->name) == 0;
-}
+    void destroy(Token* self) {
+        UNUSED(self);
+    }
 
-Token* copyBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    return (Token*) createBuiltinToken(tokenLocation(self), newStr(builtin->name));
-}
+    void print(Token* self, uint8_t indent) {
+        UNUSED(self);
+        UNUSED(indent);
+        printf("swap\n");
+    }
 
-LegacyTokenInit BUILTIN_TYPE_INIT = {
-        TOKEN_BUILTIN,
-        destroyBuiltinToken,
-        printBuiltinToken,
-        equalsBuiltinToken,
-        copyBuiltinToken
+    uint8_t equals(Token* self, Token* other) {
+        UNUSED(self);
+        UNUSED(other);
+        return 1;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        return (Token*) createSwapToken(tokenLocation(self));
+    }
 };
-
-Token BUILTIN_TYPE = createLegacyTokenType(BUILTIN_TYPE_INIT);
-
-BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
-    BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
-    setTokenType(&builtin->token_, BUILTIN_TYPE);
-    setTokenLocation(&builtin->token_, loc);
-    builtin->name = name;
-    return builtin;
-}
-
-void destroySwapToken(Token* self) {
-    UNUSED(self);
-}
-
-void printSwapToken(Token* self, uint8_t indent) {
-    UNUSED(self);
-    UNUSED(indent);
-    printf("swap\n");
-}
-
-uint8_t equalsSwapToken(Token* self, Token* other) {
-    UNUSED(self);
-    UNUSED(other);
-    return 1;
-}
-
-Token* copySwapToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    return (Token*) createSwapToken(tokenLocation(self));
-}
-
-LegacyTokenInit SWAP_TYPE_INIT = {
-        TOKEN_SWAP,
-        destroySwapToken,
-        printSwapToken,
-        equalsSwapToken,
-        copySwapToken
-};
-
-Token SWAP_TYPE = createLegacyTokenType(SWAP_TYPE_INIT);
 
 SwapToken* createSwapToken(SrcLoc loc) {
     SwapToken* swap = (SwapToken*) malloc(sizeof(SwapToken));
-    setTokenType(&swap->token_, SWAP_TYPE);
+    setTokenType(&swap->token_, createTokenType(new SwapTokenMethods()));
     setTokenLocation(&swap->token_, loc);
     return swap;
 }
@@ -1713,6 +1670,48 @@ PopToken* createPopToken(SrcLoc loc) {
     setTokenType(&pop->token_, POP_TYPE);
     setTokenLocation(&pop->token_, loc);
     return pop;
+}
+
+void destroyBuiltinToken(Token* self) {
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    free((char*) builtin->name);
+}
+
+void printBuiltinToken(Token* self, uint8_t indent) {
+    UNUSED(indent);
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    printf("builtin: %s\n", builtin->name);
+}
+
+uint8_t equalsBuiltinToken(Token* self, Token* other) {
+    BuiltinToken* builtin1 = (BuiltinToken*) self;
+    BuiltinToken* builtin2 = (BuiltinToken*) other;
+    return strcmp(builtin1->name, builtin2->name) == 0;
+}
+
+Token* copyBuiltinToken(Token* self, CopyVisitor visitor, void* data) {
+    UNUSED(visitor);
+    UNUSED(data);
+    BuiltinToken* builtin = (BuiltinToken*) self;
+    return (Token*) createBuiltinToken(tokenLocation(self), newStr(builtin->name));
+}
+
+LegacyTokenInit BUILTIN_TYPE_INIT = {
+        TOKEN_BUILTIN,
+        destroyBuiltinToken,
+        printBuiltinToken,
+        equalsBuiltinToken,
+        copyBuiltinToken
+};
+
+Token BUILTIN_TYPE = createLegacyTokenType(BUILTIN_TYPE_INIT);
+
+BuiltinToken* createBuiltinToken(SrcLoc loc, const char* name) {
+    BuiltinToken* builtin = (BuiltinToken*) malloc(sizeof(BuiltinToken));
+    setTokenType(&builtin->token_, BUILTIN_TYPE);
+    setTokenLocation(&builtin->token_, loc);
+    builtin->name = name;
+    return builtin;
 }
 
 void destroyCheckNoneToken(Token* self) {
