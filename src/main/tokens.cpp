@@ -1425,45 +1425,51 @@ CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
     return call;
 }
 
-void destroyStoreToken(Token* self) {
-    StoreToken* store = (StoreToken*) self;
-    free((char*) store->name);
-}
+class StoreTokenMethods : public TokenMethods {
+public:
+    const char* name;
 
-void printStoreToken(Token* self, uint8_t indent) {
-    UNUSED(indent);
-    StoreToken* store = (StoreToken*) self;
-    printf("store: %s\n", store->name);
-}
+    StoreTokenMethods(const char* name) :
+        name(name) {}
 
-uint8_t equalsStoreToken(Token* self, Token* other) {
-    StoreToken* store1 = (StoreToken*) self;
-    StoreToken* store2 = (StoreToken*) other;
-    return strcmp(store1->name, store2->name) == 0;
-}
+    TokenType type() {
+        return TOKEN_STORE;
+    }
 
-Token* copyStoreToken(Token* self, CopyVisitor visitor, void* data) {
-    UNUSED(visitor);
-    UNUSED(data);
-    StoreToken* store = (StoreToken*) self;
-    return (Token*) createStoreToken(tokenLocation(self), newStr(store->name));
-}
+    void destroy(Token* self) {
+        //StoreToken* store = (StoreToken*) self;
+        //free((char*) store->name);
+    }
 
-LegacyTokenInit STORE_TYPE_INIT = {
-        TOKEN_STORE,
-        destroyStoreToken,
-        printStoreToken,
-        equalsStoreToken,
-        copyStoreToken
+    void print(Token* self, uint8_t indent) {
+        UNUSED(indent);
+        StoreToken* store = (StoreToken*) self;
+        printf("store: %s\n", getStoreTokenName(store));
+    }
+
+    uint8_t equals(Token* self, Token* other) {
+        StoreToken* store1 = (StoreToken*) self;
+        StoreToken* store2 = (StoreToken*) other;
+        return strcmp(getStoreTokenName(store1), getStoreTokenName(store2)) == 0;
+    }
+
+    Token* copy(Token* self, CopyVisitor visitor, void* data) {
+        UNUSED(visitor);
+        UNUSED(data);
+        StoreToken* store = (StoreToken*) self;
+        return (Token*) createStoreToken(tokenLocation(self),
+                newStr(getStoreTokenName(store)));
+    }
 };
 
-Token STORE_TYPE = createLegacyTokenType(STORE_TYPE_INIT);
+const char* getStoreTokenName(StoreToken* token) {
+    return ((StoreTokenMethods*) token->token_.methods)->name;
+}
 
 StoreToken* createStoreToken(SrcLoc loc, const char* name) {
     StoreToken* store = (StoreToken*) malloc(sizeof(StoreToken));
-    setTokenType(&store->token_, STORE_TYPE);
+    setTokenType(&store->token_, createTokenType(new StoreTokenMethods(name)));
     setTokenLocation(&store->token_, loc);
-    store->name = name;
     return store;
 }
 

@@ -300,8 +300,10 @@ uint8_t getCallOpTokenArity(CallOpToken* token);
 
 typedef struct {
     Token token_;
-    const char* name;
+    //const char* name_;
 } StoreToken;
+
+const char* getStoreTokenName(StoreToken* token);
 
 typedef struct {
     Token token_;

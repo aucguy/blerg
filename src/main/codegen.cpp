@@ -409,7 +409,7 @@ void compileToken(ModuleBuilder* builder, Map* globalFuncs, Map* labels,
         emitCall(builder, getCallOpTokenArity((CallOpToken*) token));
     } else if(getTokenType(token) == TOKEN_STORE) {
         emitSrcLoc(builder, tokenLocation(token));
-        emitStore(builder, ((StoreToken*) token)->name);
+        emitStore(builder, getStoreTokenName((StoreToken*) token));
     } else if(getTokenType(token) == TOKEN_DUP) {
         emitSrcLoc(builder, tokenLocation(token));
         emitDup(builder);
