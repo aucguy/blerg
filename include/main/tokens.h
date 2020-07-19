@@ -96,45 +96,87 @@ void setTokenLocation(Token* token, SrcLoc loc);
 TokenType getTokenType(Token* token);
 void setTokenType(Token* token, Token type);
 
-typedef struct {
-    Token token_;
-    //int32_t value;
-} IntToken;
+class IntToken : public Token {
+public:
+    int32_t value;
+
+    IntToken(SrcLoc location, int32_t value);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* token, CopyVisitor visitor, void* data);
+};
 
 int32_t getIntTokenValue(IntToken* token);
 
-typedef struct {
-    Token token_;
-    //float value;
-} FloatToken;
+class FloatToken : public Token {
+public:
+    float value;
+
+    FloatToken(SrcLoc location, float value);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 float getFloatTokenValue(FloatToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* value_;
-} LiteralToken;
+class LiteralToken : public Token {
+public:
+    const char* value;
+
+    LiteralToken(SrcLoc location, const char* value);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* token, CopyVisitor visitor, void* data);
+};
 
 const char* getLiteralTokenValue(LiteralToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* value_;
-} IdentifierToken;
+class IdentifierToken : public Token {
+public:
+    const char* value;
+
+    IdentifierToken(SrcLoc location, const char* value);
+    TokenType type();
+    void destroy(Token* token);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* token, CopyVisitor visitor, void* data);
+};
 
 const char* getIdentifierTokenValue(IdentifierToken* token);
 
-typedef struct {
-    Token token_;
-    //List* elements_;
-} TupleToken;
+class TupleToken : public Token {
+public:
+    List* elements;
+
+    TupleToken(SrcLoc location, List* elements);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getTupleTokenElements(TupleToken* token);
 
-typedef struct {
-    Token token_;
-    //List* elements_;
-} ListToken;
+class ListToken : public Token {
+public:
+    List* elements;
+
+    ListToken(SrcLoc location, List* elements);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getListTokenElements(ListToken* token);
 
@@ -143,53 +185,96 @@ typedef struct {
     Token* value;
 } ObjectPair;
 
-typedef struct {
-    Token token_;
-    //List* elements_;
-} ObjectToken;
+
+class ObjectToken : public Token {
+public:
+    List* elements;
+
+    ObjectToken(SrcLoc location, List* elements);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getObjectTokenElements(ObjectToken* token);
 
-typedef struct {
-    Token token_;
-    //List* children_;
-} CallToken;
+class CallToken : public Token {
+public:
+    List* children;
+
+    CallToken(SrcLoc location, List* children);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getCallTokenChildren(CallToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* op_;
-    //Token* left_;
-    //Token* right_;
-} BinaryOpToken;
+class BinaryOpToken : public Token {
+public:
+    const char* op;
+    Token* left;
+    Token* right;
+
+    BinaryOpToken(SrcLoc location, const char* op, Token* left, Token* right);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getBinaryOpTokenOp(BinaryOpToken* token);
 Token* getBinaryOpTokenLeft(BinaryOpToken* token);
 Token* getBinaryOpTokenRight(BinaryOpToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* op_;
-    //Token* child_;
-} UnaryOpToken;
+class UnaryOpToken : public Token {
+public:
+    const char* op;
+    Token* child;
+
+    UnaryOpToken(SrcLoc location, const char* op, Token* child) ;
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getUnaryOpTokenOp(UnaryOpToken* token);
 Token* getUnaryOpTokenChild(UnaryOpToken* token);
 
-typedef struct {
-    Token token_;
-    //Token* left_;
-    //Token* right_;
-} AssignmentToken;
+class AssignmentToken : public Token {
+public:
+    Token* left;
+    Token* right;
+
+    AssignmentToken(SrcLoc location, Token* left, Token* right);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 Token* getAssignmentTokenLeft(AssignmentToken* token);
 Token* getAssignmentTokenRight(AssignmentToken* token);
 
-typedef struct {
-    Token token_;
-    //List* children_;
-} BlockToken;
+class BlockToken : public Token {
+public:
+    List* children;
+
+    BlockToken(SrcLoc location, List* children);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getBlockTokenChildren(BlockToken* token);
 
@@ -198,136 +283,263 @@ typedef struct {
     BlockToken* block;
 } IfBranch;
 
-typedef struct {
-    Token token_;
-    //List* branches_;
-    //BlockToken* elseBranch_;
-} IfToken;
+class IfToken : public Token {
+public:
+    List* branches;
+    BlockToken* elseBranch;
+
+    IfToken(SrcLoc location, List* branches, BlockToken* elseBranch);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 List* getIfTokenBranches(IfToken* token);
 BlockToken* getIfTokenElseBranch(IfToken* token);
 
-typedef struct {
-    Token token_;
-    //Token* condition_;
-    //BlockToken* body_;
-} WhileToken;
+class WhileToken : public Token {
+public:
+    Token* condition;
+    BlockToken* body;
+
+    WhileToken(SrcLoc location, Token* condition, BlockToken* body);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 Token* getWhileTokenCondition(WhileToken* token);
 BlockToken* getWhileTokenBody(WhileToken* token);
 
-typedef struct {
-    Token token_;
-    //IdentifierToken* name_;
-    //List* args_;
-    //BlockToken* body_;
-} FuncToken;
+class FuncToken : public Token {
+public:
+    IdentifierToken* name;
+    List* args;
+    BlockToken* body;
+
+    FuncToken(SrcLoc loc, IdentifierToken* name, List* args, BlockToken* body);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 IdentifierToken* getFuncTokenName(FuncToken* token);
 void setFuncTokenName(FuncToken* token, IdentifierToken* name);
 List* getFuncTokenArgs(FuncToken* token);
 BlockToken* getFuncTokenBody(FuncToken* token);
 
-typedef struct {
-    Token token_;
-    //Token* body_;
-} ReturnToken;
+class ReturnToken : public Token {
+public:
+    Token* body;
+
+    ReturnToken(SrcLoc location, Token* body);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 Token* getReturnTokenBody(ReturnToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* name_;
-} LabelToken;
+class LabelToken : public Token {
+public:
+    const char* name;
+
+    LabelToken(SrcLoc location, const char* name);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getLabelTokenName(LabelToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* label_;
-} AbsJumpToken;
+class AbsJumpToken : public Token {
+public:
+    const char* label;
+
+    AbsJumpToken(SrcLoc location, const char* label);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getAbsJumpTokenLabel(AbsJumpToken* token);
 
-typedef struct {
-    Token token_;
-    //Token* condition_;
-    //const char* label_;
+class CondJumpToken : public Token {
+public:
+    Token* condition;
+    const char* label;
     //if the condition is false and when is 0 then the jump is taken
     //if the condition is true and when is 1 then the jump is taken
-    //uint8_t when_;
-} CondJumpToken;
+    uint8_t when;
+
+    CondJumpToken(SrcLoc loc, Token* condition, const char* label, uint8_t when);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 Token* getCondJumpTokenCondition(CondJumpToken* token);
 const char* getCondJumpTokenLabel(CondJumpToken* token);
 uint8_t getCondJumpTokenWhen(CondJumpToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* name_;
-} PushBuiltinToken;
+class PushBuiltinToken : public Token {
+public:
+    const char* name;
+
+    PushBuiltinToken(SrcLoc location, const char* name);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getPushBuiltinTokenName(PushBuiltinToken* token);
 
-typedef struct {
-    Token token_;
-    //int32_t value_;
-} PushIntToken;
+class PushIntToken : public Token {
+public:
+    int32_t value;
 
+    PushIntToken(SrcLoc location, int32_t value);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 int32_t getPushIntTokenValue(PushIntToken* token);
 
-typedef struct {
-    Token token_;
-    //uint8_t arity_;
-} CallOpToken;
+class CallOpToken : public Token {
+public:
+    uint8_t arity;
+
+    CallOpToken(SrcLoc location, uint8_t arity);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 uint8_t getCallOpTokenArity(CallOpToken* token);
 
-typedef struct {
-    Token token_;
-    //const char* name_;
-} StoreToken;
+class StoreToken : public Token {
+public:
+    const char* name;
+
+    StoreToken(SrcLoc location, const char* name);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getStoreTokenName(StoreToken* token);
 
-typedef struct {
-    Token token_;
-} DupToken;
+class DupToken : public Token {
+public:
+    DupToken(SrcLoc location);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
-typedef struct {
-    Token token_;
-    //Token* value_;
-} PushToken;
+class PushToken : public Token {
+public:
+    Token* value;
+
+    PushToken(SrcLoc location, Token* value);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t ident);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 Token* getPushTokenValue(PushToken* token);
 
-typedef struct {
-    Token token_;
-} Rot3Token;
+class Rot3Token : public Token {
+public:
+    Rot3Token(SrcLoc location);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
-typedef struct {
-    Token token_;
-} SwapToken;
+class SwapToken : public Token {
+public:
+    SwapToken(SrcLoc location);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
-typedef struct {
-    Token token_;
-} PopToken;
+class PopToken : public Token {
+public:
+    PopToken(SrcLoc location);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
-typedef struct {
-    Token token_;
-    //const char* name_;
-} BuiltinToken;
+class BuiltinToken : public Token {
+public:
+    const char* name;
+
+    BuiltinToken(SrcLoc location, const char* name);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getBuiltinTokenName(BuiltinToken* token);
 
-typedef struct {
-    Token token_;
-} CheckNoneToken;
+class CheckNoneToken : public Token {
+public:
+    CheckNoneToken(SrcLoc location);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
-typedef struct {
-    Token token_;
-    //const char* name_;
-} NewFuncToken;
+class NewFuncToken : public Token {
+public:
+    const char* name;
+
+    NewFuncToken(SrcLoc location, const char* name);
+    TokenType type();
+    void destroy(Token* self);
+    void print(Token* self, uint8_t indent);
+    uint8_t equals(Token* self, Token* other);
+    Token* copy(Token* self, CopyVisitor visitor, void* data);
+};
 
 const char* getNewFuncTokenName(NewFuncToken* token);
 
