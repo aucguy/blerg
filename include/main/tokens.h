@@ -43,17 +43,23 @@ typedef enum {
     TOKEN_POP,
     TOKEN_BUILTIN,
     TOKEN_CHECK_NONE,
-    TOKEN_NEW_FUNC,
-    TOKEN_UNDEF
+    TOKEN_NEW_FUNC
 } TokenType;
 
 typedef struct Token Token;
 
 typedef struct Token* (*CopyVisitor)(struct Token*, void*);
 
-class TokenMethods {
+/**
+ * Supertype for all tokens. This should be the first field of all tokens,
+ * so tokens can be casted to their subtype and this supertype. All fields of
+ * the token must be unique references.
+ */
+class Token {
 public:
-    virtual ~TokenMethods() {} ;
+    SrcLoc location;
+
+    Token(SrcLoc location) : location(location) {}
     virtual TokenType type() = 0;
     virtual void destroy(Token*) = 0;
     virtual void print(Token*, uint8_t) = 0;
@@ -61,40 +67,9 @@ public:
     virtual Token* copy(Token*, CopyVisitor, void*) = 0;
 };
 
-/**
- * Supertype for all tokens. This should be the first field of all tokens,
- * so tokens can be casted to their subtype and this supertype. All fields of
- * the token must be unique references.
- */
-class Token : public TokenMethods {
-public:
-    SrcLoc location;
-    //TokenMethods* methods;
-
-    //Token(SrcLoc location) : location(location), methods(this) {}
-    Token(SrcLoc location) : location(location) {}
-
-    virtual TokenType type() {
-        return TOKEN_UNDEF;
-    }
-
-    virtual void destroy(Token*) {}
-
-    virtual void print(Token*, uint8_t) {};
-
-    virtual uint8_t equals(Token*, Token*) {
-        return 0;
-    }
-
-    virtual Token* copy(Token*, CopyVisitor, void*) {
-        return nullptr;
-    }
-};
-
 SrcLoc tokenLocation(Token* token);
-void setTokenLocation(Token* token, SrcLoc loc);
+//void setTokenLocation(Token* token, SrcLoc loc);
 TokenType getTokenType(Token* token);
-void setTokenType(Token* token, Token type);
 
 class IntToken : public Token {
 public:

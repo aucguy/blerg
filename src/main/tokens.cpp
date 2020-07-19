@@ -16,12 +16,7 @@ SrcLoc tokenLocation(Token* token) {
     return token->location;
 }
 
-void setTokenLocation(Token* token, SrcLoc loc) {
-    token->location = loc;
-}
-
 TokenType getTokenType(Token* token) {
-    //return token->methods->type();
     return token->type();
 }
 
@@ -1534,11 +1529,8 @@ void printTokenWithIndent(Token* token, uint8_t indent) {
 
     if(token == NULL) {
         printf("NULL\n");
-    //} else if(token->print == NULL) {
-    //    printf("unknown\n");
     } else {
         token->print(token, indent);
-        //token->methods->print(token, indent);
     }
 }
 
@@ -1550,13 +1542,10 @@ void printToken(Token* token) {
  * Determines if two tokens are equal.
  */
 uint8_t tokensEqual(Token* a, Token* b) {
-    //if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b) ||
-    //        a->equals == NULL || b->equals == NULL) {
     if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b)) {
         return 0;
     }
     return a->equals(a, b);
-    //return a->methods->equals(a, b);
 }
 
 uint8_t tokensEqualVoid(void* a, void* b) {
@@ -1572,5 +1561,4 @@ uint8_t branchesEqual(void* a, void* b) {
 
 Token* copyToken(Token* token, CopyVisitor visitor, void* data) {
     return token->copy(token, visitor, data);
-    //return token->methods->copy(token, visitor, data);
 }
