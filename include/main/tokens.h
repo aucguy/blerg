@@ -61,10 +61,10 @@ public:
 
     Token(SrcLoc location) : location(location) {}
     virtual TokenType type() = 0;
-    virtual void destroy(Token*) = 0;
-    virtual void print(Token*, uint8_t) = 0;
-    virtual uint8_t equals(Token*, Token*) = 0;
-    virtual Token* copy(Token*, CopyVisitor, void*) = 0;
+    virtual void destroy() = 0;
+    virtual void print(uint8_t) = 0;
+    virtual uint8_t equals(Token*) = 0;
+    virtual Token* copy(CopyVisitor, void*) = 0;
 };
 
 SrcLoc tokenLocation(Token* token);
@@ -77,10 +77,10 @@ public:
 
     IntToken(SrcLoc location, int32_t value);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* token, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 int32_t getIntTokenValue(IntToken* token);
@@ -91,10 +91,10 @@ public:
 
     FloatToken(SrcLoc location, float value);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 float getFloatTokenValue(FloatToken* token);
@@ -105,10 +105,10 @@ public:
 
     LiteralToken(SrcLoc location, const char* value);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* token, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getLiteralTokenValue(LiteralToken* token);
@@ -119,10 +119,10 @@ public:
 
     IdentifierToken(SrcLoc location, const char* value);
     TokenType type();
-    void destroy(Token* token);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* token, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getIdentifierTokenValue(IdentifierToken* token);
@@ -133,10 +133,10 @@ public:
 
     TupleToken(SrcLoc location, List* elements);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getTupleTokenElements(TupleToken* token);
@@ -147,10 +147,10 @@ public:
 
     ListToken(SrcLoc location, List* elements);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getListTokenElements(ListToken* token);
@@ -167,10 +167,10 @@ public:
 
     ObjectToken(SrcLoc location, List* elements);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getObjectTokenElements(ObjectToken* token);
@@ -181,10 +181,10 @@ public:
 
     CallToken(SrcLoc location, List* children);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getCallTokenChildren(CallToken* token);
@@ -197,10 +197,10 @@ public:
 
     BinaryOpToken(SrcLoc location, const char* op, Token* left, Token* right);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getBinaryOpTokenOp(BinaryOpToken* token);
@@ -214,10 +214,10 @@ public:
 
     UnaryOpToken(SrcLoc location, const char* op, Token* child) ;
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getUnaryOpTokenOp(UnaryOpToken* token);
@@ -230,10 +230,10 @@ public:
 
     AssignmentToken(SrcLoc location, Token* left, Token* right);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 Token* getAssignmentTokenLeft(AssignmentToken* token);
@@ -245,10 +245,10 @@ public:
 
     BlockToken(SrcLoc location, List* children);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getBlockTokenChildren(BlockToken* token);
@@ -265,10 +265,10 @@ public:
 
     IfToken(SrcLoc location, List* branches, BlockToken* elseBranch);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 List* getIfTokenBranches(IfToken* token);
@@ -281,10 +281,10 @@ public:
 
     WhileToken(SrcLoc location, Token* condition, BlockToken* body);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 Token* getWhileTokenCondition(WhileToken* token);
@@ -298,10 +298,10 @@ public:
 
     FuncToken(SrcLoc loc, IdentifierToken* name, List* args, BlockToken* body);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 IdentifierToken* getFuncTokenName(FuncToken* token);
@@ -315,10 +315,10 @@ public:
 
     ReturnToken(SrcLoc location, Token* body);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 Token* getReturnTokenBody(ReturnToken* token);
@@ -329,10 +329,10 @@ public:
 
     LabelToken(SrcLoc location, const char* name);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getLabelTokenName(LabelToken* token);
@@ -343,10 +343,10 @@ public:
 
     AbsJumpToken(SrcLoc location, const char* label);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getAbsJumpTokenLabel(AbsJumpToken* token);
@@ -361,10 +361,10 @@ public:
 
     CondJumpToken(SrcLoc loc, Token* condition, const char* label, uint8_t when);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 Token* getCondJumpTokenCondition(CondJumpToken* token);
@@ -377,10 +377,10 @@ public:
 
     PushBuiltinToken(SrcLoc location, const char* name);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getPushBuiltinTokenName(PushBuiltinToken* token);
@@ -391,10 +391,10 @@ public:
 
     PushIntToken(SrcLoc location, int32_t value);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 int32_t getPushIntTokenValue(PushIntToken* token);
 
@@ -404,10 +404,10 @@ public:
 
     CallOpToken(SrcLoc location, uint8_t arity);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 uint8_t getCallOpTokenArity(CallOpToken* token);
@@ -418,10 +418,10 @@ public:
 
     StoreToken(SrcLoc location, const char* name);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getStoreTokenName(StoreToken* token);
@@ -430,10 +430,10 @@ class DupToken : public Token {
 public:
     DupToken(SrcLoc location);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 class PushToken : public Token {
@@ -442,10 +442,10 @@ public:
 
     PushToken(SrcLoc location, Token* value);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t ident);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 Token* getPushTokenValue(PushToken* token);
@@ -454,30 +454,30 @@ class Rot3Token : public Token {
 public:
     Rot3Token(SrcLoc location);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 class SwapToken : public Token {
 public:
     SwapToken(SrcLoc location);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 class PopToken : public Token {
 public:
     PopToken(SrcLoc location);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 class BuiltinToken : public Token {
@@ -486,10 +486,10 @@ public:
 
     BuiltinToken(SrcLoc location, const char* name);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getBuiltinTokenName(BuiltinToken* token);
@@ -498,10 +498,10 @@ class CheckNoneToken : public Token {
 public:
     CheckNoneToken(SrcLoc location);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 class NewFuncToken : public Token {
@@ -510,10 +510,10 @@ public:
 
     NewFuncToken(SrcLoc location, const char* name);
     TokenType type();
-    void destroy(Token* self);
-    void print(Token* self, uint8_t indent);
-    uint8_t equals(Token* self, Token* other);
-    Token* copy(Token* self, CopyVisitor visitor, void* data);
+    void destroy();
+    void print(uint8_t indent);
+    uint8_t equals(Token* other);
+    Token* copy(CopyVisitor visitor, void* data);
 };
 
 const char* getNewFuncTokenName(NewFuncToken* token);

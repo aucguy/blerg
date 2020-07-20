@@ -43,25 +43,21 @@ TokenType IntToken::type() {
     return TOKEN_INT;
 }
 
-void IntToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void IntToken::destroy() {}
 
-void IntToken::print(Token* self, uint8_t indent) {
+void IntToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("int: %i\n", getIntTokenValue((IntToken*) self));
+    printf("int: %i\n", this->value);
 }
 
-uint8_t IntToken::equals(Token* self, Token* other) {
-    return getIntTokenValue((IntToken*) self) == getIntTokenValue((IntToken*) other);
+uint8_t IntToken::equals(Token* other) {
+    return this->value == ((IntToken*) other)->value;
 }
 
-Token* IntToken::copy(Token* token, CopyVisitor visitor, void* data) {
+Token* IntToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    IntToken* intToken = (IntToken*) token;
-    return (Token*) createIntToken(tokenLocation((Token*) intToken),
-            getIntTokenValue(intToken));
+    return (Token*) createIntToken(this->location, this->value);
 }
 
 int32_t getIntTokenValue(IntToken* token) {
@@ -85,24 +81,21 @@ TokenType FloatToken::type() {
     return TOKEN_FLOAT;
 }
 
-void FloatToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void FloatToken::destroy() {}
 
-void FloatToken::print(Token* self, uint8_t indent) {
+void FloatToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("float: %f\n", getFloatTokenValue((FloatToken*) self));
+    printf("float: %f\n", this->value);
 }
 
-uint8_t FloatToken::equals(Token* self, Token* other) {
-    return getFloatTokenValue(((FloatToken*) self)) == getFloatTokenValue(((FloatToken*) other));
+uint8_t FloatToken::equals(Token* other) {
+    return this->value == ((FloatToken*) other)->value;
 }
 
-Token* FloatToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* FloatToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    FloatToken* num = (FloatToken*) self;
-    return (Token*) createFloatToken(tokenLocation(self), getFloatTokenValue(num));
+    return (Token*) createFloatToken(this->location, this->value);
 }
 
 float getFloatTokenValue(FloatToken* token) {
@@ -120,26 +113,23 @@ TokenType LiteralToken::type() {
     return TOKEN_LITERAL;
 }
 
-void LiteralToken::destroy(Token* self) {
+void LiteralToken::destroy() {
     //free((void*) ((LiteralToken*) self)->value);
 }
 
-void LiteralToken::print(Token* self, uint8_t indent) {
+void LiteralToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("literal: %s\n", getLiteralTokenValue((LiteralToken*) self));
+    printf("literal: %s\n", this->value);
 }
 
-uint8_t LiteralToken::equals(Token* self, Token* other) {
-    return strcmp(getLiteralTokenValue((LiteralToken*) self),
-            getLiteralTokenValue((LiteralToken*) other)) == 0;
+uint8_t LiteralToken::equals(Token* other) {
+    return strcmp(this->value, ((LiteralToken*) other)->value) == 0;
 }
 
-Token* LiteralToken::copy(Token* token, CopyVisitor visitor, void* data) {
+Token* LiteralToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    LiteralToken* literal = (LiteralToken*) token;
-    const char* copied = newStr(getLiteralTokenValue(literal));
-    return (Token*) createLiteralToken(tokenLocation((Token*) literal), copied);
+    return (Token*) createLiteralToken(this->location, newStr(this->value));
 }
 
 const char* getLiteralTokenValue(LiteralToken* token) {
@@ -163,26 +153,23 @@ TokenType IdentifierToken::type() {
     return TOKEN_IDENTIFIER;
 }
 
-void IdentifierToken::destroy(Token* token) {
+void IdentifierToken::destroy() {
     //free((void*) ((IdentifierToken*) token)->value);
 }
 
-void IdentifierToken::print(Token* self, uint8_t indent) {
+void IdentifierToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("identifier: %s\n", (getIdentifierTokenValue((IdentifierToken*) self)));
+    printf("identifier: %s\n", this->value);
 }
 
-uint8_t IdentifierToken::equals(Token* self, Token* other) {
-    return strcmp(getIdentifierTokenValue((IdentifierToken*) self),
-            getIdentifierTokenValue((IdentifierToken*) other)) == 0;
+uint8_t IdentifierToken::equals(Token* other) {
+    return strcmp(this->value, ((IdentifierToken*) other)->value) == 0;
 }
 
-Token* IdentifierToken::copy(Token* token, CopyVisitor visitor, void* data) {
+Token* IdentifierToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    IdentifierToken* identifier = (IdentifierToken*) token;
-    SrcLoc loc = tokenLocation((Token*) identifier);
-    return (Token*) createIdentifierToken(loc, newStr(getIdentifierTokenValue(identifier)));
+    return (Token*) createIdentifierToken(this->location, newStr(this->value));
 }
 
 const char* getIdentifierTokenValue(IdentifierToken* token) {
@@ -206,14 +193,14 @@ TokenType TupleToken::type() {
     return TOKEN_TUPLE;
 }
 
-void TupleToken::destroy(Token* self) {
+void TupleToken::destroy() {
     //TupleToken* tuple = (TupleToken*) self;
     //destroyList(tuple->elements, destroyTokenVoid);
 }
 
-void TupleToken::print(Token* self, uint8_t indent) {
+void TupleToken::print(uint8_t indent) {
     printf("tuple:\n");
-    List* elements = getTupleTokenElements((TupleToken*) self);
+    List* elements = this->elements;
     uint8_t i = 0;
 
     while(elements != NULL) {
@@ -225,16 +212,13 @@ void TupleToken::print(Token* self, uint8_t indent) {
     }
 }
 
-uint8_t TupleToken::equals(Token* self, Token* other) {
-    TupleToken* tuple1 = (TupleToken*) self;
-    TupleToken* tuple2 = (TupleToken*) other;
-    return allList2(getTupleTokenElements(tuple1), getTupleTokenElements(tuple2), tokensEqualVoid);
+uint8_t TupleToken::equals(Token* other) {
+    return allList2(this->elements, ((TupleToken*) other)->elements, tokensEqualVoid);
 }
 
-Token* TupleToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    TupleToken* tuple = (TupleToken*) self;
-    List* copied = copyTokenList(getTupleTokenElements(tuple), visitor, data);
-    return (Token*) createTupleToken(tokenLocation((Token*) tuple), copied);
+Token* TupleToken::copy(CopyVisitor visitor, void* data) {
+    List* copied = copyTokenList(this->elements, visitor, data);
+    return (Token*) createTupleToken(this->location, copied);
 }
 
 List* getTupleTokenElements(TupleToken* token) {
@@ -252,14 +236,14 @@ TokenType ListToken::type() {
     return TOKEN_LIST;
 }
 
-void ListToken::destroy(Token* self) {
+void ListToken::destroy() {
     //ListToken* list = (ListToken*) self;
     //destroyList(list->elements, destroyTokenVoid);
 }
 
-void ListToken::print(Token* self, uint8_t indent) {
+void ListToken::print(uint8_t indent) {
     printf("list:\n");
-    List* elements = getListTokenElements((ListToken*) self);
+    List* elements = this->elements;
     uint8_t i = 0;
 
     while(elements != NULL) {
@@ -272,17 +256,14 @@ void ListToken::print(Token* self, uint8_t indent) {
     }
 }
 
-uint8_t ListToken::equals(Token* self, Token* other) {
-    ListToken* list1 = (ListToken*) self;
-    ListToken* list2 = (ListToken*) other;
-    return allList2(getListTokenElements(list1), getListTokenElements(list2),
+uint8_t ListToken::equals(Token* other) {
+    return allList2(this->elements, ((ListToken*) other)->elements,
             tokensEqualVoid);
 }
 
-Token* ListToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    ListToken* list = (ListToken*) self;
-    List* copied = copyTokenList(getListTokenElements(list), visitor, data);
-    return (Token*) createListToken(tokenLocation((Token*) list), copied);
+Token* ListToken::copy(CopyVisitor visitor, void* data) {
+    List* copied = copyTokenList(this->elements, visitor, data);
+    return (Token*) createListToken(this->location, copied);
 }
 
 List* getListTokenElements(ListToken* token) {
@@ -320,8 +301,8 @@ TokenType ObjectToken::type() {
     return TOKEN_OBJECT;
 }
 
-void ObjectToken::destroy(Token* self) {
-    ObjectToken* object = (ObjectToken*) self;
+void ObjectToken::destroy() {
+    /*ObjectToken* object = (ObjectToken*) self;
     List* elements = getObjectTokenElements(object);
 
     while(elements != NULL) {
@@ -331,14 +312,13 @@ void ObjectToken::destroy(Token* self) {
         free(pair);
         elements = elements->tail;
     }
-    destroyShallowList(getObjectTokenElements(object));
+    destroyShallowList(getObjectTokenElements(object));*/
 }
 
-void ObjectToken::print(Token* self, uint8_t indent) {
-    ObjectToken* object = (ObjectToken*) self;
+void ObjectToken::print(uint8_t indent) {
     printf("object:\n");
 
-    List* elements = getObjectTokenElements(object);
+    List* elements = this->elements;
     uint8_t count = 0;
     while(elements != NULL) {
         ObjectPair* pair = (ObjectPair*) elements->head;
@@ -359,12 +339,9 @@ void ObjectToken::print(Token* self, uint8_t indent) {
     }
 }
 
-uint8_t ObjectToken::equals(Token* self, Token* other) {
-    ObjectToken* object1 = (ObjectToken*) self;
-    ObjectToken* object2 = (ObjectToken*) other;
-
-    List* elements1 = getObjectTokenElements(object1);
-    List* elements2 = getObjectTokenElements(object2);
+uint8_t ObjectToken::equals(Token* other) {
+    List* elements1 = this->elements;
+    List* elements2 = ((ObjectToken*) other)->elements;
 
     while(elements1 != NULL && elements2 != NULL) {
         ObjectPair* pair1 = (ObjectPair*) elements1->head;
@@ -380,10 +357,9 @@ uint8_t ObjectToken::equals(Token* self, Token* other) {
     return elements1 == NULL && elements2 == NULL;
 }
 
-Token* ObjectToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    ObjectToken* object = (ObjectToken*) self;
-    List* copied = copyObjectPairs(getObjectTokenElements(object), visitor, data);
-    return (Token*) createObjectToken(tokenLocation(self), copied);
+Token* ObjectToken::copy(CopyVisitor visitor, void* data) {
+    List* copied = copyObjectPairs(this->elements, visitor, data);
+    return (Token*) createObjectToken(this->location, copied);
 }
 
 List* getObjectTokenElements(ObjectToken* token) {
@@ -401,27 +377,27 @@ TokenType CallToken::type() {
     return TOKEN_CALL;
 }
 
-void CallToken::destroy(Token* self) {
-    List* children = getCallTokenChildren((CallToken*) self);
+void CallToken::destroy() {
+    /*List* children = getCallTokenChildren((CallToken*) self);
     while(children != NULL) {
         destroyToken((Token*) children->head);
         children = children->tail;
     }
-    destroyShallowList(getCallTokenChildren((CallToken*) self));
+    destroyShallowList(getCallTokenChildren((CallToken*) self));*/
 }
 
-void CallToken::print(Token* self, uint8_t indent) {
+void CallToken::print(uint8_t indent) {
     printf("call:\n");
-    List* children = getCallTokenChildren((CallToken*) self);
+    List* children = this->children;
     while(children != NULL) {
         printTokenWithIndent((Token*) children->head, indent + 1);
         children = children->tail;
     }
 }
 
-uint8_t CallToken::equals(Token* self, Token* other) {
-    List* childrenA = getCallTokenChildren((CallToken*) self);
-    List* childrenB = getCallTokenChildren((CallToken*) other);
+uint8_t CallToken::equals(Token* other) {
+    List* childrenA = this->children;
+    List* childrenB = ((CallToken*) other)->children;
 
     while(childrenA != NULL && childrenB != NULL) {
         if(!tokensEqual((Token*) childrenA->head, (Token*) childrenB->head)) {
@@ -434,10 +410,9 @@ uint8_t CallToken::equals(Token* self, Token* other) {
     return childrenA == NULL && childrenB == NULL;
 }
 
-Token* CallToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    CallToken* call = (CallToken*) self;
-    List* children = copyTokenList(getCallTokenChildren(call), visitor, data);
-    return (Token*) createCallToken(tokenLocation((Token*) call), children);
+Token* CallToken::copy(CopyVisitor visitor, void* data) {
+    List* children = copyTokenList(this->children, visitor, data);
+    return (Token*) createCallToken(this->location, children);
 }
 
 List* getCallTokenChildren(CallToken* token) {
@@ -455,34 +430,31 @@ TokenType BinaryOpToken::type() {
     return TOKEN_BINARY_OP;
 }
 
-void BinaryOpToken::destroy(Token* self) {
-    BinaryOpToken* binaryOp = (BinaryOpToken*) self;
+void BinaryOpToken::destroy() {
+    /*BinaryOpToken* binaryOp = (BinaryOpToken*) self;
     free((void*) getBinaryOpTokenOp(binaryOp));
     destroyToken(getBinaryOpTokenLeft(binaryOp));
-    destroyToken(getBinaryOpTokenRight(binaryOp));
+    destroyToken(getBinaryOpTokenRight(binaryOp));*/
 }
 
-void BinaryOpToken::print(Token* self, uint8_t indent) {
-    BinaryOpToken* binaryOp = (BinaryOpToken*) self;
-    printf("binaryOp: '%s'\n", getBinaryOpTokenOp(binaryOp));
-    printTokenWithIndent(getBinaryOpTokenLeft(binaryOp), indent + 1);
-    printTokenWithIndent(getBinaryOpTokenRight(binaryOp), indent + 1);
+void BinaryOpToken::print(uint8_t indent) {
+    printf("binaryOp: '%s'\n", this->op);
+    printTokenWithIndent(this->left, indent + 1);
+    printTokenWithIndent(this->right, indent + 1);
 }
 
-uint8_t BinaryOpToken::equals(Token* self, Token* other) {
-    BinaryOpToken* selfBinOp = (BinaryOpToken*) self;
+uint8_t BinaryOpToken::equals(Token* other) {
     BinaryOpToken* otherBinOp = (BinaryOpToken*) other;
-    return strcmp(getBinaryOpTokenOp(selfBinOp), getBinaryOpTokenOp(otherBinOp)) == 0 &&
-            tokensEqual(getBinaryOpTokenLeft(selfBinOp), getBinaryOpTokenLeft(otherBinOp)) &&
-            tokensEqual(getBinaryOpTokenRight(selfBinOp), getBinaryOpTokenRight(otherBinOp));
+    return strcmp(this->op, otherBinOp->op) == 0 &&
+            tokensEqual(this->left, otherBinOp->left) &&
+            tokensEqual(this->right, otherBinOp->right);
 }
 
-Token* BinaryOpToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    BinaryOpToken* binOp = (BinaryOpToken*) self;
-    const char* op = newStr(getBinaryOpTokenOp(binOp));
-    Token* left = visitor(getBinaryOpTokenLeft(binOp), data);
-    Token* right = visitor(getBinaryOpTokenRight(binOp), data);
-    return (Token*) createBinaryOpToken(tokenLocation((Token*) binOp), op, left, right);
+Token* BinaryOpToken::copy(CopyVisitor visitor, void* data) {
+    const char* op = newStr(this->op);
+    Token* left = visitor(this->left, data);
+    Token* right = visitor(this->right, data);
+    return (Token*) createBinaryOpToken(this->location, op, left, right);
 }
 
 const char* getBinaryOpTokenOp(BinaryOpToken* token) {
@@ -517,30 +489,26 @@ TokenType UnaryOpToken::type() {
     return TOKEN_UNARY_OP;
 }
 
-void UnaryOpToken::destroy(Token* self) {
-    UnaryOpToken* unaryOp = (UnaryOpToken*) self;
-    free((void*) getUnaryOpTokenOp(unaryOp));
-    destroyToken(getUnaryOpTokenChild(unaryOp));
+void UnaryOpToken::destroy() {
+    /*free((void*) getUnaryOpTokenOp(unaryOp));
+    destroyToken(getUnaryOpTokenChild(unaryOp));*/
 }
 
-void UnaryOpToken::print(Token* self, uint8_t indent) {
-    UnaryOpToken* unaryOp = (UnaryOpToken*) self;
-    printf("unaryOp: %s\n", getUnaryOpTokenOp(unaryOp));
-    printTokenWithIndent(getUnaryOpTokenChild(unaryOp), indent + 1);
+void UnaryOpToken::print(uint8_t indent) {
+    printf("unaryOp: %s\n", this->op);
+    printTokenWithIndent(this->child, indent + 1);
 }
 
-uint8_t UnaryOpToken::equals(Token* self, Token* other) {
-    UnaryOpToken* selfUnOp = (UnaryOpToken*) self;
+uint8_t UnaryOpToken::equals(Token* other) {
     UnaryOpToken* otherUnOp = (UnaryOpToken*) other;
-    return strcmp(getUnaryOpTokenOp(selfUnOp), getUnaryOpTokenOp(otherUnOp)) == 0 &&
-            tokensEqual(getUnaryOpTokenChild(selfUnOp), getUnaryOpTokenChild(otherUnOp));
+    return strcmp(this->op, otherUnOp->op) == 0 &&
+            tokensEqual(this->child, otherUnOp->child);
 }
 
-Token* UnaryOpToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    UnaryOpToken* unOp = (UnaryOpToken*) self;
-    return (Token*) createUnaryOpToken(tokenLocation(self),
-            newStr(getUnaryOpTokenOp(unOp)),
-            visitor(getUnaryOpTokenChild(unOp), data));
+Token* UnaryOpToken::copy( CopyVisitor visitor, void* data) {
+    return (Token*) createUnaryOpToken(this->location,
+            newStr(this->op),
+            visitor(this->child, data));
 }
 
 const char* getUnaryOpTokenOp(UnaryOpToken* token) {
@@ -569,44 +537,35 @@ TokenType AssignmentToken::type() {
     return TOKEN_ASSIGNMENT;
 }
 
-void AssignmentToken::destroy(Token* self) {
+void AssignmentToken::destroy() {
     //AssignmentToken* assignment = (AssignmentToken*) self;
     //destroyToken((Token*) assignment->left);
     //destroyToken(assignment->right);
 }
 
-void AssignmentToken::print(Token* self, uint8_t indent) {
-    AssignmentToken* assignment = (AssignmentToken*) self;
+void AssignmentToken::print(uint8_t indent) {
     printf("assignment:\n");
 
     printIndent(indent + 1);
     printf("lvalue:\n");
-    printTokenWithIndent(getAssignmentTokenLeft(assignment), indent + 2);
+    printTokenWithIndent(this->left, indent + 2);
 
     printIndent(indent + 1);
     printf("rvalue:\n");
-    printTokenWithIndent(getAssignmentTokenRight(assignment), indent + 2);
+    printTokenWithIndent(this->right, indent + 2);
 }
 
-uint8_t AssignmentToken::equals(Token* self, Token* other) {
-    AssignmentToken* selfAssign = (AssignmentToken*) self;
+uint8_t AssignmentToken::equals(Token* other) {
     AssignmentToken* otherAssign = (AssignmentToken*) other;
 
-    Token* selfLeft = getAssignmentTokenLeft(selfAssign);
-    Token* selfRight = getAssignmentTokenRight(otherAssign);
-
-    Token* otherLeft = getAssignmentTokenLeft(otherAssign);
-    Token* otherRight = getAssignmentTokenRight(otherAssign);
-
-    return tokensEqual(selfLeft, otherLeft) &&
-            tokensEqual(selfRight, otherRight);
+    return tokensEqual(this->left, otherAssign->left) &&
+            tokensEqual(this->right, otherAssign->right);
 }
 
-Token* AssignmentToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    AssignmentToken* assign = (AssignmentToken*) self;
-    Token* left = visitor((Token*) getAssignmentTokenLeft(assign), data);
-    Token* right = visitor(getAssignmentTokenRight(assign), data);
-    return (Token*) createAssignmentToken(tokenLocation(self), left, right);
+Token* AssignmentToken::copy(CopyVisitor visitor, void* data) {
+    Token* left = visitor((Token*) this->left, data);
+    Token* right = visitor(this->right, data);
+    return (Token*) createAssignmentToken(tokenLocation(this), left, right);
 }
 
 Token* getAssignmentTokenLeft(AssignmentToken* token) {
@@ -634,28 +593,25 @@ TokenType BlockToken::type() {
     return TOKEN_BLOCK;
 }
 
-void BlockToken::destroy(Token* self) {
+void BlockToken::destroy() {
     //destroyList(((BlockToken*) self)->children, destroyTokenVoid);
 }
 
-void BlockToken::print(Token* self, uint8_t indent) {
-    BlockToken* block = (BlockToken*) self;
+void BlockToken::print(uint8_t indent) {
     printf("block:\n");
-    for(List* node = getBlockTokenChildren(block); node != NULL; node = node->tail) {
+    for(List* node = this->children; node != NULL; node = node->tail) {
         printTokenWithIndent((Token*) node->head, indent + 1);
     }
 }
 
-uint8_t BlockToken::equals(Token* self, Token* other) {
-    return allList2(getBlockTokenChildren((BlockToken*) self),
-            getBlockTokenChildren((BlockToken*) other), tokensEqualVoid);
+uint8_t BlockToken::equals(Token* other) {
+    return allList2(this->children, ((BlockToken*) other)->children,
+            tokensEqualVoid);
 }
 
-Token* BlockToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    BlockToken* block = (BlockToken*) self;
-    List* copied = copyTokenList(getBlockTokenChildren(block), visitor, data);
-    SrcLoc location = tokenLocation(self);
-    return (Token*) createBlockToken(location, copied);
+Token* BlockToken::copy(CopyVisitor visitor, void* data) {
+    List* copied = copyTokenList(this->children, visitor, data);
+    return (Token*) createBlockToken(this->location, copied);
 }
 
 List* getBlockTokenChildren(BlockToken* token) {
@@ -693,16 +649,15 @@ TokenType IfToken::type() {
     return TOKEN_IF;
 }
 
-void IfToken::destroy(Token* self) {
+void IfToken::destroy() {
     //IfToken* ifToken = (IfToken*) self;
     //destroyList(ifToken->branches, destroyIfBranch);
     //destroyToken((Token*) ifToken->elseBranch);
 }
 
-void IfToken::print(Token* self, uint8_t indent) {
-    IfToken* ifStmt = (IfToken*) self;
+void IfToken::print(uint8_t indent) {
     printf("if:\n");
-    for(List* node = getIfTokenBranches(ifStmt); node != NULL; node = node->tail) {
+    for(List* node = this->branches; node != NULL; node = node->tail) {
         IfBranch* branch = (IfBranch*) node->head;
         printIndent(indent + 1);
         printf("condition:\n");
@@ -713,35 +668,30 @@ void IfToken::print(Token* self, uint8_t indent) {
     }
     printIndent(indent + 1);
     printf("else:\n");
-    printTokenWithIndent((Token*) getIfTokenElseBranch(ifStmt), indent + 2);
+    printTokenWithIndent((Token*) this->elseBranch, indent + 2);
 }
 
-uint8_t IfToken::equals(Token* self, Token* other) {
-    IfToken* selfIf = (IfToken*) self;
+uint8_t IfToken::equals(Token* other) {
     IfToken* otherIf = (IfToken*) other;
 
-    if(!allList2(getIfTokenBranches(selfIf),
-            getIfTokenBranches(otherIf), branchesEqual)) {
+    if(!allList2(this->branches, otherIf->branches, branchesEqual)) {
         return 0;
     }
-    if(getIfTokenElseBranch(selfIf) == NULL &&
-            getIfTokenElseBranch(otherIf) == NULL) {
+    if(this->elseBranch == NULL && otherIf->elseBranch == NULL) {
         return 1;
     }
-    return tokensEqual((Token*) getIfTokenElseBranch(selfIf),
-            (Token*) getIfTokenElseBranch(otherIf));
+    return tokensEqual(this->elseBranch, otherIf->elseBranch);
 }
 
-Token* IfToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    IfToken* ifToken = (IfToken*) self;
-    List* branches = copyIfBranches(getIfTokenBranches(ifToken), visitor, data);
+Token* IfToken::copy(CopyVisitor visitor, void* data) {
+    List* branches = copyIfBranches(this->branches, visitor, data);
     Token* elseBranch;
-    if(getIfTokenElseBranch(ifToken) == NULL) {
+    if(this->elseBranch == NULL) {
         elseBranch = NULL;
     } else {
-        elseBranch = visitor((Token*) getIfTokenElseBranch(ifToken), data);
+        elseBranch = visitor((Token*) this->elseBranch, data);
     }
-    return (Token*) createIfToken(tokenLocation(self), branches,
+    return (Token*) createIfToken(this->location, branches,
             (BlockToken*) elseBranch);
 }
 
@@ -764,44 +714,35 @@ TokenType WhileToken::type() {
     return TOKEN_WHILE;
 }
 
-void WhileToken::destroy(Token* self) {
-    WhileToken* whileToken = (WhileToken*) self;
+void WhileToken::destroy() {
+    /*WhileToken* whileToken = (WhileToken*) self;
     destroyToken((Token*) getWhileTokenCondition(whileToken));
-    destroyToken((Token*) getWhileTokenBody(whileToken));
+    destroyToken((Token*) getWhileTokenBody(whileToken));*/
 }
 
-void WhileToken::print(Token* self, uint8_t indent) {
-    WhileToken* whileStmt = (WhileToken*) self;
+void WhileToken::print(uint8_t indent) {
     printf("while:\n");
 
     printIndent(indent + 1);
     printf("condition:\n");
-    printTokenWithIndent((Token*) getWhileTokenCondition(whileStmt), indent + 2);
+    printTokenWithIndent(this->condition, indent + 2);
 
     printIndent(indent + 1);
     printf("body:\n");
-    printTokenWithIndent((Token*) getWhileTokenBody(whileStmt), indent + 2);
+    printTokenWithIndent(this->body, indent + 2);
 }
 
-uint8_t WhileToken::equals(Token* self, Token* other) {
-    WhileToken* selfWhile = (WhileToken*) self;
+uint8_t WhileToken::equals(Token* other) {
     WhileToken* otherWhile = (WhileToken*) other;
 
-    Token* selfCondition = getWhileTokenCondition(selfWhile);
-    Token* selfBody = (Token*) getWhileTokenBody(selfWhile);
-
-    Token* otherCondition = getWhileTokenCondition(otherWhile);
-    Token* otherBody = (Token*) getWhileTokenBody(otherWhile);
-
-    return tokensEqual(selfCondition, otherCondition) &&
-            tokensEqual(selfBody, otherBody);
+    return tokensEqual(this->condition, otherWhile->condition) &&
+            tokensEqual(this->body, otherWhile->body);
 }
 
-Token* WhileToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    WhileToken* whileToken = (WhileToken*) self;
-    Token* condition = visitor(getWhileTokenCondition(whileToken), data);
-    BlockToken* body = (BlockToken*) visitor((Token*) getWhileTokenBody(whileToken), data);
-    return (Token*) createWhileToken(tokenLocation(self), condition, body);
+Token* WhileToken::copy(CopyVisitor visitor, void* data) {
+    Token* condition = visitor(this->condition, data);
+    BlockToken* body = (BlockToken*) visitor((Token*) this->body, data);
+    return (Token*) createWhileToken(this->location, condition, body);
 }
 
 Token* getWhileTokenCondition(WhileToken* token) {
@@ -823,50 +764,38 @@ TokenType FuncToken::type() {
     return TOKEN_FUNC;
 }
 
-void FuncToken::destroy(Token* self) {
+void FuncToken::destroy() {
     //FuncToken* funcToken = (FuncToken*) self;
     //destroyToken((Token*) funcToken->name);
     //destroyList(funcToken->args, destroyTokenVoid);
     //destroyToken((Token*) funcToken->body);
 }
 
-void FuncToken::print(Token* self, uint8_t indent) {
-    FuncToken* func = (FuncToken*) self;
-    printf("func: %s", getIdentifierTokenValue(getFuncTokenName(func)));
-    List* node = getFuncTokenArgs(func);
+void FuncToken::print(uint8_t indent) {
+    printf("func: %s", getIdentifierTokenValue(this->name));
+    List* node = this->args;
     while(node != NULL) {
         printf(" %s", getIdentifierTokenValue((IdentifierToken*) node->head));
         node = node->tail;
     }
     printf("\n");
-    printTokenWithIndent((Token*) getFuncTokenBody(func), indent + 1);
+    printTokenWithIndent(this->body, indent + 1);
 }
 
-uint8_t FuncToken::equals(Token* self, Token* other) {
-    FuncToken* selfFunc = (FuncToken*) self;
+uint8_t FuncToken::equals(Token* other) {
     FuncToken* otherFunc = (FuncToken*) other;
 
-    Token* selfName = (Token*) getFuncTokenName(selfFunc);
-    List* selfArgs = getFuncTokenArgs(selfFunc);
-    Token* selfBody = (Token*) getFuncTokenBody(selfFunc);
-
-    Token* otherName = (Token*) getFuncTokenName(otherFunc);
-    List* otherArgs = getFuncTokenArgs(otherFunc);
-    Token* otherBody = (Token*) getFuncTokenBody(otherFunc);
-
-    return tokensEqual(selfName, otherName) &&
-            allList2(selfArgs, otherArgs, tokensEqualVoid) &&
-            tokensEqual(selfBody, otherBody);
+    return tokensEqual(this->name, otherFunc->name) &&
+            allList2(this->args, otherFunc->args, tokensEqualVoid) &&
+            tokensEqual(this->body, otherFunc->body);
 }
 
-Token* FuncToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    FuncToken* func = (FuncToken*) self;
-    IdentifierToken* name = (IdentifierToken*)
-            visitor((Token*) getFuncTokenName(func), data);
-    List* args = copyTokenList(getFuncTokenArgs(func), visitor, data);
-    BlockToken* body = (BlockToken*) visitor((Token*) getFuncTokenBody(func), data);
+Token* FuncToken::copy(CopyVisitor visitor, void* data) {
+    IdentifierToken* name = (IdentifierToken*) visitor((Token*) this->name, data);
+    List* args = copyTokenList(this->args, visitor, data);
+    BlockToken* body = (BlockToken*) visitor(this->body, data);
 
-    return (Token*) createFuncToken(tokenLocation(self), name, args, body);
+    return (Token*) createFuncToken(this->location, name, args, body);
 }
 
 IdentifierToken* getFuncTokenName(FuncToken* token) {
@@ -897,24 +826,22 @@ TokenType ReturnToken::type() {
     return TOKEN_RETURN;
 }
 
-void ReturnToken::destroy(Token* self) {
+void ReturnToken::destroy() {
     //destroyToken(((ReturnToken*) self)->body);
 }
 
-void ReturnToken::print(Token* self, uint8_t indent) {
+void ReturnToken::print(uint8_t indent) {
     printf("return:\n");
-    printTokenWithIndent(getReturnTokenBody((ReturnToken*) self), indent + 1);
+    printTokenWithIndent(this->body, indent + 1);
 }
 
-uint8_t ReturnToken::equals(Token* self, Token* other) {
-    return tokensEqual(getReturnTokenBody((ReturnToken*) self),
-            getReturnTokenBody((ReturnToken*) other));
+uint8_t ReturnToken::equals(Token* other) {
+    return tokensEqual(this->body, ((ReturnToken*) other)->body);
 }
 
-Token* ReturnToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    ReturnToken* token = (ReturnToken*) self;
-    Token* copied = visitor(getReturnTokenBody(token), data);
-    return (Token*) createReturnToken(tokenLocation(self), copied);
+Token* ReturnToken::copy(CopyVisitor visitor, void* data) {
+    Token* copied = visitor(this->body, data);
+    return (Token*) createReturnToken(this->location, copied);
 }
 
 Token* getReturnTokenBody(ReturnToken* token) {
@@ -932,26 +859,23 @@ TokenType LabelToken::type() {
     return TOKEN_LABEL;
 }
 
-void LabelToken::destroy(Token* self) {
+void LabelToken::destroy() {
     //free((void*) ((LabelToken*) self)->name);
 }
 
-void LabelToken::print(Token* self, uint8_t indent) {
+void LabelToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("label: %s \n", getLabelTokenName((LabelToken*) self));
+    printf("label: %s \n", this->name);
 }
 
-uint8_t LabelToken::equals(Token* self, Token* other) {
-    return strcmp(getLabelTokenName((LabelToken*) self),
-            getLabelTokenName((LabelToken*) other)) == 0;
+uint8_t LabelToken::equals(Token* other) {
+    return strcmp(this->name, ((LabelToken*) other)->name) == 0;
 }
 
-Token* LabelToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* LabelToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    LabelToken* label = (LabelToken*) self;
-    const char* name = newStr(getLabelTokenName(label));
-    return (Token*) createLabelToken(name);
+    return (Token*) createLabelToken(newStr(this->name));
 }
 
 const char* getLabelTokenName(LabelToken* token) {
@@ -972,26 +896,23 @@ TokenType AbsJumpToken::type() {
     return TOKEN_ABS_JUMP;
 }
 
-void AbsJumpToken::destroy(Token* self) {
+void AbsJumpToken::destroy() {
     //free((void*) ((AbsJumpToken*) self)->label);
 }
 
-void AbsJumpToken::print(Token* self, uint8_t indent) {
+void AbsJumpToken::print(uint8_t indent) {
     UNUSED(indent);
-    printf("absJump: %s\n", getAbsJumpTokenLabel((AbsJumpToken*) self));
+    printf("absJump: %s\n", ((AbsJumpToken*) this)->label);
 }
 
-uint8_t AbsJumpToken::equals(Token* self, Token* other) {
-    return strcmp(getAbsJumpTokenLabel((AbsJumpToken*) self),
-            getAbsJumpTokenLabel((AbsJumpToken*) other)) == 0;
+uint8_t AbsJumpToken::equals(Token* other) {
+    return strcmp(this->label, ((AbsJumpToken*) other)->label) == 0;
 }
 
-Token* AbsJumpToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* AbsJumpToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    AbsJumpToken* jump = (AbsJumpToken*) self;
-    const char* label = newStr(getAbsJumpTokenLabel(jump));
-    return (Token*) createAbsJumpToken(label);
+    return (Token*) createAbsJumpToken(this->label);
 }
 
 const char* getAbsJumpTokenLabel(AbsJumpToken* token) {
@@ -1012,34 +933,30 @@ TokenType CondJumpToken::type() {
     return TOKEN_COND_JUMP;
 }
 
-void CondJumpToken::destroy(Token* self) {
+void CondJumpToken::destroy() {
     //CondJumpToken* token = (CondJumpToken*) self;
     //destroyToken(token->condition);
     //free((void*) token->label);
 }
 
-void CondJumpToken::print(Token* self, uint8_t indent) {
-    CondJumpToken* token = (CondJumpToken*) self;
-    printf("condJump: %s, %i\n", getCondJumpTokenLabel(token),
-            getCondJumpTokenWhen(token));
-    printTokenWithIndent(getCondJumpTokenCondition(token), indent + 1);
+void CondJumpToken::print(uint8_t indent) {
+    printf("condJump: %s, %i\n", this->label, this->when);
+    printTokenWithIndent(this->condition, indent + 1);
 }
 
-uint8_t CondJumpToken::equals(Token* self, Token* other) {
-    CondJumpToken* a = (CondJumpToken*) self;
-    CondJumpToken* b = (CondJumpToken*) other;
+uint8_t CondJumpToken::equals(Token* other) {
+    CondJumpToken* otherJump = (CondJumpToken*) other;
 
-    return tokensEqual(getCondJumpTokenCondition(a), getCondJumpTokenCondition(b)) &&
-            strcmp(getCondJumpTokenLabel(a), getCondJumpTokenLabel(b)) == 0 &&
-            getCondJumpTokenWhen(a) == getCondJumpTokenWhen(b);
+    return tokensEqual(this->condition, otherJump->condition) &&
+            strcmp(this->label, otherJump->label) == 0 &&
+            this->when == otherJump->when;
 }
 
-Token* CondJumpToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    CondJumpToken* jump = (CondJumpToken*) self;
-    Token* condition = visitor(getCondJumpTokenCondition(jump), data);
-    const char* label = newStr(getCondJumpTokenLabel(jump));
-    return (Token*) createCondJumpToken(tokenLocation(self), condition, label,
-            getCondJumpTokenWhen(jump));
+Token* CondJumpToken::copy(CopyVisitor visitor, void* data) {
+    Token* condition = visitor(this->condition, data);
+    const char* label = newStr(this->label);
+    return (Token*) createCondJumpToken(this->location, condition, label,
+            this->when);
 }
 
 Token* getCondJumpTokenCondition(CondJumpToken* token) {
@@ -1066,30 +983,24 @@ TokenType PushBuiltinToken::type() {
     return TOKEN_PUSH_BUILTIN;
 }
 
-void PushBuiltinToken::destroy(Token* self) {
+void PushBuiltinToken::destroy() {
     //PushBuiltinToken* builtin = (PushBuiltinToken*) self;
     //free((char*) builtin->name);
 }
 
-void PushBuiltinToken::print(Token* self, uint8_t indent) {
+void PushBuiltinToken::print(uint8_t indent) {
     UNUSED(indent);
-    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    printf("push_builtin: %s\n", getPushBuiltinTokenName(builtin));
+    printf("push_builtin: %s\n", this->name);
 }
 
-uint8_t PushBuiltinToken::equals(Token* self, Token* other) {
-    PushBuiltinToken* builtin1 = (PushBuiltinToken*) self;
-    PushBuiltinToken* builtin2 = (PushBuiltinToken*) other;
-    return strcmp(getPushBuiltinTokenName(builtin1),
-            getPushBuiltinTokenName(builtin2)) == 0;
+uint8_t PushBuiltinToken::equals(Token* other) {
+    return strcmp(this->name, ((PushBuiltinToken*) other)->name) == 0;
 }
 
-Token* PushBuiltinToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* PushBuiltinToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    return (Token*) createPushBuiltinToken(tokenLocation(self),
-            newStr(getPushBuiltinTokenName(builtin)));
+    return (Token*) createPushBuiltinToken(this->location, newStr(this->name));
 }
 
 const char* getPushBuiltinTokenName(PushBuiltinToken* token) {
@@ -1107,27 +1018,21 @@ TokenType PushIntToken::type() {
     return TOKEN_PUSH_INT;
 }
 
-void PushIntToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void PushIntToken::destroy() {}
 
-void PushIntToken::print(Token* self, uint8_t indent) {
+void PushIntToken::print(uint8_t indent) {
     UNUSED(indent);
-    PushIntToken* push = (PushIntToken*) self;
-    printf("push_int: %i\n", getPushIntTokenValue(push));
+    printf("push_int: %i\n", this->value);
 }
 
-uint8_t PushIntToken::equals(Token* self, Token* other) {
-    PushIntToken* push1 = (PushIntToken*) self;
-    PushIntToken* push2 = (PushIntToken*) other;
-    return getPushIntTokenValue(push1) == getPushIntTokenValue(push2);
+uint8_t PushIntToken::equals(Token* other) {
+    return this->value == ((PushIntToken*) other)->value;
 }
 
-Token* PushIntToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* PushIntToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    PushIntToken* push = (PushIntToken*) self;
-    return (Token*) createPushIntToken(tokenLocation(self), getPushIntTokenValue(push));
+    return (Token*) createPushIntToken(this->location, this->value);
 }
 
 int32_t getPushIntTokenValue(PushIntToken* token) {
@@ -1145,27 +1050,21 @@ TokenType CallOpToken::type() {
     return TOKEN_OP_CALL;
 }
 
-void CallOpToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void CallOpToken::destroy() {}
 
-void CallOpToken::print(Token* self, uint8_t indent) {
+void CallOpToken::print(uint8_t indent) {
     UNUSED(indent);
-    CallOpToken* call = (CallOpToken*) self;
-    printf("op_call: %i\n", getCallOpTokenArity(call));
+    printf("op_call: %i\n", this->arity);
 }
 
-uint8_t CallOpToken::equals(Token* self, Token* other) {
-    CallOpToken* call1 = (CallOpToken*) self;
-    CallOpToken* call2 = (CallOpToken*) other;
-    return getCallOpTokenArity(call1) == getCallOpTokenArity(call2);
+uint8_t CallOpToken::equals(Token* other) {
+    return this->arity == ((CallOpToken*) other)->arity;
 }
 
-Token* CallOpToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* CallOpToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    CallOpToken* call = (CallOpToken*) self;
-    return (Token*) createCallOpToken(tokenLocation(self), getCallOpTokenArity(call));
+    return (Token*) createCallOpToken(this->location, this->arity);
 }
 
 uint8_t getCallOpTokenArity(CallOpToken* token) {
@@ -1183,29 +1082,24 @@ TokenType StoreToken::type() {
     return TOKEN_STORE;
 }
 
-void StoreToken::destroy(Token* self) {
+void StoreToken::destroy() {
     //StoreToken* store = (StoreToken*) self;
     //free((char*) store->name);
 }
 
-void StoreToken::print(Token* self, uint8_t indent) {
+void StoreToken::print(uint8_t indent) {
     UNUSED(indent);
-    StoreToken* store = (StoreToken*) self;
-    printf("store: %s\n", getStoreTokenName(store));
+    printf("store: %s\n", this->name);
 }
 
-uint8_t StoreToken::equals(Token* self, Token* other) {
-    StoreToken* store1 = (StoreToken*) self;
-    StoreToken* store2 = (StoreToken*) other;
-    return strcmp(getStoreTokenName(store1), getStoreTokenName(store2)) == 0;
+uint8_t StoreToken::equals(Token* other) {
+    return strcmp(this->name, ((StoreToken*) other)->name) == 0;
 }
 
-Token* StoreToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* StoreToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    StoreToken* store = (StoreToken*) self;
-    return (Token*) createStoreToken(tokenLocation(self),
-            newStr(getStoreTokenName(store)));
+    return (Token*) createStoreToken(this->location, newStr(this->name));
 }
 
 const char* getStoreTokenName(StoreToken* token) {
@@ -1223,26 +1117,22 @@ TokenType DupToken::type() {
     return TOKEN_DUP;
 }
 
-void DupToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void DupToken::destroy() {}
 
-void DupToken::print(Token* self, uint8_t indent) {
-    UNUSED(self);
+void DupToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("dup\n");
 }
 
-uint8_t DupToken::equals(Token* self, Token* other) {
-    UNUSED(self);
+uint8_t DupToken::equals(Token* other) {
     UNUSED(other);
     return 1;
 }
 
-Token* DupToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* DupToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createDupToken(tokenLocation(self));
+    return (Token*) createDupToken(this->location);
 }
 
 DupToken* createDupToken(SrcLoc loc) {
@@ -1256,27 +1146,22 @@ TokenType PushToken::type() {
     return TOKEN_PUSH;
 }
 
-void PushToken::destroy(Token* self) {
+void PushToken::destroy() {
     //PushToken* push = (PushToken*) self;
     //destroyToken(push->value);
 }
 
-void PushToken::print(Token* self, uint8_t ident) {
-    PushToken* push = (PushToken*) self;
+void PushToken::print(uint8_t ident) {
     printf("push:\n");
-    printTokenWithIndent(getPushTokenValue(push), ident + 1);
+    printTokenWithIndent(this->value, ident + 1);
 }
 
-uint8_t PushToken::equals(Token* self, Token* other) {
-    PushToken* push1 = (PushToken*) self;
-    PushToken* push2 = (PushToken*) other;
-    return tokensEqual(getPushTokenValue(push1), getPushTokenValue(push2));
+uint8_t PushToken::equals(Token* other) {
+    return tokensEqual(this->value, ((PushToken*) other)->value);
 }
 
-Token* PushToken::copy(Token* self, CopyVisitor visitor, void* data) {
-    PushToken* push = (PushToken*) self;
-    return (Token*) createPushToken(tokenLocation(self),
-            visitor(getPushTokenValue(push), data));
+Token* PushToken::copy(CopyVisitor visitor, void* data) {
+    return (Token*) createPushToken(this->location, visitor(this->value, data));
 }
 
 Token* getPushTokenValue(PushToken* token) {
@@ -1294,26 +1179,22 @@ TokenType Rot3Token::type() {
     return TOKEN_ROT3;
 }
 
-void Rot3Token::destroy(Token* self) {
-    UNUSED(self);
-}
+void Rot3Token::destroy() {}
 
-void Rot3Token::print(Token* self, uint8_t indent) {
-    UNUSED(self);
+void Rot3Token::print(uint8_t indent) {
     UNUSED(indent);
     printf("rot3\n");
 }
 
-uint8_t Rot3Token::equals(Token* self, Token* other) {
-    UNUSED(self);
+uint8_t Rot3Token::equals(Token* other) {
     UNUSED(other);
     return 1;
 }
 
-Token* Rot3Token::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* Rot3Token::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createRot3Token(tokenLocation(self));
+    return (Token*) createRot3Token(this->location);
 }
 
 Rot3Token* createRot3Token(SrcLoc location) {
@@ -1327,26 +1208,22 @@ TokenType SwapToken::type() {
     return TOKEN_SWAP;
 }
 
-void SwapToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void SwapToken::destroy() {}
 
-void SwapToken::print(Token* self, uint8_t indent) {
-    UNUSED(self);
+void SwapToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("swap\n");
 }
 
-uint8_t SwapToken::equals(Token* self, Token* other) {
-    UNUSED(self);
+uint8_t SwapToken::equals(Token* other) {
     UNUSED(other);
     return 1;
 }
 
-Token* SwapToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* SwapToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createSwapToken(tokenLocation(self));
+    return (Token*) createSwapToken(this->location);
 }
 
 SwapToken* createSwapToken(SrcLoc loc) {
@@ -1360,26 +1237,22 @@ TokenType PopToken::type() {
     return TOKEN_POP;
 }
 
-void PopToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void PopToken::destroy() {}
 
-void PopToken::print(Token* self, uint8_t indent) {
-    UNUSED(self);
+void PopToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("pop\n");
 }
 
-uint8_t PopToken::equals(Token* self, Token* other) {
-    UNUSED(self);
+uint8_t PopToken::equals(Token* other) {
     UNUSED(other);
     return 1;
 }
 
-Token* PopToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* PopToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createPopToken(tokenLocation(self));
+    return (Token*) createPopToken(this->location);
 }
 
 PopToken* createPopToken(SrcLoc loc) {
@@ -1393,29 +1266,24 @@ TokenType BuiltinToken::type() {
     return TOKEN_BUILTIN;
 }
 
-void BuiltinToken::destroy(Token* self) {
+void BuiltinToken::destroy() {
     //BuiltinToken* builtin = (BuiltinToken*) self;
     //free((char*) builtin->name);
 }
 
-void BuiltinToken::print(Token* self, uint8_t indent) {
+void BuiltinToken::print(uint8_t indent) {
     UNUSED(indent);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    printf("builtin: %s\n", getBuiltinTokenName(builtin));
+    printf("builtin: %s\n", this->name);
 }
 
-uint8_t BuiltinToken::equals(Token* self, Token* other) {
-    BuiltinToken* builtin1 = (BuiltinToken*) self;
-    BuiltinToken* builtin2 = (BuiltinToken*) other;
-    return strcmp(getBuiltinTokenName(builtin1), getBuiltinTokenName(builtin2)) == 0;
+uint8_t BuiltinToken::equals(Token* other) {
+    return strcmp(this->name, ((BuiltinToken*) other)->name) == 0;
 }
 
-Token* BuiltinToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* BuiltinToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    BuiltinToken* builtin = (BuiltinToken*) self;
-    return (Token*) createBuiltinToken(tokenLocation(self),
-            newStr(getBuiltinTokenName(builtin)));
+    return (Token*) createBuiltinToken(this->location, newStr(this->name));
 }
 
 const char* getBuiltinTokenName(BuiltinToken* token) {
@@ -1433,26 +1301,22 @@ TokenType CheckNoneToken::type() {
     return TOKEN_CHECK_NONE;
 }
 
-void CheckNoneToken::destroy(Token* self) {
-    UNUSED(self);
-}
+void CheckNoneToken::destroy() {}
 
-void CheckNoneToken::print(Token* self, uint8_t indent) {
-    UNUSED(self);
+void CheckNoneToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("check_none\n");
 }
 
-uint8_t CheckNoneToken::equals(Token* self, Token* other) {
-    UNUSED(self);
+uint8_t CheckNoneToken::equals(Token* other) {
     UNUSED(other);
     return 1;
 }
 
-Token* CheckNoneToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* CheckNoneToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createCheckNoneToken(tokenLocation(self));
+    return (Token*) createCheckNoneToken(this->location);
 }
 
 CheckNoneToken* createCheckNoneToken(SrcLoc location) {
@@ -1466,29 +1330,24 @@ TokenType NewFuncToken::type() {
     return TOKEN_NEW_FUNC;
 }
 
-void NewFuncToken::destroy(Token* self) {
+void NewFuncToken::destroy() {
     //NewFuncToken* func = (NewFuncToken*) self;
     //free((char*) func->name);
 }
 
-void NewFuncToken::print(Token* self, uint8_t indent) {
+void NewFuncToken::print(uint8_t indent) {
     UNUSED(indent);
-    NewFuncToken* func = (NewFuncToken*) self;
-    printf("new_func: %s\n", getNewFuncTokenName(func));
+    printf("new_func: %s\n", this->name);
 }
 
-uint8_t NewFuncToken::equals(Token* self, Token* other) {
-    NewFuncToken* func1 = (NewFuncToken*) self;
-    NewFuncToken* func2 = (NewFuncToken*) other;
-    return strcmp(getNewFuncTokenName(func1), getNewFuncTokenName(func2)) == 0;
+uint8_t NewFuncToken::equals(Token* other) {
+    return strcmp(this->name, ((NewFuncToken*) other)->name) == 0;
 }
 
-Token* NewFuncToken::copy(Token* self, CopyVisitor visitor, void* data) {
+Token* NewFuncToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    NewFuncToken* func = (NewFuncToken*) self;
-    return (Token*) createNewFuncToken(tokenLocation(self),
-            newStr(getNewFuncTokenName(func)));
+    return (Token*) createNewFuncToken(this->location, newStr(this->name));
 }
 
 const char* getNewFuncTokenName(NewFuncToken* token) {
@@ -1530,7 +1389,7 @@ void printTokenWithIndent(Token* token, uint8_t indent) {
     if(token == NULL) {
         printf("NULL\n");
     } else {
-        token->print(token, indent);
+        token->print(indent);
     }
 }
 
@@ -1545,7 +1404,7 @@ uint8_t tokensEqual(Token* a, Token* b) {
     if(a == NULL || b == NULL || getTokenType(a) != getTokenType(b)) {
         return 0;
     }
-    return a->equals(a, b);
+    return a->equals(b);
 }
 
 uint8_t tokensEqualVoid(void* a, void* b) {
@@ -1560,5 +1419,5 @@ uint8_t branchesEqual(void* a, void* b) {
 }
 
 Token* copyToken(Token* token, CopyVisitor visitor, void* data) {
-    return token->copy(token, visitor, data);
+    return token->copy(visitor, data);
 }
