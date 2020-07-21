@@ -43,8 +43,6 @@ TokenType IntToken::type() {
     return TOKEN_INT;
 }
 
-void IntToken::destroy() {}
-
 void IntToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("int: %i\n", this->value);
@@ -81,8 +79,6 @@ TokenType FloatToken::type() {
     return TOKEN_FLOAT;
 }
 
-void FloatToken::destroy() {}
-
 void FloatToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("float: %f\n", this->value);
@@ -109,12 +105,12 @@ FloatToken* createFloatToken(SrcLoc location, float value) {
 LiteralToken::LiteralToken(SrcLoc location, const char* value) :
     Token(location), value(value) {}
 
-TokenType LiteralToken::type() {
-    return TOKEN_LITERAL;
+LiteralToken::~LiteralToken() {
+    free((void*) this->value);
 }
 
-void LiteralToken::destroy() {
-    //free((void*) ((LiteralToken*) self)->value);
+TokenType LiteralToken::type() {
+    return TOKEN_LITERAL;
 }
 
 void LiteralToken::print(uint8_t indent) {
@@ -149,12 +145,12 @@ LiteralToken* createLiteralToken(SrcLoc loc, const char* value) {
 IdentifierToken::IdentifierToken(SrcLoc location, const char* value) :
     Token(location), value(value) {}
 
-TokenType IdentifierToken::type() {
-    return TOKEN_IDENTIFIER;
+IdentifierToken::~IdentifierToken() {
+    free((void*) this->value);
 }
 
-void IdentifierToken::destroy() {
-    //free((void*) ((IdentifierToken*) token)->value);
+TokenType IdentifierToken::type() {
+    return TOKEN_IDENTIFIER;
 }
 
 void IdentifierToken::print(uint8_t indent) {
@@ -189,13 +185,12 @@ IdentifierToken* createIdentifierToken(SrcLoc loc, const char* value) {
 TupleToken::TupleToken(SrcLoc location, List* elements) :
     Token(location), elements(elements) {}
 
-TokenType TupleToken::type() {
-    return TOKEN_TUPLE;
+TupleToken::~TupleToken() {
+    destroyList(this->elements, destroyTokenVoid);
 }
 
-void TupleToken::destroy() {
-    //TupleToken* tuple = (TupleToken*) self;
-    //destroyList(tuple->elements, destroyTokenVoid);
+TokenType TupleToken::type() {
+    return TOKEN_TUPLE;
 }
 
 void TupleToken::print(uint8_t indent) {
@@ -232,13 +227,12 @@ TupleToken* createTupleToken(SrcLoc location, List* elements) {
 ListToken::ListToken(SrcLoc location, List* elements) :
     Token(location), elements(elements) {}
 
-TokenType ListToken::type() {
-    return TOKEN_LIST;
+ListToken::~ListToken() {
+    destroyList(this->elements, destroyTokenVoid);
 }
 
-void ListToken::destroy() {
-    //ListToken* list = (ListToken*) self;
-    //destroyList(list->elements, destroyTokenVoid);
+TokenType ListToken::type() {
+    return TOKEN_LIST;
 }
 
 void ListToken::print(uint8_t indent) {
@@ -297,13 +291,8 @@ List* copyObjectPairs(List* list, CopyVisitor visitor, void* data) {
 ObjectToken::ObjectToken(SrcLoc location, List* elements) :
     Token(location), elements(elements) {}
 
-TokenType ObjectToken::type() {
-    return TOKEN_OBJECT;
-}
-
-void ObjectToken::destroy() {
-    /*ObjectToken* object = (ObjectToken*) self;
-    List* elements = getObjectTokenElements(object);
+ObjectToken::~ObjectToken() {
+    List* elements = this->elements;
 
     while(elements != NULL) {
         ObjectPair* pair = (ObjectPair*) elements->head;
@@ -312,7 +301,12 @@ void ObjectToken::destroy() {
         free(pair);
         elements = elements->tail;
     }
-    destroyShallowList(getObjectTokenElements(object));*/
+
+    destroyShallowList(this->elements);
+}
+
+TokenType ObjectToken::type() {
+    return TOKEN_OBJECT;
 }
 
 void ObjectToken::print(uint8_t indent) {
@@ -373,17 +367,17 @@ ObjectToken* createObjectToken(SrcLoc location, List* elements) {
 CallToken::CallToken(SrcLoc location, List* children) :
     Token(location), children(children) {}
 
-TokenType CallToken::type() {
-    return TOKEN_CALL;
-}
-
-void CallToken::destroy() {
-    /*List* children = getCallTokenChildren((CallToken*) self);
+CallToken::~CallToken() {
+    List* children = this->children;
     while(children != NULL) {
         destroyToken((Token*) children->head);
         children = children->tail;
     }
-    destroyShallowList(getCallTokenChildren((CallToken*) self));*/
+    destroyShallowList(this->children);
+}
+
+TokenType CallToken::type() {
+    return TOKEN_CALL;
 }
 
 void CallToken::print(uint8_t indent) {
@@ -426,15 +420,14 @@ CallToken* createCallToken(SrcLoc location, List* children) {
 BinaryOpToken::BinaryOpToken(SrcLoc location, const char* op, Token* left, Token* right) :
     Token(location), op(op), left(left), right(right) {}
 
-TokenType BinaryOpToken::type() {
-    return TOKEN_BINARY_OP;
+BinaryOpToken::~BinaryOpToken() {
+    free((void*) this->op);
+    destroyToken(this->left);
+    destroyToken(this->right);
 }
 
-void BinaryOpToken::destroy() {
-    /*BinaryOpToken* binaryOp = (BinaryOpToken*) self;
-    free((void*) getBinaryOpTokenOp(binaryOp));
-    destroyToken(getBinaryOpTokenLeft(binaryOp));
-    destroyToken(getBinaryOpTokenRight(binaryOp));*/
+TokenType BinaryOpToken::type() {
+    return TOKEN_BINARY_OP;
 }
 
 void BinaryOpToken::print(uint8_t indent) {
@@ -485,13 +478,13 @@ BinaryOpToken* createBinaryOpToken(SrcLoc loc, const char* op, Token* left,
 UnaryOpToken::UnaryOpToken(SrcLoc location, const char* op, Token* child) :
     Token(location), op(op), child(child) {}
 
-TokenType UnaryOpToken::type() {
-    return TOKEN_UNARY_OP;
+UnaryOpToken::~UnaryOpToken() {
+    free((void*) this->op);
+    destroyToken(this->child);
 }
 
-void UnaryOpToken::destroy() {
-    /*free((void*) getUnaryOpTokenOp(unaryOp));
-    destroyToken(getUnaryOpTokenChild(unaryOp));*/
+TokenType UnaryOpToken::type() {
+    return TOKEN_UNARY_OP;
 }
 
 void UnaryOpToken::print(uint8_t indent) {
@@ -533,14 +526,13 @@ UnaryOpToken* createUnaryOpToken(SrcLoc loc, const char* op, Token* child) {
 AssignmentToken::AssignmentToken(SrcLoc location, Token* left, Token* right) :
     Token(location), left(left), right(right) {}
 
-TokenType AssignmentToken::type() {
-    return TOKEN_ASSIGNMENT;
+AssignmentToken::~AssignmentToken() {
+    destroyToken(this->left);
+    destroyToken(this->right);
 }
 
-void AssignmentToken::destroy() {
-    //AssignmentToken* assignment = (AssignmentToken*) self;
-    //destroyToken((Token*) assignment->left);
-    //destroyToken(assignment->right);
+TokenType AssignmentToken::type() {
+    return TOKEN_ASSIGNMENT;
 }
 
 void AssignmentToken::print(uint8_t indent) {
@@ -589,12 +581,12 @@ AssignmentToken* createAssignmentToken(SrcLoc loc, Token* left, Token* right) {
 BlockToken::BlockToken(SrcLoc location, List* children) :
     Token(location), children(children) {}
 
-TokenType BlockToken::type() {
-    return TOKEN_BLOCK;
+BlockToken::~BlockToken() {
+    destroyList(this->children, destroyTokenVoid);
 }
 
-void BlockToken::destroy() {
-    //destroyList(((BlockToken*) self)->children, destroyTokenVoid);
+TokenType BlockToken::type() {
+    return TOKEN_BLOCK;
 }
 
 void BlockToken::print(uint8_t indent) {
@@ -645,14 +637,13 @@ List* copyIfBranches(List* branches, CopyVisitor visitor, void* data) {
 IfToken::IfToken(SrcLoc location, List* branches, BlockToken* elseBranch) :
     Token(location), branches(branches), elseBranch(elseBranch) {}
 
-TokenType IfToken::type() {
-    return TOKEN_IF;
+IfToken::~IfToken() {
+    destroyList(this->branches, destroyIfBranch);
+    destroyToken(this->elseBranch);
 }
 
-void IfToken::destroy() {
-    //IfToken* ifToken = (IfToken*) self;
-    //destroyList(ifToken->branches, destroyIfBranch);
-    //destroyToken((Token*) ifToken->elseBranch);
+TokenType IfToken::type() {
+    return TOKEN_IF;
 }
 
 void IfToken::print(uint8_t indent) {
@@ -710,14 +701,13 @@ IfToken* createIfToken(SrcLoc loc, List* branches, BlockToken* elseBranch) {
 WhileToken::WhileToken(SrcLoc location, Token* condition, BlockToken* body) :
     Token(location), condition(condition), body(body) {}
 
-TokenType WhileToken::type() {
-    return TOKEN_WHILE;
+WhileToken::~WhileToken() {
+    destroyToken(this->condition);
+    destroyToken(this->body);
 }
 
-void WhileToken::destroy() {
-    /*WhileToken* whileToken = (WhileToken*) self;
-    destroyToken((Token*) getWhileTokenCondition(whileToken));
-    destroyToken((Token*) getWhileTokenBody(whileToken));*/
+TokenType WhileToken::type() {
+    return TOKEN_WHILE;
 }
 
 void WhileToken::print(uint8_t indent) {
@@ -760,15 +750,14 @@ WhileToken* createWhileToken(SrcLoc loc, Token* condition, BlockToken* body) {
 FuncToken::FuncToken(SrcLoc loc, IdentifierToken* name, List* args, BlockToken* body) :
     Token(loc), name(name), args(args), body(body) {}
 
-TokenType FuncToken::type() {
-    return TOKEN_FUNC;
+FuncToken::~FuncToken() {
+    destroyToken(this->name);
+    destroyList(this->args, destroyTokenVoid);
+    destroyToken(this->body);
 }
 
-void FuncToken::destroy() {
-    //FuncToken* funcToken = (FuncToken*) self;
-    //destroyToken((Token*) funcToken->name);
-    //destroyList(funcToken->args, destroyTokenVoid);
-    //destroyToken((Token*) funcToken->body);
+TokenType FuncToken::type() {
+    return TOKEN_FUNC;
 }
 
 void FuncToken::print(uint8_t indent) {
@@ -822,12 +811,12 @@ FuncToken* createFuncToken(SrcLoc loc, IdentifierToken* name, List* args,
 ReturnToken::ReturnToken(SrcLoc location, Token* body) :
     Token(location), body(body) {}
 
-TokenType ReturnToken::type() {
-    return TOKEN_RETURN;
+ReturnToken::~ReturnToken() {
+    destroyToken(this->body);
 }
 
-void ReturnToken::destroy() {
-    //destroyToken(((ReturnToken*) self)->body);
+TokenType ReturnToken::type() {
+    return TOKEN_RETURN;
 }
 
 void ReturnToken::print(uint8_t indent) {
@@ -855,12 +844,12 @@ ReturnToken* createReturnToken(SrcLoc location, Token* body) {
 LabelToken::LabelToken(SrcLoc location, const char* name) :
     Token(location), name(name) {}
 
-TokenType LabelToken::type() {
-    return TOKEN_LABEL;
+LabelToken::~LabelToken() {
+    free((void*) this->name);
 }
 
-void LabelToken::destroy() {
-    //free((void*) ((LabelToken*) self)->name);
+TokenType LabelToken::type() {
+    return TOKEN_LABEL;
 }
 
 void LabelToken::print(uint8_t indent) {
@@ -892,12 +881,12 @@ LabelToken* createLabelToken(const char* name) {
 AbsJumpToken::AbsJumpToken(SrcLoc location, const char* label) :
     Token(location), label(label) {}
 
-TokenType AbsJumpToken::type() {
-    return TOKEN_ABS_JUMP;
+AbsJumpToken::~AbsJumpToken() {
+    free((void*) this->label);
 }
 
-void AbsJumpToken::destroy() {
-    //free((void*) ((AbsJumpToken*) self)->label);
+TokenType AbsJumpToken::type() {
+    return TOKEN_ABS_JUMP;
 }
 
 void AbsJumpToken::print(uint8_t indent) {
@@ -912,7 +901,7 @@ uint8_t AbsJumpToken::equals(Token* other) {
 Token* AbsJumpToken::copy(CopyVisitor visitor, void* data) {
     UNUSED(visitor);
     UNUSED(data);
-    return (Token*) createAbsJumpToken(this->label);
+    return (Token*) createAbsJumpToken(newStr(this->label));
 }
 
 const char* getAbsJumpTokenLabel(AbsJumpToken* token) {
@@ -926,17 +915,16 @@ AbsJumpToken* createAbsJumpToken(const char* label) {
     return new AbsJumpToken(loc, label);
 }
 
+CondJumpToken::~CondJumpToken() {
+    destroyToken(this->condition);
+    free((void*) this->label);
+}
+
 CondJumpToken::CondJumpToken(SrcLoc loc, Token* condition, const char* label, uint8_t when) :
     Token(loc), condition(condition), label(label), when(when) {}
 
 TokenType CondJumpToken::type() {
     return TOKEN_COND_JUMP;
-}
-
-void CondJumpToken::destroy() {
-    //CondJumpToken* token = (CondJumpToken*) self;
-    //destroyToken(token->condition);
-    //free((void*) token->label);
 }
 
 void CondJumpToken::print(uint8_t indent) {
@@ -979,13 +967,12 @@ CondJumpToken* createCondJumpToken(SrcLoc loc, Token* cond, const char* label,
 PushBuiltinToken::PushBuiltinToken(SrcLoc location, const char* name) :
     Token(location), name(name) {}
 
-TokenType PushBuiltinToken::type() {
-    return TOKEN_PUSH_BUILTIN;
+PushBuiltinToken::~PushBuiltinToken() {
+    free((void*) this->name);
 }
 
-void PushBuiltinToken::destroy() {
-    //PushBuiltinToken* builtin = (PushBuiltinToken*) self;
-    //free((char*) builtin->name);
+TokenType PushBuiltinToken::type() {
+    return TOKEN_PUSH_BUILTIN;
 }
 
 void PushBuiltinToken::print(uint8_t indent) {
@@ -1018,8 +1005,6 @@ TokenType PushIntToken::type() {
     return TOKEN_PUSH_INT;
 }
 
-void PushIntToken::destroy() {}
-
 void PushIntToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("push_int: %i\n", this->value);
@@ -1050,8 +1035,6 @@ TokenType CallOpToken::type() {
     return TOKEN_OP_CALL;
 }
 
-void CallOpToken::destroy() {}
-
 void CallOpToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("op_call: %i\n", this->arity);
@@ -1078,13 +1061,12 @@ CallOpToken* createCallOpToken(SrcLoc loc, uint8_t arity) {
 StoreToken::StoreToken(SrcLoc location, const char* name) :
     Token(location), name(name) {}
 
-TokenType StoreToken::type() {
-    return TOKEN_STORE;
+StoreToken::~StoreToken() {
+    free((void*) this->name);
 }
 
-void StoreToken::destroy() {
-    //StoreToken* store = (StoreToken*) self;
-    //free((char*) store->name);
+TokenType StoreToken::type() {
+    return TOKEN_STORE;
 }
 
 void StoreToken::print(uint8_t indent) {
@@ -1117,8 +1099,6 @@ TokenType DupToken::type() {
     return TOKEN_DUP;
 }
 
-void DupToken::destroy() {}
-
 void DupToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("dup\n");
@@ -1142,13 +1122,12 @@ DupToken* createDupToken(SrcLoc loc) {
 PushToken::PushToken(SrcLoc location, Token* value) :
     Token(location), value(value) {}
 
-TokenType PushToken::type() {
-    return TOKEN_PUSH;
+PushToken::~PushToken() {
+    destroyToken(this->value);
 }
 
-void PushToken::destroy() {
-    //PushToken* push = (PushToken*) self;
-    //destroyToken(push->value);
+TokenType PushToken::type() {
+    return TOKEN_PUSH;
 }
 
 void PushToken::print(uint8_t ident) {
@@ -1179,8 +1158,6 @@ TokenType Rot3Token::type() {
     return TOKEN_ROT3;
 }
 
-void Rot3Token::destroy() {}
-
 void Rot3Token::print(uint8_t indent) {
     UNUSED(indent);
     printf("rot3\n");
@@ -1207,8 +1184,6 @@ SwapToken::SwapToken(SrcLoc location) :
 TokenType SwapToken::type() {
     return TOKEN_SWAP;
 }
-
-void SwapToken::destroy() {}
 
 void SwapToken::print(uint8_t indent) {
     UNUSED(indent);
@@ -1237,8 +1212,6 @@ TokenType PopToken::type() {
     return TOKEN_POP;
 }
 
-void PopToken::destroy() {}
-
 void PopToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("pop\n");
@@ -1262,13 +1235,12 @@ PopToken* createPopToken(SrcLoc loc) {
 BuiltinToken::BuiltinToken(SrcLoc location, const char* name) :
     Token(location), name(name) {}
 
-TokenType BuiltinToken::type() {
-    return TOKEN_BUILTIN;
+BuiltinToken::~BuiltinToken() {
+    free((void*) this->name);
 }
 
-void BuiltinToken::destroy() {
-    //BuiltinToken* builtin = (BuiltinToken*) self;
-    //free((char*) builtin->name);
+TokenType BuiltinToken::type() {
+    return TOKEN_BUILTIN;
 }
 
 void BuiltinToken::print(uint8_t indent) {
@@ -1301,8 +1273,6 @@ TokenType CheckNoneToken::type() {
     return TOKEN_CHECK_NONE;
 }
 
-void CheckNoneToken::destroy() {}
-
 void CheckNoneToken::print(uint8_t indent) {
     UNUSED(indent);
     printf("check_none\n");
@@ -1326,13 +1296,12 @@ CheckNoneToken* createCheckNoneToken(SrcLoc location) {
 NewFuncToken::NewFuncToken(SrcLoc location, const char* name) :
     Token(location), name(name) {}
 
-TokenType NewFuncToken::type() {
-    return TOKEN_NEW_FUNC;
+NewFuncToken::~NewFuncToken() {
+    free((void*) this->name);
 }
 
-void NewFuncToken::destroy() {
-    //NewFuncToken* func = (NewFuncToken*) self;
-    //free((char*) func->name);
+TokenType NewFuncToken::type() {
+    return TOKEN_NEW_FUNC;
 }
 
 void NewFuncToken::print(uint8_t indent) {
@@ -1362,11 +1331,9 @@ NewFuncToken* createNewFuncToken(SrcLoc location, const char* name) {
  * Frees a token's memory, it's data's memory and subtokens recursively
  */
 void destroyToken(Token* token) {
-    if(token == NULL) {
-        return;
+    if(token != NULL) {
+        delete token;
     }
-    //token->destroy_(token);
-    //free(token);
 }
 
 void destroyTokenVoid(void* token) {
