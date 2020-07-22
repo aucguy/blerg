@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string>
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <iostream>
 
 #include "main/top.h"
 #include "test/parseTest.h"
@@ -10,6 +12,7 @@
 #include "test/transformTest.h"
 #include "test/codegenTest.h"
 #include "test/executeTest.h"
+#include "test/parenAst.h"
 
 uint8_t cmdArgc = 0;
 const char** cmdArgs = nullptr;
@@ -110,6 +113,21 @@ uint8_t runTests(uint8_t argc, const char* args[]) {
             }
         }
         closedir(dir);
+    }
+
+    dir = opendir("parse_tests");
+    if(dir != NULL) {
+        while((file = readdir(dir)) != NULL) {
+            const std::string d_name = std::string(file->d_name);
+            if(d_name != ".." && d_name != ".") {
+                const std::string filename = std::string("parse_tests/") +
+                        std::string(file->d_name);
+
+                const std::string* src = new std::string(readFile(filename.c_str()));
+                ParenNode* node = parseParenNode(src);
+                std::cout << d_name << ": " << *node->asStr() << "\n";
+            }
+        }
     }
 
     if(status == 0) {
